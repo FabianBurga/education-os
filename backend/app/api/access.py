@@ -25,7 +25,7 @@ def _person_id_for_user(session: Session, user_id: UUID) -> UUID:
             """
             SELECT person_id
             FROM user_accounts
-            WHERE id = :user_id AND is_active = true
+            WHERE id = CAST(:user_id AS uuid) AND is_active = true
             """
         ).bindparams(user_id=str(user_id))
     ).first()
@@ -47,8 +47,8 @@ def require_staff_access(
             """
             SELECT id
             FROM staff_profiles
-            WHERE person_id = :person_id
-              AND institution_id = :institution_id
+            WHERE person_id = CAST(:person_id AS uuid)
+              AND institution_id = CAST(:institution_id AS uuid)
               AND status = 'ACTIVE'
             """
         ).bindparams(
@@ -75,8 +75,8 @@ def get_guardian_principal(
             """
             SELECT id
             FROM guardian_profiles
-            WHERE person_id = :person_id
-              AND institution_id = :institution_id
+            WHERE person_id = CAST(:person_id AS uuid)
+              AND institution_id = CAST(:institution_id AS uuid)
               AND status = 'ACTIVE'
             """
         ).bindparams(

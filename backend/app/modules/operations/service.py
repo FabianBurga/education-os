@@ -101,7 +101,7 @@ def _migration_check(session: Session) -> ReadinessCheck:
     revision = _scalar(session, "SELECT version_num FROM alembic_version")
     return ReadinessCheck(
         code="ALEMBIC_HEAD",
-        passed=revision == "0008_m7",
+        passed=revision == "0009_rc5",
         detail=f"database revision={revision}",
     )
 

@@ -54,9 +54,9 @@ def get_current_principal(
             SELECT m.user_id, m.institution_id, i.organization_id
             FROM memberships m
             JOIN institutions i ON i.id = m.institution_id
-            WHERE m.user_id = :user_id
-              AND m.institution_id = :institution_id
-              AND i.organization_id = :organization_id
+            WHERE m.user_id = CAST(:user_id AS uuid)
+              AND m.institution_id = CAST(:institution_id AS uuid)
+              AND i.organization_id = CAST(:organization_id AS uuid)
               AND m.status = 'ACTIVE'
               AND i.status = 'ACTIVE'
             """

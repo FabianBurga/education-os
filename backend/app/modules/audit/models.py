@@ -4,6 +4,10 @@ from uuid import UUID, uuid4
 from sqlalchemy import JSON, Column
 from sqlmodel import Field, SQLModel
 
+# Register FK targets even when Audit is imported standalone.
+from app.modules.identity import models as _identity_models  # noqa: F401
+from app.modules.tenancy import models as _tenancy_models  # noqa: F401
+
 
 def utcnow() -> datetime:
     return datetime.now(UTC)
