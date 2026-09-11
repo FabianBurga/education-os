@@ -10,9 +10,11 @@ from app.api.v1.m3_router import router as m3_router
 from app.api.v1.m4_router import router as m4_router
 from app.api.v1.m5_router import router as m5_router
 from app.api.v1.m6_router import router as m6_router
+from app.api.v1.m7_router import router as m7_router
 from app.db.session import get_session
 
 router = APIRouter()
+router.include_router(m7_router)
 router.include_router(m6_router)
 router.include_router(m5_router, dependencies=[Depends(require_staff_access)])
 router.include_router(m4_router, dependencies=[Depends(require_staff_access)])
