@@ -10,7 +10,6 @@ from app.core.security import decode_access_token
 from app.db.session import get_session
 from app.db.tenant_context import TenantContext, apply_tenant_context
 
-
 bearer = HTTPBearer(auto_error=True)
 
 

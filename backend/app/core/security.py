@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
@@ -6,7 +6,6 @@ import jwt
 from pwdlib import PasswordHash
 
 from app.core.config import settings
-
 
 password_hash = PasswordHash.recommended()
 ALGORITHM = "HS256"
@@ -26,9 +25,7 @@ def create_access_token(
     organization_id: UUID,
     institution_id: UUID,
 ) -> str:
-    expires = datetime.now(timezone.utc) + timedelta(
-        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
-    )
+    expires = datetime.now(UTC) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     payload: dict[str, Any] = {
         "sub": str(user_id),
         "organization_id": str(organization_id),

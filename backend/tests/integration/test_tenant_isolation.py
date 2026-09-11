@@ -4,7 +4,6 @@ from uuid import uuid4
 import psycopg
 import pytest
 
-
 OWNER_URL = os.getenv(
     "OWNER_DATABASE_URL_PG",
     "postgresql://education_owner:education_owner_dev@localhost:5432/education_os",

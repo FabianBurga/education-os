@@ -5,7 +5,6 @@ from sqlmodel import Session
 from app.api.deps import CurrentPrincipal, get_current_principal
 from app.db.session import get_session
 
-
 router = APIRouter()
 
 
@@ -23,10 +22,5 @@ def list_campuses(
     _: CurrentPrincipal = Depends(get_current_principal),
     session: Session = Depends(get_session),
 ) -> list[dict]:
-    rows = session.exec(
-        text("SELECT id, institution_id, name FROM campuses ORDER BY name")
-    ).all()
-    return [
-        {"id": str(r[0]), "institution_id": str(r[1]), "name": r[2]}
-        for r in rows
-    ]
+    rows = session.exec(text("SELECT id, institution_id, name FROM campuses ORDER BY name")).all()
+    return [{"id": str(r[0]), "institution_id": str(r[1]), "name": r[2]} for r in rows]
