@@ -14,4 +14,4 @@ def test_runtime_can_read_current_schema_revision() -> None:
     ) as conn, conn.cursor() as cur:
         cur.execute("SELECT version_num FROM alembic_version")
         row = cur.fetchone()
-    assert row == ("0013_m11",)
+    assert row == ("0014_m12",)
