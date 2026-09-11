@@ -1,0 +1,10 @@
+from fastapi import APIRouter
+
+from app.modules.enrollment.router import router as enrollment_router
+from app.modules.families.router import router as families_router
+from app.modules.students.router import router as students_router
+
+router = APIRouter()
+router.include_router(students_router)
+router.include_router(families_router)
+router.include_router(enrollment_router)

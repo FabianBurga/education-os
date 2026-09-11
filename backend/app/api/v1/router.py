@@ -3,9 +3,11 @@ from sqlalchemy import text
 from sqlmodel import Session
 
 from app.api.deps import CurrentPrincipal, get_current_principal
+from app.api.v1.m1_router import router as m1_router
 from app.db.session import get_session
 
 router = APIRouter()
+router.include_router(m1_router)
 
 
 @router.get("/me")
