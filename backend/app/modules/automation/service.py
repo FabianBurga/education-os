@@ -256,6 +256,25 @@ def run_engine(
     )
 
 
+def _restore_rls_context_after_commit(
+    session: Session,
+    principal: CurrentPrincipal,
+) -> None:
+    """Restore transaction-local RLS settings after an internal commit."""
+    connection = session.connection()
+    for setting, value in (
+        ("app.organization_id", principal.organization_id),
+        ("app.institution_id", principal.institution_id),
+        ("app.user_id", principal.user_id),
+    ):
+        if value is None:
+            continue
+        connection.exec_driver_sql(
+            "SELECT set_config(%s, %s, true)",
+            (setting, str(value)),
+        )
+
+
 def acknowledge_task(
     session: Session,
     principal: CurrentPrincipal,
@@ -279,6 +298,7 @@ def acknowledge_task(
         task.id,
     )
     session.commit()
+    _restore_rls_context_after_commit(session, principal)
     session.refresh(task)
     return task
 
@@ -333,6 +353,7 @@ def complete_task(
         )
 
     session.commit()
+    _restore_rls_context_after_commit(session, principal)
     session.refresh(task)
     return task
 
