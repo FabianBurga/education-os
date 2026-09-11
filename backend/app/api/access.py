@@ -65,6 +65,44 @@ def require_staff_access(
     return principal
 
 
+def require_admin_access(
+    principal: CurrentPrincipal = Depends(get_current_principal),
+    session: Session = Depends(get_session),
+) -> CurrentPrincipal:
+    person_id = _person_id_for_user(session, principal.user_id)
+    row = session.exec(
+        text(
+            """
+            SELECT sp.id
+            FROM staff_profiles sp
+            JOIN memberships m
+              ON m.user_id = CAST(:user_id AS uuid)
+             AND m.institution_id = CAST(:institution_id AS uuid)
+             AND m.status = 'ACTIVE'
+            JOIN membership_roles mr ON mr.membership_id = m.id
+            JOIN role_permissions rp ON rp.role_id = mr.role_id
+            JOIN permissions p ON p.id = rp.permission_id
+            WHERE sp.person_id = CAST(:person_id AS uuid)
+              AND sp.institution_id = CAST(:institution_id AS uuid)
+              AND sp.status = 'ACTIVE'
+              AND p.key = 'admin.console.access'
+            LIMIT 1
+            """
+        ).bindparams(
+            user_id=str(principal.user_id),
+            person_id=str(person_id),
+            institution_id=str(principal.institution_id),
+        )
+    ).first()
+
+    if row is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Administrator permission required",
+        )
+    return principal
+
+
 def get_guardian_principal(
     principal: CurrentPrincipal = Depends(get_current_principal),
     session: Session = Depends(get_session),
@@ -100,4 +138,7 @@ def get_guardian_principal(
     )
 
 
-GuardianPrincipalDep = Annotated[GuardianPrincipal, Depends(get_guardian_principal)]
+GuardianPrincipalDep = Annotated[
+    GuardianPrincipal,
+    Depends(get_guardian_principal),
+]

@@ -9,7 +9,9 @@ DATABASE_URL_PG = os.getenv(
 
 
 def test_runtime_can_read_current_schema_revision() -> None:
-    with psycopg.connect(DATABASE_URL_PG) as conn, conn.cursor() as cur:
+    with psycopg.connect(
+        DATABASE_URL_PG
+    ) as conn, conn.cursor() as cur:
         cur.execute("SELECT version_num FROM alembic_version")
         row = cur.fetchone()
-    assert row == ("0009_rc5",)
+    assert row == ("0010_m8",)

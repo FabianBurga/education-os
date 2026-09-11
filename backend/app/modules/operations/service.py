@@ -30,7 +30,13 @@ CRITICAL_TABLES = (
     "family_notice_receipts",
     "pilot_readiness_runs",
 )
-CRITICAL_TABLES_SQL = "'student_profiles', 'guardian_profiles', 'staff_profiles', 'enrollments', 'sections', 'attendance_records', 'grade_entries', 'intelligence_signals', 'automation_rules', 'automation_cases', 'automation_tasks', 'guardian_student_portal_access', 'family_notices', 'family_notice_receipts', 'pilot_readiness_runs'"
+CRITICAL_TABLES_SQL = (
+    "'student_profiles', 'guardian_profiles', 'staff_profiles', "
+    "'enrollments', 'sections', 'attendance_records', 'grade_entries', "
+    "'intelligence_signals', 'automation_rules', 'automation_cases', "
+    "'automation_tasks', 'guardian_student_portal_access', 'family_notices', "
+    "'family_notice_receipts', 'pilot_readiness_runs'"
+)
 
 
 def _scalar(session: Session, sql: str):
@@ -65,8 +71,16 @@ def security_baseline(session: Session) -> SecurityBaseline:
         )
     ).all()
 
-    force_rls = sum(1 for _, enabled, forced, _ in rows if enabled and forced)
-    runtime_owned = sum(1 for _, _, _, owner in rows if owner == "education_app")
+    force_rls = sum(
+        1
+        for _, enabled, forced, _ in rows
+        if enabled and forced
+    )
+    runtime_owned = sum(
+        1
+        for _, _, _, owner in rows
+        if owner == "education_app"
+    )
 
     return SecurityBaseline(
         runtime_role="education_app",
@@ -84,24 +98,41 @@ def pilot_data_summary(session: Session) -> PilotDataSummary:
         return int(_scalar(session, sql) or 0)
 
     return PilotDataSummary(
-        active_students=count("SELECT COUNT(*) FROM student_profiles WHERE status = 'ACTIVE'"),
-        active_guardians=count("SELECT COUNT(*) FROM guardian_profiles WHERE status = 'ACTIVE'"),
-        active_staff=count("SELECT COUNT(*) FROM staff_profiles WHERE status = 'ACTIVE'"),
-        active_sections=count("SELECT COUNT(*) FROM sections WHERE status = 'ACTIVE'"),
-        attendance_records=count("SELECT COUNT(*) FROM attendance_records"),
-        grade_entries=count("SELECT COUNT(*) FROM grade_entries"),
+        active_students=count(
+            "SELECT COUNT(*) FROM student_profiles WHERE status = 'ACTIVE'"
+        ),
+        active_guardians=count(
+            "SELECT COUNT(*) FROM guardian_profiles WHERE status = 'ACTIVE'"
+        ),
+        active_staff=count(
+            "SELECT COUNT(*) FROM staff_profiles WHERE status = 'ACTIVE'"
+        ),
+        active_sections=count(
+            "SELECT COUNT(*) FROM sections WHERE status = 'ACTIVE'"
+        ),
+        attendance_records=count(
+            "SELECT COUNT(*) FROM attendance_records"
+        ),
+        grade_entries=count(
+            "SELECT COUNT(*) FROM grade_entries"
+        ),
         open_intelligence_signals=count(
             "SELECT COUNT(*) FROM intelligence_signals WHERE status = 'OPEN'"
         ),
-        open_automation_cases=count("SELECT COUNT(*) FROM automation_cases WHERE status = 'OPEN'"),
+        open_automation_cases=count(
+            "SELECT COUNT(*) FROM automation_cases WHERE status = 'OPEN'"
+        ),
     )
 
 
 def _migration_check(session: Session) -> ReadinessCheck:
-    revision = _scalar(session, "SELECT version_num FROM alembic_version")
+    revision = _scalar(
+        session,
+        "SELECT version_num FROM alembic_version",
+    )
     return ReadinessCheck(
         code="ALEMBIC_HEAD",
-        passed=revision == "0009_rc5",
+        passed=revision == "0010_m8",
         detail=f"database revision={revision}",
     )
 
@@ -127,18 +158,27 @@ def _role_checks(session: Session) -> list[ReadinessCheck]:
         ReadinessCheck(
             code="RUNTIME_NOT_TABLE_OWNER",
             passed=baseline.critical_tables_runtime_owned == 0,
-            detail=f"runtime-owned critical tables={baseline.critical_tables_runtime_owned}",
+            detail=(
+                "runtime-owned critical tables="
+                f"{baseline.critical_tables_runtime_owned}"
+            ),
         ),
     ]
 
 
 def _rls_check(session: Session) -> ReadinessCheck:
     baseline = security_baseline(session)
-    passed = baseline.critical_tables_force_rls == baseline.critical_tables_total
+    passed = (
+        baseline.critical_tables_force_rls
+        == baseline.critical_tables_total
+    )
     return ReadinessCheck(
         code="CRITICAL_FORCE_RLS",
         passed=passed,
-        detail=(f"force_rls={baseline.critical_tables_force_rls}/{baseline.critical_tables_total}"),
+        detail=(
+            f"force_rls={baseline.critical_tables_force_rls}/"
+            f"{baseline.critical_tables_total}"
+        ),
     )
 
 
@@ -194,5 +234,7 @@ def run_pilot_readiness(
 
 def latest_pilot_readiness(session: Session):
     return session.exec(
-        select(PilotReadinessRun).order_by(PilotReadinessRun.executed_at.desc())
+        select(PilotReadinessRun).order_by(
+            PilotReadinessRun.executed_at.desc()
+        )
     ).first()

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Education OS · Administrador</title>
+<style>
+:root{--bg:#f5f7fa;--card:#fff;--ink:#172033;--muted:#657184;--line:#e3e7ee;--accent:#243b5a;--ok:#1f6d4d;--bad:#9b3440}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:4;padding:18px 24px}.head{max-width:1400px;margin:auto;display:flex;justify-content:space-between;gap:16px;align-items:center}
+h1{font-size:22px;margin:0}.sub{font-size:13px;color:var(--muted);margin-top:4px}.auth{display:flex;gap:8px}.auth input{width:340px}
+input,select,button{border:1px solid var(--line);border-radius:9px;padding:9px 10px;background:#fff}button{cursor:pointer;font-weight:650}.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+main{max-width:1400px;margin:auto;padding:24px}.summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}.metric,.card{background:#fff;border:1px solid var(--line);border-radius:15px;padding:16px;box-shadow:0 2px 10px #17203308}.metric b{font-size:26px;display:block;margin-top:5px}
+.nav{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0}.nav button.active{background:var(--accent);color:#fff}.panel{display:none}.panel.active{display:block}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.form{display:grid;grid-template-columns:1fr 1fr;gap:8px}.form .full{grid-column:1/-1}.card h2{font-size:16px;margin:0 0 12px}.card h3{font-size:14px;margin:18px 0 8px}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);font-size:12px}th{color:var(--muted);font-size:11px;text-transform:uppercase}
+.yes{color:var(--ok)}.no{color:var(--bad)}.status{margin:14px 0;font-size:13px;color:var(--muted)}
+@media(max-width:900px){.head{flex-direction:column;align-items:flex-start}.auth{width:100%}.auth input{width:100%}.summary{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}.form{grid-template-columns:1fr}.form .full{grid-column:auto}}
+</style>
+</head>
+<body>
+<header><div class="head"><div><h1>Administrator Console</h1><div class="sub">Education OS · configuración institucional y puesta en marcha</div></div>
+<div class="auth"><input id="token" type="password" placeholder="Bearer token SYSTEM_ADMIN"><button class="primary" onclick="connect()">Conectar</button></div></div></header>
+<main>
+<div id="summary" class="summary"></div>
+<div class="nav">
+<button class="active" onclick="tab('institution',this)">Institución</button>
+<button onclick="tab('people',this)">Personas y accesos</button>
+<button onclick="tab('academic',this)">Estructura académica</button>
+<button onclick="tab('enrollment',this)">Matrícula y familias</button>
+<button onclick="tab('checklist',this)">Puesta en marcha</button>
+</div>
+
+<section id="institution" class="panel active"><div class="grid">
+<div class="card"><h2>Institución actual</h2><div class="form">
+<input id="instName" class="full" placeholder="Nombre">
+<select id="instType"><option>PRIVATE</option><option>PUBLIC</option><option>FISCOMISIONAL</option><option>MUNICIPAL</option></select>
+<select id="instStatus"><option>ACTIVE</option><option>INACTIVE</option></select>
+<button class="primary full" onclick="saveInstitution()">Guardar institución</button></div></div>
+<div class="card"><h2>Campus</h2><div class="form"><input id="campusName" placeholder="Nuevo campus"><button onclick="addCampus()">Agregar campus</button></div><div id="campuses"></div></div>
+<div class="card"><h2>Período académico</h2><div class="form">
+<input id="periodCode" placeholder="Código"><input id="periodName" placeholder="Nombre">
+<input id="periodStart" type="date"><input id="periodEnd" type="date">
+<select id="periodStatus"><option>PLANNED</option><option>ACTIVE</option></select><button onclick="addPeriod()">Crear período</button>
+</div><div id="periods"></div></div>
+</div></section>
+
+<section id="people" class="panel"><div class="grid">
+<div class="card"><h2>Crear persona</h2><div class="form"><input id="given" placeholder="Nombres"><input id="family" placeholder="Apellidos"><input id="personEmail" class="full" placeholder="Correo principal"><button class="primary full" onclick="addPerson()">Crear persona</button></div></div>
+<div class="card"><h2>Crear cuenta + membresía</h2><div class="form"><select id="accountPerson"></select><input id="loginEmail" placeholder="Correo de acceso"><input id="tempPassword" type="password" placeholder="Clave temporal (10+)"><button onclick="addAccount()">Crear acceso</button></div></div>
+<div class="card"><h2>Crear perfil de personal</h2><div class="form"><select id="staffPerson"></select><input id="staffCode" placeholder="Código de personal"><button onclick="addStaff()">Crear personal</button></div></div>
+<div class="card"><h2>Roles y permisos</h2><div class="form"><input id="roleKey" placeholder="ROL_EJEMPLO"><input id="roleName" placeholder="Nombre"><button onclick="addRole()">Crear rol</button></div>
+<h3>Asignar rol</h3><div class="form"><select id="roleMembership"></select><select id="roleSelect"></select><button onclick="assignRole()">Asignar</button></div>
+<h3>Asignar permiso</h3><div class="form"><select id="permissionRole"></select><select id="permissionSelect"></select><button onclick="assignPermission()">Asignar permiso</button></div></div>
+<div class="card" style="grid-column:1/-1"><h2>Personas / accesos</h2><div id="peopleTable"></div><h3>Cuentas</h3><div id="accountsTable"></div></div>
+</div></section>
+
+<section id="academic" class="panel"><div class="grid">
+<div class="card"><h2>Nivel académico</h2><div class="form"><input id="levelCode" placeholder="Código"><input id="levelName" placeholder="Nombre"><button onclick="addLevel()">Crear nivel</button></div><div id="levels"></div></div>
+<div class="card"><h2>Grado</h2><div class="form"><select id="gradeLevel"></select><input id="gradeCode" placeholder="Código"><input id="gradeName" placeholder="Nombre"><button onclick="addGrade()">Crear grado</button></div><div id="grades"></div></div>
+<div class="card"><h2>Asignatura</h2><div class="form"><input id="subjectCode" placeholder="Código"><input id="subjectName" placeholder="Nombre"><input id="subjectArea" placeholder="Área"><button onclick="addSubject()">Crear asignatura</button></div><div id="subjects"></div></div>
+<div class="card"><h2>Sección</h2><div class="form"><select id="sectionPeriod"></select><select id="sectionCampus"></select><select id="sectionGrade"></select><input id="sectionCode" placeholder="Código"><input id="sectionName" placeholder="Nombre"><select id="sectionShift"><option>MORNING</option><option>AFTERNOON</option><option>FULL_DAY</option></select><input id="sectionCapacity" type="number" value="40"><button onclick="addSection()">Crear sección</button></div><div id="sections"></div></div>
+</div></section>
+
+<section id="enrollment" class="panel"><div class="grid">
+<div class="card"><h2>Perfil estudiante</h2><div class="form"><select id="studentPerson"></select><input id="studentCode" placeholder="Código estudiante"><button onclick="addStudent()">Crear perfil</button></div><div id="students"></div></div>
+<div class="card"><h2>Perfil representante</h2><div class="form"><select id="guardianPerson"></select><input id="guardianCode" placeholder="Código representante"><button onclick="addGuardian()">Crear perfil</button></div><div id="guardians"></div></div>
+<div class="card"><h2>Familia</h2><div class="form"><input id="familyHousehold" placeholder="Nombre familiar"><button onclick="addFamily()">Crear familia</button></div><div id="families"></div></div>
+<div class="card"><h2>Matrícula</h2><div class="form"><select id="enrollStudent"></select><select id="enrollPeriod"></select><select id="enrollCampus"></select><input id="enrollNumber" placeholder="Número matrícula"><button onclick="addEnrollment()">Matricular</button></div><div id="enrollments"></div></div>
+</div></section>
+
+<section id="checklist" class="panel"><div class="card"><h2>Checklist de puesta en marcha</h2><div id="checklistBody"></div></div></section>
+<div id="status" class="status"></div>
+</main>
+<script>
+const tokenEl=document.getElementById('token');tokenEl.value=sessionStorage.getItem('education_os_admin_token')||'';let data={};
+function headers(){return tokenEl.value.trim()?{'Authorization':'Bearer '+tokenEl.value.trim(),'Content-Type':'application/json'}:{'Content-Type':'application/json'}}
+async function api(path,opts={}){const r=await fetch('/api/v1'+path,{...opts,headers:{...headers(),...(opts.headers||{})}});const txt=await r.text();let body;try{body=txt?JSON.parse(txt):null}catch{body=txt}if(!r.ok)throw new Error(`${r.status} ${body?.detail||txt}`);return body}
+function connect(){sessionStorage.setItem('education_os_admin_token',tokenEl.value.trim());load()}
+function tab(id,b){document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');b.classList.add('active')}
+function rows(items,cols){if(!items?.length)return '<p class="sub">Sin registros.</p>';return `<table><thead><tr>${cols.map(c=>`<th>${c[0]}</th>`).join('')}</tr></thead><tbody>${items.map(x=>`<tr>${cols.map(c=>`<td>${c[1](x)??'—'}</td>`).join('')}</tr>`).join('')}</tbody></table>`}
+function options(id,items,label,value='id'){document.getElementById(id).innerHTML=(items||[]).map(x=>`<option value="${x[value]}">${label(x)}</option>`).join('')}
+function setStatus(t){document.getElementById('status').textContent=t}
+async function load(){try{const [summary,inst,campuses,people,accounts,staff,roles,perms,periods,levels,grades,subjects,sections,students,guardians,families,enrollments,check]=await Promise.all([api('/admin/summary'),api('/admin/institution'),api('/admin/campuses'),api('/admin/people'),api('/admin/accounts'),api('/admin/staff'),api('/admin/roles'),api('/admin/permissions'),api('/academic-periods'),api('/academics/levels'),api('/academics/grades'),api('/academics/subjects'),api('/academics/sections'),api('/students'),api('/guardians'),api('/families'),api('/enrollments'),api('/admin/onboarding-checklist')]);data={summary,inst,campuses,people,accounts,staff,roles,perms,periods,levels,grades,subjects,sections,students,guardians,families,enrollments,check};document.getElementById('summary').innerHTML=[['Personas',summary.people],['Usuarios',summary.users],['Personal',summary.active_staff],['Estudiantes',summary.active_students],['Secciones',summary.sections]].map(x=>`<div class="metric"><span class="sub">${x[0]}</span><b>${x[1]}</b></div>`).join('');instName.value=inst.name;instType.value=inst.type;instStatus.value=inst.status;render();fillOptions();setStatus('Administrator Console actualizado.')}catch(e){setStatus('No se pudo cargar: '+e.message)}}
+function render(){campuses.innerHTML=rows(data.campuses,[['Campus',x=>x.name],['ID',x=>x.id]]);periods.innerHTML=rows(data.periods,[['Código',x=>x.code],['Nombre',x=>x.name],['Estado',x=>x.status]]);peopleTable.innerHTML=rows(data.people,[['Persona',x=>x.family_names+', '+x.given_names],['Correo',x=>x.primary_email],['ID',x=>x.id]]);accountsTable.innerHTML=rows(data.accounts,[['Login',x=>x.login_email],['Estado',x=>x.status],['Roles',x=>x.roles.join(', ')||'—'],['Membership',x=>x.membership_id]]);levels.innerHTML=rows(data.levels,[['Código',x=>x.code],['Nivel',x=>x.name]]);grades.innerHTML=rows(data.grades,[['Código',x=>x.code],['Grado',x=>x.name]]);subjects.innerHTML=rows(data.subjects,[['Código',x=>x.code],['Asignatura',x=>x.name],['Área',x=>x.area]]);sections.innerHTML=rows(data.sections,[['Código',x=>x.code],['Sección',x=>x.name],['Turno',x=>x.shift]]);students.innerHTML=rows(data.students,[['Código',x=>x.student_code],['Persona',x=>x.person_id]]);guardians.innerHTML=rows(data.guardians,[['Código',x=>x.guardian_code],['Persona',x=>x.person_id]]);families.innerHTML=rows(data.families,[['Familia',x=>x.name],['Estado',x=>x.status]]);enrollments.innerHTML=rows(data.enrollments,[['Número',x=>x.enrollment_number],['Estado',x=>x.status],['Estudiante',x=>x.student_profile_id]]);checklistBody.innerHTML=`<p><b>${data.check.completion_percent}%</b> · ${data.check.ready_items}/${data.check.total_items}</p>`+data.check.items.map(x=>`<p class="${x.ready?'yes':'no'}">${x.ready?'✓':'○'} ${x.label}<span class="sub"> · ${x.detail}</span></p>`).join('')}
+function fillOptions(){const pl=x=>x.family_names+', '+x.given_names;['accountPerson','staffPerson','studentPerson','guardianPerson'].forEach(id=>options(id,data.people,pl));options('roleMembership',data.accounts,x=>x.login_email,'membership_id');options('roleSelect',data.roles,x=>x.key);options('permissionRole',data.roles,x=>x.key);options('permissionSelect',data.perms,x=>x.key);options('gradeLevel',data.levels,x=>x.name);options('sectionPeriod',data.periods,x=>x.name);options('sectionCampus',data.campuses,x=>x.name);options('sectionGrade',data.grades,x=>x.name);options('enrollStudent',data.students,x=>x.student_code||x.id);options('enrollPeriod',data.periods,x=>x.name);options('enrollCampus',data.campuses,x=>x.name)}
+async function post(path,body){await api(path,{method:'POST',body:body===null?undefined:JSON.stringify(body)});await load()}
+async function patch(path,body){await api(path,{method:'PATCH',body:JSON.stringify(body)});await load()}
+async function saveInstitution(){await patch('/admin/institution',{name:instName.value,type:instType.value,status:instStatus.value})}
+async function addCampus(){await post('/admin/campuses',{name:campusName.value})}
+async function addPeriod(){await post('/academic-periods',{code:periodCode.value,name:periodName.value,starts_on:periodStart.value,ends_on:periodEnd.value,status:periodStatus.value})}
+async function addPerson(){await post('/admin/people',{given_names:given.value,family_names:family.value,primary_email:personEmail.value||null})}
+async function addAccount(){await post('/admin/accounts',{person_id:accountPerson.value,login_email:loginEmail.value,temporary_password:tempPassword.value})}
+async function addStaff(){await post('/admin/staff',{person_id:staffPerson.value,staff_code:staffCode.value||null})}
+async function addRole(){await post('/admin/roles',{key:roleKey.value,name:roleName.value})}
+async function assignRole(){await post(`/admin/memberships/${roleMembership.value}/roles/${roleSelect.value}`,null)}
+async function assignPermission(){await post(`/admin/roles/${permissionRole.value}/permissions/${permissionSelect.value}`,null)}
+async function addLevel(){await post('/academics/levels',{code:levelCode.value,name:levelName.value,sort_order:0})}
+async function addGrade(){await post('/academics/grades',{academic_level_id:gradeLevel.value,code:gradeCode.value,name:gradeName.value,sort_order:0})}
+async function addSubject(){await post('/academics/subjects',{code:subjectCode.value,name:subjectName.value,area:subjectArea.value||null})}
+async function addSection(){await post('/academics/sections',{academic_period_id:sectionPeriod.value,campus_id:sectionCampus.value,grade_level_id:sectionGrade.value,code:sectionCode.value,name:sectionName.value,shift:sectionShift.value,capacity:Number(sectionCapacity.value)})}
+async function addStudent(){await post('/students',{person_id:studentPerson.value,student_code:studentCode.value||null})}
+async function addGuardian(){await post('/guardians',{person_id:guardianPerson.value,guardian_code:guardianCode.value||null})}
+async function addFamily(){await post('/families',{name:familyHousehold.value})}
+async function addEnrollment(){await post('/enrollments',{student_profile_id:enrollStudent.value,academic_period_id:enrollPeriod.value,campus_id:enrollCampus.value,enrollment_number:enrollNumber.value||null,status:'ACTIVE',enrolled_on:new Date().toISOString().slice(0,10)})}
+if(tokenEl.value)load();
+</script>
+</body>
+</html>
