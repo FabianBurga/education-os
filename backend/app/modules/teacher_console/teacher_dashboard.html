@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Education OS · Teacher Console</title>
+<style>
+:root{
+  --bg:#f4f6f9;--card:#fff;--ink:#162033;--muted:#697386;--line:#e3e7ee;
+  --nav:#1c2f46;--accent:#2c5c89;--soft:#eef2f6;--ok:#2a704f;--warn:#9a6617;--bad:#9a3845
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+.head{max-width:1500px;margin:auto;padding:16px 22px;display:flex;gap:16px;justify-content:space-between;align-items:center}
+h1{font-size:21px;margin:0}.sub{font-size:12px;color:var(--muted);margin-top:3px}
+.auth{display:flex;gap:7px;align-items:center}.auth input{width:320px}
+input,select,textarea,button{border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:#fff;color:var(--ink)}
+button{cursor:pointer;font-weight:680}.primary{background:var(--nav);border-color:var(--nav);color:#fff}.accent{background:var(--accent);border-color:var(--accent);color:#fff}
+main{max-width:1500px;margin:auto;padding:22px}
+.notice{background:#fff;border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:11px;padding:11px 13px;font-size:12px;color:var(--muted)}
+.metrics{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-top:14px}
+.metric,.card{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 2px 10px #17203308}.metric{padding:14px}.value{font-size:25px;font-weight:780;margin-top:5px}.label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.055em;font-weight:750}
+.nav{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.nav button.active{background:var(--nav);border-color:var(--nav);color:#fff}
+.panel{display:none}.panel.active{display:block}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.card{padding:15px}.wide{grid-column:1/-1}
+.card h2{font-size:15px;margin:0 0 11px}.toolbar{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:10px}.toolbar .spacer{flex:1}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);font-size:12px;vertical-align:top}th{font-size:10px;text-transform:uppercase;color:var(--muted);background:#fafbfc}
+.pill{display:inline-flex;padding:4px 7px;border-radius:999px;background:var(--soft);font-size:10px;font-weight:800}.pill.HIGH{background:#f7e8ec;color:var(--bad)}.pill.MEDIUM{background:#fff3df;color:var(--warn)}.pill.ESCALATED{background:#f7e8ec;color:var(--bad)}.pill.COMPLETED{background:#edf7f1;color:var(--ok)}
+.form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.form .full{grid-column:1/-1}
+.empty{padding:24px;text-align:center;color:var(--muted)}.status{font-size:12px;color:var(--muted);margin-top:14px;min-height:20px}
+.roster-row{display:grid;grid-template-columns:1.2fr .8fr .6fr 1fr auto;gap:7px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)}
+.grade-row{display:grid;grid-template-columns:1.3fr .5fr .7fr 1.2fr auto;gap:7px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)}
+@media(max-width:1100px){.metrics{grid-template-columns:repeat(3,1fr)}.grid{grid-template-columns:1fr}.wide{grid-column:auto}}
+@media(max-width:720px){.head{align-items:flex-start;flex-direction:column}.auth{width:100%;flex-wrap:wrap}.auth input{width:100%}.metrics{grid-template-columns:repeat(2,1fr)}.form{grid-template-columns:1fr}.roster-row,.grade-row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><div class="head">
+<div><h1>Teacher Console</h1><div class="sub">Education OS · clases asignadas, asistencia, calificaciones y seguimiento</div></div>
+<div class="auth">
+<input id="token" type="password" placeholder="Bearer token TEACHER">
+<button class="primary" onclick="connect()">Conectar</button>
+<button onclick="loadAll()">Actualizar</button>
+</div>
+</div></header>
+<main>
+<div class="notice">El docente solo ve y modifica información vinculada a sus asignaciones docentes activas. Las alertas son apoyo informativo; la decisión y el registro académico siguen siendo humanos.</div>
+<div id="metrics" class="metrics"></div>
+
+<div class="nav">
+<button class="active" onclick="tab('home',this)">Inicio</button>
+<button onclick="tab('classesPanel',this)">Mis clases</button>
+<button onclick="tab('attendancePanel',this)">Asistencia</button>
+<button onclick="tab('gradesPanel',this)">Calificaciones</button>
+<button onclick="tab('tasksPanel',this)">Seguimiento</button>
+</div>
+
+<section id="home" class="panel active">
+<div class="grid">
+<div class="card"><h2>Resumen docente</h2><div id="homeSummary" class="empty">Conecta un token TEACHER.</div></div>
+<div class="card"><h2>Alertas relevantes</h2><div id="alertsBody"></div></div>
+</div>
+</section>
+
+<section id="classesPanel" class="panel">
+<div class="card"><div class="toolbar"><h2 style="margin:0">Mis clases</h2><div class="spacer"></div><button onclick="loadClasses()">Actualizar</button></div><div id="classesBody"></div></div>
+</section>
+
+<section id="attendancePanel" class="panel">
+<div class="grid">
+<div class="card">
+<h2>Sesión de clase</h2>
+<div class="form">
+<select id="attClass" class="full" onchange="loadSessions()"></select>
+<input id="sessionDate" type="date">
+<input id="sessionStart" type="time" value="08:00">
+<input id="sessionEnd" type="time" value="08:45">
+<button class="accent full" onclick="createSession()">Crear sesión</button>
+</div>
+<h2 style="margin-top:16px">Sesiones</h2>
+<div id="sessionsBody"></div>
+</div>
+<div class="card">
+<h2>Registro de asistencia</h2>
+<select id="sessionSelect" style="width:100%;margin-bottom:10px" onchange="loadAttendanceRows()"></select>
+<div id="attendanceRows"></div>
+</div>
+</div>
+</section>
+
+<section id="gradesPanel" class="panel">
+<div class="grid">
+<div class="card">
+<h2>Evaluaciones</h2>
+<select id="gradeClass" style="width:100%;margin-bottom:10px" onchange="loadGradeWorkspace()"></select>
+<div class="form">
+<select id="gradingPeriod" class="full"></select>
+<input id="catCode" placeholder="Código categoría">
+<input id="catName" placeholder="Nombre categoría">
+<input id="catWeight" type="number" min="0" max="100" value="100">
+<button class="full" onclick="createCategory()">Crear categoría</button>
+<select id="categorySelect" class="full"></select>
+<input id="assessmentCode" placeholder="Código evaluación">
+<input id="assessmentTitle" placeholder="Título evaluación">
+<input id="assessmentMax" type="number" min="0.1" step="0.1" value="10">
+<input id="assessmentDue" type="date">
+<button class="accent full" onclick="createAssessment()">Crear evaluación</button>
+</div>
+<h2 style="margin-top:16px">Evaluaciones creadas</h2>
+<div id="assessmentsBody"></div>
+</div>
+<div class="card">
+<h2>Calificar</h2>
+<select id="assessmentSelect" style="width:100%;margin-bottom:10px" onchange="loadGradeRows()"></select>
+<div id="gradeRows"></div>
+</div>
+</div>
+</section>
+
+<section id="tasksPanel" class="panel">
+<div class="card">
+<div class="toolbar"><h2 style="margin:0">Seguimiento</h2><div class="spacer"></div><button onclick="loadTasks()">Actualizar</button></div>
+<div id="tasksBody"></div>
+</div>
+</section>
+
+<div id="status" class="status"></div>
+</main>
+<script>
+const tokenEl=document.getElementById('token');
+tokenEl.value=sessionStorage.getItem('education_os_teacher_token')||'';
+let state={summary:null,classes:[],alerts:[],codes:[],tasks:[],sessions:[],periods:[],categories:[],assessments:[]};
+
+function h(){return tokenEl.value.trim()?{'Authorization':'Bearer '+tokenEl.value.trim(),'Content-Type':'application/json'}:{'Content-Type':'application/json'}}
+async function api(path,opts={}){
+ const r=await fetch('/api/v1/teacher'+path,{...opts,headers:{...h(),...(opts.headers||{})}});
+ const txt=await r.text(); let b=null; try{b=txt?JSON.parse(txt):null}catch{b=txt}
+ if(!r.ok) throw new Error(`${r.status} ${b?.detail||txt}`); return b;
+}
+function connect(){sessionStorage.setItem('education_os_teacher_token',tokenEl.value.trim());loadAll()}
+function tab(id,b){document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');b.classList.add('active')}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function setStatus(t){document.getElementById('status').textContent=t}
+function metric(l,v,d=''){return `<div class="metric"><div class="label">${l}</div><div class="value">${v}</div><div class="sub">${d}</div></div>`}
+function opt(v,t){return `<option value="${esc(v)}">${esc(t)}</option>`}
+function dt(v){return v?new Date(v).toLocaleString():'—'}
+
+async function loadAll(){
+ if(!tokenEl.value.trim()){setStatus('Ingresa un token TEACHER.');return}
+ setStatus('Actualizando...');
+ try{
+  const [summary,classes,alerts,codes,tasks]=await Promise.all([api('/summary'),api('/classes'),api('/alerts'),api('/attendance/codes'),api('/tasks')]);
+  state={...state,summary,classes,alerts,codes,tasks};
+  renderSummary();renderAlerts();renderClasses();renderClassSelectors();renderTasks();
+  setStatus('Teacher Console actualizado.');
+ }catch(e){setStatus('Error: '+e.message)}
+}
+function renderSummary(){
+ const s=state.summary||{};
+ document.getElementById('metrics').innerHTML=[
+  metric('Clases',s.assigned_classes??0,'asignadas'),
+  metric('Secciones',s.assigned_sections??0),
+  metric('Estudiantes',s.unique_students??0),
+  metric('Sesiones hoy',s.today_sessions??0),
+  metric('Alertas',s.relevant_open_signals??0,`${s.missing_grade_entries??0} faltantes`),
+  metric('Seguimiento',s.open_teacher_tasks??0,`${s.escalated_teacher_tasks??0} escaladas`)
+ ].join('');
+ document.getElementById('homeSummary').innerHTML=`<table><tbody><tr><th>Clases activas</th><td>${s.assigned_classes??0}</td></tr><tr><th>Estudiantes únicos</th><td>${s.unique_students??0}</td></tr><tr><th>Sesiones hoy</th><td>${s.today_sessions??0}</td></tr><tr><th>Tareas abiertas</th><td>${s.open_teacher_tasks??0}</td></tr></tbody></table>`;
+}
+function renderAlerts(){
+ const xs=state.alerts||[];
+ document.getElementById('alertsBody').innerHTML=xs.length?`<table><thead><tr><th>Severidad</th><th>Estudiante</th><th>Señal</th></tr></thead><tbody>${xs.map(x=>`<tr><td><span class="pill ${esc(x.severity)}">${esc(x.severity)}</span></td><td>${esc(x.student_name)}<div class="sub">${esc(x.section_name||'')}</div></td><td>${esc(x.signal_type)}<div class="sub">${esc(x.summary)}</div></td></tr>`).join('')}</tbody></table>`:'<div class="empty">Sin alertas abiertas en tus secciones.</div>';
+}
+function renderClasses(){
+ const xs=state.classes||[];
+ document.getElementById('classesBody').innerHTML=xs.length?`<table><thead><tr><th>Grado</th><th>Sección</th><th>Asignatura</th><th>Período</th><th>Estudiantes</th><th>Rol</th></tr></thead><tbody>${xs.map(x=>`<tr><td>${esc(x.grade_name)}</td><td>${esc(x.section_name)}</td><td><strong>${esc(x.subject_name)}</strong><div class="sub">${esc(x.subject_code)}</div></td><td>${esc(x.academic_period_name)}</td><td>${x.student_count}</td><td>${esc(x.assignment_role)}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">No tienes clases asignadas.</div>';
+}
+function renderClassSelectors(){
+ const html=(state.classes||[]).map(x=>opt(x.course_offering_id,`${x.grade_name} · ${x.section_name} · ${x.subject_name}`)).join('');
+ document.getElementById('attClass').innerHTML=html;
+ document.getElementById('gradeClass').innerHTML=html;
+ if(state.classes.length){loadSessions();loadGradeWorkspace()}
+}
+async function loadClasses(){try{state.classes=await api('/classes');renderClasses();renderClassSelectors()}catch(e){setStatus('Error: '+e.message)}}
+
+async function loadSessions(){
+ const id=document.getElementById('attClass').value;if(!id)return;
+ try{state.sessions=await api(`/classes/${id}/sessions`);renderSessions()}catch(e){setStatus('Error: '+e.message)}
+}
+function renderSessions(){
+ const xs=state.sessions||[];
+ document.getElementById('sessionsBody').innerHTML=xs.length?xs.map(x=>`<button style="margin:3px" onclick="selectSession('${x.id}')">${esc(x.session_date)} ${esc(x.starts_at)}</button>`).join(''):'<div class="empty">Sin sesiones.</div>';
+ document.getElementById('sessionSelect').innerHTML=xs.map(x=>opt(x.id,`${x.session_date} · ${x.starts_at}-${x.ends_at}`)).join('');
+ if(xs.length)loadAttendanceRows(); else document.getElementById('attendanceRows').innerHTML='<div class="empty">Crea una sesión.</div>';
+}
+function selectSession(id){document.getElementById('sessionSelect').value=id;loadAttendanceRows()}
+async function createSession(){
+ const id=document.getElementById('attClass').value;if(!id)return;
+ const body={session_date:document.getElementById('sessionDate').value,starts_at:document.getElementById('sessionStart').value,ends_at:document.getElementById('sessionEnd').value};
+ try{await api(`/classes/${id}/sessions`,{method:'POST',body:JSON.stringify(body)});setStatus('Sesión creada.');await loadAll();await loadSessions()}catch(e){setStatus('Error: '+e.message)}
+}
+async function loadAttendanceRows(){
+ const sid=document.getElementById('sessionSelect').value;if(!sid)return;
+ try{const rows=await api(`/sessions/${sid}/attendance`);renderAttendanceRows(rows)}catch(e){setStatus('Error: '+e.message)}
+}
+function renderAttendanceRows(rows){
+ const codes=state.codes||[];
+ document.getElementById('attendanceRows').innerHTML=rows.length?rows.map(r=>`<div class="roster-row">
+ <div><strong>${esc(r.student_name)}</strong><div class="sub">${esc(r.student_code||'')}</div></div>
+ <select id="ac-${r.student_section_assignment_id}">${codes.map(c=>`<option value="${c.id}" ${c.id===r.attendance_code_id?'selected':''}>${esc(c.code)} · ${esc(c.label)}</option>`).join('')}</select>
+ <input id="late-${r.student_section_assignment_id}" type="number" min="0" value="${r.minutes_late||0}">
+ <input id="note-${r.student_section_assignment_id}" value="${esc(r.note||'')}" placeholder="Nota">
+ <button onclick="saveAttendance('${r.student_section_assignment_id}')">Guardar</button></div>`).join(''):'<div class="empty">Sin estudiantes.</div>';
+}
+async function saveAttendance(aid){
+ const sid=document.getElementById('sessionSelect').value;
+ const body={student_section_assignment_id:aid,attendance_code_id:document.getElementById('ac-'+aid).value,minutes_late:Number(document.getElementById('late-'+aid).value||0),note:document.getElementById('note-'+aid).value||null};
+ try{await api(`/sessions/${sid}/attendance`,{method:'PUT',body:JSON.stringify(body)});setStatus('Asistencia guardada.')}catch(e){setStatus('Error: '+e.message)}
+}
+
+async function loadGradeWorkspace(){
+ const id=document.getElementById('gradeClass').value;if(!id)return;
+ try{
+  const [periods,categories,assessments]=await Promise.all([api(`/classes/${id}/grading-periods`),api(`/classes/${id}/categories`),api(`/classes/${id}/assessments`)]);
+  state.periods=periods;state.categories=categories;state.assessments=assessments;
+  document.getElementById('gradingPeriod').innerHTML=periods.map(x=>opt(x.id,x.name)).join('');
+  document.getElementById('categorySelect').innerHTML=categories.map(x=>opt(x.id,`${x.code} · ${x.name}`)).join('');
+  renderAssessments();
+ }catch(e){setStatus('Error: '+e.message)}
+}
+async function createCategory(){
+ const id=document.getElementById('gradeClass').value;
+ const body={grading_period_id:document.getElementById('gradingPeriod').value,code:document.getElementById('catCode').value,name:document.getElementById('catName').value,weight_percent:Number(document.getElementById('catWeight').value||0)};
+ try{await api(`/classes/${id}/categories`,{method:'POST',body:JSON.stringify(body)});setStatus('Categoría creada.');await loadGradeWorkspace()}catch(e){setStatus('Error: '+e.message)}
+}
+async function createAssessment(){
+ const id=document.getElementById('gradeClass').value;
+ const due=document.getElementById('assessmentDue').value;
+ const body={grading_period_id:document.getElementById('gradingPeriod').value,assessment_category_id:document.getElementById('categorySelect').value,code:document.getElementById('assessmentCode').value,title:document.getElementById('assessmentTitle').value,max_score:Number(document.getElementById('assessmentMax').value||10),due_on:due||null};
+ try{await api(`/classes/${id}/assessments`,{method:'POST',body:JSON.stringify(body)});setStatus('Evaluación creada.');await loadGradeWorkspace()}catch(e){setStatus('Error: '+e.message)}
+}
+function renderAssessments(){
+ const xs=state.assessments||[];
+ document.getElementById('assessmentsBody').innerHTML=xs.length?`<table><thead><tr><th>Código</th><th>Título</th><th>Máximo</th><th>Fecha</th></tr></thead><tbody>${xs.map(x=>`<tr><td>${esc(x.code)}</td><td>${esc(x.title)}</td><td>${x.max_score}</td><td>${esc(x.due_on||'—')}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">Sin evaluaciones.</div>';
+ document.getElementById('assessmentSelect').innerHTML=xs.map(x=>opt(x.id,`${x.code} · ${x.title}`)).join('');
+ if(xs.length)loadGradeRows(); else document.getElementById('gradeRows').innerHTML='<div class="empty">Crea una evaluación.</div>';
+}
+async function loadGradeRows(){
+ const id=document.getElementById('assessmentSelect').value;if(!id)return;
+ try{renderGradeRows(await api(`/assessments/${id}/grades`))}catch(e){setStatus('Error: '+e.message)}
+}
+function renderGradeRows(rows){
+ document.getElementById('gradeRows').innerHTML=rows.length?rows.map(r=>`<div class="grade-row">
+ <div><strong>${esc(r.student_name)}</strong><div class="sub">${esc(r.student_code||'')}</div></div>
+ <input id="score-${r.student_section_assignment_id}" type="number" min="0" step="0.1" value="${r.score??''}">
+ <select id="gs-${r.student_section_assignment_id}">${['PENDING','GRADED','MISSING','EXCUSED'].map(s=>`<option ${s===r.status?'selected':''}>${s}</option>`).join('')}</select>
+ <input id="gf-${r.student_section_assignment_id}" value="${esc(r.feedback||'')}" placeholder="Retroalimentación">
+ <button onclick="saveGrade('${r.student_section_assignment_id}')">Guardar</button></div>`).join(''):'<div class="empty">Sin estudiantes.</div>';
+}
+async function saveGrade(aid){
+ const id=document.getElementById('assessmentSelect').value;const raw=document.getElementById('score-'+aid).value;const status=document.getElementById('gs-'+aid).value;
+ const body={student_section_assignment_id:aid,score:raw===''?null:Number(raw),status,feedback:document.getElementById('gf-'+aid).value||null};
+ try{await api(`/assessments/${id}/grades`,{method:'PUT',body:JSON.stringify(body)});setStatus('Calificación guardada.')}catch(e){setStatus('Error: '+e.message)}
+}
+
+function renderTasks(){
+ const xs=state.tasks||[];
+ document.getElementById('tasksBody').innerHTML=xs.length?`<table><thead><tr><th>Estado</th><th>Estudiante</th><th>Tarea</th><th>Vence</th><th>Acción</th></tr></thead><tbody>${xs.map(x=>`<tr><td><span class="pill ${esc(x.status)}">${esc(x.status)}</span></td><td>${esc(x.student_name)}<div class="sub">${esc(x.section_name||'')}</div></td><td><strong>${esc(x.title)}</strong><div class="sub">${esc(x.description||'')}</div></td><td>${dt(x.due_at)}</td><td>${['OPEN','ESCALATED'].includes(x.status)?`<button onclick="ackTask('${x.id}')">Reconocer</button>`:''} ${x.status!=='COMPLETED'?`<button onclick="completeTask('${x.id}')">Completar</button>`:''}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">No hay tareas TEACHER en tus secciones.</div>';
+}
+async function loadTasks(){try{state.tasks=await api('/tasks');renderTasks()}catch(e){setStatus('Error: '+e.message)}}
+async function ackTask(id){try{await api(`/tasks/${id}/acknowledge`,{method:'POST'});setStatus('Tarea reconocida.');await loadAll()}catch(e){setStatus('Error: '+e.message)}}
+async function completeTask(id){const note=prompt('Resultado / nota de cierre:');if(!note)return;try{await api(`/tasks/${id}/complete`,{method:'POST',body:JSON.stringify({completion_note:note})});setStatus('Tarea completada.');await loadAll()}catch(e){setStatus('Error: '+e.message)}}
+
+document.getElementById('sessionDate').value=new Date().toISOString().slice(0,10);
+if(tokenEl.value.trim())loadAll();
+</script>
+</body>
+</html>

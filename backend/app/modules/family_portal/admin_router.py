@@ -4,7 +4,10 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 from sqlmodel import Session
 
-from app.api.access import require_staff_access
+from app.api.access import (
+    require_privileged_staff_access,
+    require_staff_access,
+)
 from app.api.deps import CurrentPrincipal
 from app.db.session import get_session
 from app.modules.family_portal.schemas import (
@@ -25,6 +28,7 @@ from app.modules.family_portal.service import (
 router = APIRouter(
     prefix="/family-admin",
     tags=["family-admin"],
+    dependencies=[Depends(require_privileged_staff_access)],
 )
 SessionDep = Annotated[Session, Depends(get_session)]
 StaffDep = Annotated[CurrentPrincipal, Depends(require_staff_access)]

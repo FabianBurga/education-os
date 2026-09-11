@@ -3,7 +3,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from sqlmodel import Session
 
-from app.api.access import require_staff_access
+from app.api.access import (
+    require_privileged_staff_access,
+    require_staff_access,
+)
 from app.api.deps import CurrentPrincipal
 from app.db.session import get_session
 from app.modules.operations.schemas import (
@@ -22,7 +25,10 @@ from app.modules.operations.service import (
 router = APIRouter(
     prefix="/operations",
     tags=["operations"],
-    dependencies=[Depends(require_staff_access)],
+    dependencies=[
+        Depends(require_staff_access),
+        Depends(require_privileged_staff_access),
+    ],
 )
 
 SessionDep = Annotated[Session, Depends(get_session)]
