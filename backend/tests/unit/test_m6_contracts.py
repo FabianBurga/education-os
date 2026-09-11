@@ -1,4 +1,7 @@
-from app.api.access import require_staff_access
+from app.api.access import (
+    require_coordination_access,
+    require_staff_access,
+)
 from app.api.v1.m1_router import router as m1_router
 from app.api.v1.m2_router import router as m2_router
 from app.api.v1.m3_router import router as m3_router
@@ -29,9 +32,11 @@ def test_m6_family_routes_registered() -> None:
     assert expected.issubset(paths)
 
 
-def test_internal_milestone_routers_require_staff_access() -> None:
-    for router in (m1_router, m2_router, m3_router, m4_router, m5_router):
+def test_internal_milestone_routers_keep_required_access_boundaries() -> None:
+    for router in (m1_router, m2_router, m3_router, m5_router):
         assert require_staff_access in _dependency_calls(router)
+
+    assert require_coordination_access in _dependency_calls(m4_router)
 
 
 def test_public_students_contract_still_exists() -> None:

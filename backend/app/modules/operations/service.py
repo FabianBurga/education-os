@@ -132,7 +132,7 @@ def _migration_check(session: Session) -> ReadinessCheck:
     )
     return ReadinessCheck(
         code="ALEMBIC_HEAD",
-        passed=revision == "0010_m8",
+        passed=revision == "0011_m9",
         detail=f"database revision={revision}",
     )
 

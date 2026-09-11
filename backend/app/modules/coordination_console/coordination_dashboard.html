@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Education OS · Rector / Coordinación</title>
+<style>
+:root{
+  --bg:#f4f6f9;--card:#fff;--ink:#172033;--muted:#667085;--line:#e3e7ee;
+  --nav:#19263a;--accent:#27496d;--soft:#eef2f6;--ok:#26704f;--warn:#9a671a;
+  --bad:#9a3946;--high:#f7e9ec;--med:#fff3df;--low:#eef5f1
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--ink)}
+header{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--line)}
+.head{max-width:1500px;margin:auto;padding:17px 24px;display:flex;gap:18px;align-items:center;justify-content:space-between}
+h1{font-size:21px;margin:0}.sub{font-size:12px;color:var(--muted);margin-top:3px}
+.auth{display:flex;gap:7px;align-items:center}.auth input{width:320px}
+input,button,select,textarea{border:1px solid var(--line);border-radius:9px;padding:9px 10px;background:#fff;color:var(--ink)}
+button{cursor:pointer;font-weight:680}.primary{background:var(--nav);border-color:var(--nav);color:#fff}.accent{background:var(--accent);border-color:var(--accent);color:#fff}
+main{max-width:1500px;margin:auto;padding:22px 24px 60px}
+.notice{background:#fff;border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:11px;padding:12px 14px;font-size:12px;color:var(--muted);margin-bottom:16px}
+.metrics{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+.metric,.card{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 2px 10px #17203307}
+.metric{padding:14px}.metric .value{font-size:25px;font-weight:780;margin-top:5px}.label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.055em;font-weight:750}
+.nav{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.nav button.active{background:var(--nav);border-color:var(--nav);color:#fff}
+.panel{display:none}.panel.active{display:block}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.card{padding:15px}.wide{grid-column:1/-1}
+.card h2{font-size:15px;margin:0 0 11px}.card h3{font-size:13px;margin:15px 0 8px}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);font-size:12px;vertical-align:top}
+th{font-size:10px;text-transform:uppercase;letter-spacing:.045em;color:var(--muted);background:#fafbfc}
+.pill{display:inline-flex;padding:4px 7px;border-radius:999px;font-size:10px;font-weight:800}.pill.HIGH{background:var(--high);color:var(--bad)}.pill.MEDIUM{background:var(--med);color:var(--warn)}.pill.LOW{background:var(--low);color:var(--ok)}
+.state{display:inline-flex;padding:4px 7px;border-radius:999px;background:var(--soft);font-size:10px;font-weight:750}.state.ESCALATED{background:var(--high);color:var(--bad)}.state.ACKNOWLEDGED{background:#e9f0fa;color:#315d91}.state.COMPLETED{background:var(--low);color:var(--ok)}
+.actions{display:flex;gap:6px;flex-wrap:wrap}.actions button{font-size:11px;padding:6px 8px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.toolbar .spacer{flex:1}
+.status{margin-top:15px;font-size:12px;color:var(--muted);min-height:20px}
+.empty{text-align:center;color:var(--muted);padding:26px}
+.case{border-top:1px solid var(--line);padding:12px 0}.case:first-child{border-top:0}.case-head{display:flex;gap:12px;justify-content:space-between;align-items:flex-start}.case-title{font-weight:750}
+.task{margin-top:9px;padding:10px;border:1px solid var(--line);background:#fafbfc;border-radius:10px}
+.timeline{margin-top:8px;padding:9px;background:#f7f9fb;border-radius:9px;font-size:11px;color:var(--muted);display:none}
+.bar{height:7px;border-radius:99px;background:var(--soft);overflow:hidden;margin-top:5px}.bar span{display:block;height:100%;background:var(--accent)}
+.trend-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:12px}
+code{font-size:11px}
+@media(max-width:1100px){.metrics{grid-template-columns:repeat(3,1fr)}.grid,.trend-grid{grid-template-columns:1fr}.wide{grid-column:auto}}
+@media(max-width:720px){.head{align-items:flex-start;flex-direction:column}.auth{width:100%;flex-wrap:wrap}.auth input{width:100%}.metrics{grid-template-columns:repeat(2,1fr)}main{padding:18px 12px}.case-head{flex-direction:column}}
+</style>
+</head>
+<body>
+<header>
+<div class="head">
+  <div>
+    <h1>Rector / Coordination Console</h1>
+    <div class="sub">Education OS · señales explicables, seguimiento humano y cierre verificable</div>
+  </div>
+  <div class="auth">
+    <input id="token" type="password" placeholder="Bearer token RECTOR / COORDINATOR">
+    <button class="primary" onclick="connect()">Conectar</button>
+    <button onclick="loadAll()">Actualizar</button>
+  </div>
+</div>
+</header>
+
+<main>
+<div class="notice">
+  Las señales son apoyo para la decisión institucional. Education OS no sanciona ni toma decisiones de alto impacto de forma autónoma.
+  Rectoría / Coordinación revisa el contexto, decide la acción y deja evidencia de seguimiento.
+</div>
+
+<div id="metrics" class="metrics"></div>
+
+<div class="nav">
+  <button class="active" onclick="tab('overview',this)">Resumen</button>
+  <button onclick="tab('attention',this)">Prioridades</button>
+  <button onclick="tab('cases',this)">Casos y seguimiento</button>
+  <button onclick="tab('sectionsPanel',this)">Secciones</button>
+  <button onclick="tab('trends',this)">Tendencias</button>
+</div>
+
+<section id="overview" class="panel active">
+  <div class="grid">
+    <div class="card">
+      <h2>Estado institucional</h2>
+      <div id="overviewBody" class="empty">Conecta un token autorizado.</div>
+    </div>
+    <div class="card">
+      <h2>Acciones de coordinación</h2>
+      <div class="toolbar">
+        <button class="accent" onclick="refreshSignals()">Actualizar señales</button>
+        <button onclick="runWorkflow()">Procesar flujo</button>
+        <button onclick="tickWorkflow()">Escalar vencidos</button>
+      </div>
+      <p class="sub">Actualizar señales reevalúa asistencia y desempeño. Procesar flujo crea casos y tareas según reglas existentes. Escalar vencidos aplica el SLA configurado.</p>
+    </div>
+  </div>
+</section>
+
+<section id="attention" class="panel">
+  <div class="card">
+    <div class="toolbar">
+      <div><h2 style="margin:0">Cola de prioridades</h2><div class="sub">Ordenada por severidad y última observación.</div></div>
+      <div class="spacer"></div>
+      <button onclick="refreshSignals()">Recalcular</button>
+      <button onclick="runWorkflow()">Crear / actualizar seguimiento</button>
+    </div>
+    <div id="attentionBody"></div>
+  </div>
+</section>
+
+<section id="cases" class="panel">
+  <div class="card">
+    <div class="toolbar">
+      <div><h2 style="margin:0">Casos y seguimiento</h2><div class="sub">De la señal a una acción con responsable, SLA, evidencia y resultado.</div></div>
+      <div class="spacer"></div>
+      <button onclick="loadCases()">Actualizar casos</button>
+    </div>
+    <div id="casesBody"></div>
+  </div>
+</section>
+
+<section id="sectionsPanel" class="panel">
+  <div class="card">
+    <h2>Secciones</h2>
+    <div id="sectionsBody"></div>
+  </div>
+</section>
+
+<section id="trends" class="panel">
+  <div class="trend-grid">
+    <div class="card">
+      <div class="toolbar">
+        <div><h2 style="margin:0">Asistencia</h2><div class="sub">Tendencia institucional.</div></div>
+        <div class="spacer"></div>
+        <select id="trendDays" onchange="loadTrends()"><option value="30">30 días</option><option value="60">60 días</option><option value="90">90 días</option><option value="180">180 días</option></select>
+      </div>
+      <div id="attendanceTrend"></div>
+    </div>
+    <div class="card">
+      <h2>Rendimiento académico</h2>
+      <div id="academicTrend"></div>
+    </div>
+  </div>
+</section>
+
+<div id="status" class="status"></div>
+</main>
+
+<script>
+const tokenEl=document.getElementById('token');
+tokenEl.value=sessionStorage.getItem('education_os_coord_token')||'';
+let state={summary:null,attention:[],cases:[],sections:[],attendance:[],academic:[]};
+
+function headers(json=true){
+  const h={};
+  if(tokenEl.value.trim()) h.Authorization='Bearer '+tokenEl.value.trim();
+  if(json) h['Content-Type']='application/json';
+  return h;
+}
+async function api(path,opts={}){
+  const r=await fetch('/api/v1/coordination'+path,{...opts,headers:{...headers(),...(opts.headers||{})}});
+  const txt=await r.text(); let body=null;
+  try{body=txt?JSON.parse(txt):null}catch{body=txt}
+  if(!r.ok) throw new Error(`${r.status} ${body?.detail||txt}`);
+  return body;
+}
+function connect(){sessionStorage.setItem('education_os_coord_token',tokenEl.value.trim());loadAll()}
+function tab(id,b){document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');b.classList.add('active')}
+function setStatus(t){document.getElementById('status').textContent=t}
+function pct(v){return v===null||v===undefined?'—':Number(v).toFixed(1)+'%'}
+function dt(v){if(!v)return'—';return new Date(v).toLocaleString()}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function pill(sev){return `<span class="pill ${esc(sev)}">${esc(sev)}</span>`}
+function taskState(s){return `<span class="state ${esc(s)}">${esc(s)}</span>`}
+function metric(label,value,detail=''){return `<div class="metric"><div class="label">${label}</div><div class="value">${value}</div><div class="sub">${detail}</div></div>`}
+
+async function loadAll(){
+  if(!tokenEl.value.trim()){setStatus('Ingresa un token RECTOR / COORDINATOR.');return}
+  setStatus('Actualizando consola...');
+  try{
+    const days=document.getElementById('trendDays').value;
+    const [summary,attention,cases,sections,attendance,academic]=await Promise.all([
+      api('/summary'),api('/attention'),api('/cases'),api('/sections'),
+      api('/trends/attendance?days='+days),api('/trends/academic')
+    ]);
+    state={summary,attention,cases,sections,attendance,academic};
+    renderAll();
+    setStatus('Rector / Coordination Console actualizado.');
+  }catch(e){setStatus('No se pudo cargar: '+e.message)}
+}
+
+function renderAll(){
+  const s=state.summary||{};
+  document.getElementById('metrics').innerHTML=[
+    metric('Estudiantes',s.active_students??'—','activos'),
+    metric('Asistencia',pct(s.attendance_rate),`ausencia ${pct(s.absence_rate)} · atraso ${pct(s.late_rate)}`),
+    metric('Promedio',pct(s.academic_average_percent),`${s.missing_grade_entries??0} registros faltantes`),
+    metric('Señales',s.open_signals??0,`${s.high_signals??0} alta severidad`),
+    metric('Casos',s.open_cases??0,'abiertos'),
+    metric('Tareas',s.open_tasks??0,`${s.escalated_tasks??0} escaladas · ${s.acknowledged_tasks??0} reconocidas`)
+  ].join('');
+
+  document.getElementById('overviewBody').innerHTML=`
+    <table><tbody>
+      <tr><th>Secciones activas</th><td>${s.active_sections??0}</td></tr>
+      <tr><th>Señales abiertas</th><td>${s.open_signals??0}</td></tr>
+      <tr><th>Señales HIGH</th><td>${s.high_signals??0}</td></tr>
+      <tr><th>Casos abiertos</th><td>${s.open_cases??0}</td></tr>
+      <tr><th>Tareas activas</th><td>${s.open_tasks??0}</td></tr>
+      <tr><th>Tareas escaladas</th><td>${s.escalated_tasks??0}</td></tr>
+    </tbody></table>`;
+
+  renderAttention(); renderCases(); renderSections(); renderTrends();
+}
+
+function renderAttention(){
+  const items=state.attention||[];
+  document.getElementById('attentionBody').innerHTML=items.length?`
+    <table><thead><tr><th>Severidad</th><th>Estudiante</th><th>Contexto</th><th>Señal</th><th>Seguimiento</th><th>Acción</th></tr></thead>
+    <tbody>${items.map(x=>`<tr>
+      <td>${pill(x.severity)}</td>
+      <td><strong>${esc(x.student_name)}</strong><div class="sub">${esc(x.student_code||'sin código')}</div></td>
+      <td>${esc(x.grade_name||'—')} · ${esc(x.section_name||'sin sección')}<div class="sub">${dt(x.last_seen_at)}</div></td>
+      <td><strong>${esc(x.signal_type)}</strong><div class="sub">${esc(x.summary)}</div><div class="sub">valor ${Number(x.metric_value).toFixed(1)} · umbral ${Number(x.threshold_value).toFixed(1)}</div></td>
+      <td>${x.case_id?`Caso ${taskState(x.case_status||'—')}<div class="sub">${x.task_title?esc(x.task_title):'sin tarea'} ${x.task_status?taskState(x.task_status):''}</div>`:'<span class="sub">Sin caso automatizado</span>'}</td>
+      <td><div class="actions"><button onclick="resolveSignal('${x.signal_id}')">Resolver señal</button>${x.task_id&&['OPEN','ESCALATED'].includes(x.task_status)?`<button onclick="ackTask('${x.task_id}')">Reconocer</button>`:''}${x.task_id&&x.task_status!=='COMPLETED'?`<button onclick="completeTask('${x.task_id}')">Completar</button>`:''}</div></td>
+    </tr>`).join('')}</tbody></table>`:'<div class="empty">No hay señales abiertas.</div>';
+}
+
+function renderCases(){
+  const cases=state.cases||[];
+  document.getElementById('casesBody').innerHTML=cases.length?cases.map(c=>`
+    <div class="case">
+      <div class="case-head">
+        <div><div class="case-title">${pill(c.severity)} ${esc(c.student_name)} · ${esc(c.signal_type)}</div>
+          <div class="sub">${esc(c.grade_name||'—')} · ${esc(c.section_name||'sin sección')} · abierto ${dt(c.opened_at)}</div>
+          <div class="sub">${esc(c.signal_summary)}</div>
+        </div>
+        <div>${taskState(c.case_status)}</div>
+      </div>
+      ${c.tasks.length?c.tasks.map(t=>`<div class="task">
+        <div><strong>${esc(t.title)}</strong> ${taskState(t.status)}</div>
+        <div class="sub">Responsable: ${esc(t.assigned_role_code)} · vence ${dt(t.due_at)} · escala ${dt(t.escalate_at)}</div>
+        ${t.description?`<div class="sub">${esc(t.description)}</div>`:''}
+        ${t.completion_note?`<div class="sub"><strong>Resultado:</strong> ${esc(t.completion_note)}</div>`:''}
+        <div class="actions" style="margin-top:7px">
+          ${['OPEN','ESCALATED'].includes(t.status)?`<button onclick="ackTask('${t.id}')">Reconocer</button>`:''}
+          ${t.status!=='COMPLETED'?`<button onclick="completeTask('${t.id}')">Completar</button>`:''}
+          <button onclick="toggleTimeline('${c.case_id}',this)">Ver línea de tiempo</button>
+        </div>
+      </div>`).join(''):'<div class="sub">Caso sin tareas.</div>'}
+      <div class="timeline" id="timeline-${c.case_id}"></div>
+    </div>`).join(''):'<div class="empty">No existen casos de seguimiento.</div>';
+}
+
+function renderSections(){
+  const rows=state.sections||[];
+  document.getElementById('sectionsBody').innerHTML=rows.length?`
+    <table><thead><tr><th>Grado</th><th>Sección</th><th>Estudiantes</th><th>Asistencia</th><th>Promedio</th><th>Señales</th></tr></thead>
+    <tbody>${rows.map(x=>`<tr>
+      <td>${esc(x.grade_name)}</td><td><strong>${esc(x.section_name)}</strong></td><td>${x.student_count}</td>
+      <td>${pct(x.attendance_rate)}<div class="bar"><span style="width:${Math.max(0,Math.min(100,x.attendance_rate||0))}%"></span></div></td>
+      <td>${pct(x.academic_average_percent)}<div class="bar"><span style="width:${Math.max(0,Math.min(100,x.academic_average_percent||0))}%"></span></div></td>
+      <td>${x.open_signals}</td>
+    </tr>`).join('')}</tbody></table>`:'<div class="empty">Sin secciones activas.</div>';
+}
+
+function renderTrends(){
+  const a=state.attendance||[];
+  document.getElementById('attendanceTrend').innerHTML=a.length?`
+    <table><thead><tr><th>Fecha</th><th>Registros</th><th>Asistencia</th><th>Ausencia</th><th>Atraso</th></tr></thead>
+    <tbody>${a.map(x=>`<tr><td>${esc(x.day)}</td><td>${x.total_records}</td><td>${pct(x.attendance_rate)}</td><td>${pct(x.absence_rate)}</td><td>${pct(x.late_rate)}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">Sin datos recientes.</div>';
+
+  const g=state.academic||[];
+  document.getElementById('academicTrend').innerHTML=g.length?`
+    <table><thead><tr><th>Período</th><th>Promedio</th><th>Calificadas</th><th>Faltantes</th></tr></thead>
+    <tbody>${g.map(x=>`<tr><td>${esc(x.grading_period_name)}</td><td>${pct(x.average_percent)}</td><td>${x.graded_entries}</td><td>${x.missing_entries}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">Sin períodos de calificación.</div>';
+}
+
+async function loadCases(){
+  try{state.cases=await api('/cases');renderCases();setStatus('Casos actualizados.')}catch(e){setStatus('Error: '+e.message)}
+}
+async function loadTrends(){
+  try{
+    const days=document.getElementById('trendDays').value;
+    [state.attendance,state.academic]=await Promise.all([api('/trends/attendance?days='+days),api('/trends/academic')]);
+    renderTrends();
+  }catch(e){setStatus('Error: '+e.message)}
+}
+async function refreshSignals(){
+  try{
+    setStatus('Recalculando señales...');
+    const r=await api('/signals/refresh',{method:'POST'});
+    setStatus(`Señales recalculadas: ${r.detected_or_refreshed}; cierres automáticos: ${r.auto_closed}.`);
+    await loadAll();
+  }catch(e){setStatus('Error al actualizar señales: '+e.message)}
+}
+async function runWorkflow(){
+  try{
+    const r=await api('/workflows/run',{method:'POST'});
+    setStatus(`Flujo procesado: ${r.cases_created} casos y ${r.tasks_created} tareas creadas.`);
+    await loadAll();
+  }catch(e){setStatus('Error de flujo: '+e.message)}
+}
+async function tickWorkflow(){
+  try{
+    const r=await api('/workflows/tick',{method:'POST'});
+    setStatus(`Tareas escaladas: ${r.tasks_escalated}.`);
+    await loadAll();
+  }catch(e){setStatus('Error de escalamiento: '+e.message)}
+}
+async function resolveSignal(id){
+  const note=prompt('Nota de resolución humana (mínimo 3 caracteres):');
+  if(!note)return;
+  try{
+    await api(`/signals/${id}/resolve`,{method:'POST',body:JSON.stringify({resolution_note:note})});
+    setStatus('Señal resuelta con evidencia.');
+    await loadAll();
+  }catch(e){setStatus('Error al resolver señal: '+e.message)}
+}
+async function ackTask(id){
+  try{
+    await api(`/tasks/${id}/acknowledge`,{method:'POST'});
+    setStatus('Tarea reconocida.');
+    await loadAll();
+  }catch(e){setStatus('Error al reconocer tarea: '+e.message)}
+}
+async function completeTask(id){
+  const note=prompt('Resultado / nota de cierre (mínimo 3 caracteres):');
+  if(!note)return;
+  try{
+    await api(`/tasks/${id}/complete`,{method:'POST',body:JSON.stringify({completion_note:note})});
+    setStatus('Tarea completada y resultado registrado.');
+    await loadAll();
+  }catch(e){setStatus('Error al completar tarea: '+e.message)}
+}
+async function toggleTimeline(caseId,button){
+  const el=document.getElementById('timeline-'+caseId);
+  if(el.style.display==='block'){el.style.display='none';button.textContent='Ver línea de tiempo';return}
+  try{
+    const events=await api(`/cases/${caseId}/timeline`);
+    el.innerHTML=events.length?events.map(x=>`<div><strong>${esc(x.event_type)}</strong> · ${dt(x.created_at)}<br>${esc(x.message)}</div>`).join('<hr style="border:0;border-top:1px solid #e3e7ee">'):'Sin eventos.';
+    el.style.display='block';button.textContent='Ocultar línea de tiempo';
+  }catch(e){setStatus('Error al cargar línea de tiempo: '+e.message)}
+}
+
+if(tokenEl.value.trim()) loadAll();
+</script>
+</body>
+</html>
