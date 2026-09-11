@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Education OS · Rector Intelligence</title>
+  <style>
+    :root{
+      --bg:#f6f7f9;--card:#fff;--ink:#172033;--muted:#687386;--line:#e6e9ef;
+      --accent:#27364f;--soft:#eef1f5;--danger:#8c2f39;--warn:#9a6515;--ok:#2c6b4f
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;
+      background:var(--bg);color:var(--ink)}
+    header{padding:24px 32px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.92);
+      position:sticky;top:0;z-index:5;backdrop-filter:blur(10px)}
+    .head{max-width:1400px;margin:auto;display:flex;gap:16px;align-items:center;justify-content:space-between}
+    h1{font-size:22px;margin:0}.sub{font-size:13px;color:var(--muted);margin-top:4px}
+    main{max-width:1400px;margin:auto;padding:28px 32px 60px}
+    .auth{display:flex;gap:8px}.auth input{width:310px}
+    input,button{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff}
+    button{cursor:pointer;font-weight:650}.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+    .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 2px 10px #17203308}
+    .metric{font-size:29px;font-weight:760;margin-top:8px}.label{font-size:12px;text-transform:uppercase;
+      letter-spacing:.06em;color:var(--muted);font-weight:700}
+    .section{margin-top:24px}.section h2{font-size:16px;margin:0 0 12px}
+    table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:14px;
+      overflow:hidden}
+    th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);font-size:13px}
+    th{background:var(--soft);font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+    .bar{height:8px;background:var(--soft);border-radius:999px;overflow:hidden;margin-top:7px}
+    .bar span{display:block;height:100%;background:var(--accent);border-radius:999px}
+    .signal{display:grid;grid-template-columns:110px 1fr 140px 110px;gap:12px;align-items:center;
+      padding:12px 0;border-bottom:1px solid var(--line)}
+    .pill{display:inline-flex;padding:5px 8px;border-radius:999px;font-size:11px;font-weight:750;background:var(--soft)}
+    .pill.HIGH{background:#f6e8ea;color:var(--danger)}.pill.MEDIUM{background:#fff3df;color:var(--warn)}
+    .empty{padding:26px;color:var(--muted);text-align:center}
+    .status{font-size:12px;color:var(--muted);margin-top:10px}
+    @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}.head{align-items:flex-start;flex-direction:column}
+      .auth{width:100%}.auth input{width:100%}.signal{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="head">
+    <div>
+      <h1>Rector Intelligence</h1>
+      <div class="sub">Education OS · indicadores explicables para revisión humana</div>
+    </div>
+    <div class="auth">
+      <input id="token" type="password" placeholder="Bearer token">
+      <button class="primary" onclick="saveToken()">Conectar</button>
+      <button onclick="refreshSignals()">Actualizar señales</button>
+    </div>
+  </div>
+</header>
+<main>
+  <div id="metrics" class="grid"></div>
+
+  <div class="section">
+    <h2>Secciones</h2>
+    <div id="sections"></div>
+  </div>
+
+  <div class="section">
+    <h2>Señales abiertas</h2>
+    <div class="card" id="signals"></div>
+  </div>
+
+  <div id="status" class="status"></div>
+</main>
+<script>
+const base = '/api/v1/intelligence';
+const tokenEl = document.getElementById('token');
+tokenEl.value = sessionStorage.getItem('education_os_token') || '';
+
+function token(){ return tokenEl.value.trim(); }
+function headers(){ return token() ? {'Authorization':'Bearer '+token()} : {}; }
+function saveToken(){ sessionStorage.setItem('education_os_token', token()); load(); }
+function fmt(v,suffix=''){ return v===null || v===undefined ? '—' : `${Number(v).toFixed(1)}${suffix}`; }
+
+async function api(path, opts={}){
+  const r = await fetch(base+path,{...opts,headers:{...headers(),...(opts.headers||{})}});
+  if(!r.ok){ throw new Error(`${r.status} ${await r.text()}`); }
+  return r.json();
+}
+function metric(label,value,detail=''){
+  return `<div class="card"><div class="label">${label}</div><div class="metric">${value}</div><div class="sub">${detail}</div></div>`;
+}
+async function load(){
+  document.getElementById('status').textContent='Cargando...';
+  try{
+    const [o,sections,signals] = await Promise.all([
+      api('/rector/overview'), api('/rector/sections'), api('/signals?status=OPEN')
+    ]);
+    document.getElementById('metrics').innerHTML =
+      metric('Estudiantes activos',o.active_students) +
+      metric('Secciones activas',o.active_sections) +
+      metric('Asistencia',fmt(o.attendance_rate,'%'),`Ausencia ${fmt(o.absence_rate,'%')} · Atraso ${fmt(o.late_rate,'%')}`) +
+      metric('Promedio académico',fmt(o.academic_average_percent,'%'),`${o.missing_grade_entries} faltantes`) +
+      metric('Señales abiertas',o.open_signals,'Requieren revisión humana');
+
+    document.getElementById('sections').innerHTML = sections.length ? `
+      <table><thead><tr><th>Grado</th><th>Sección</th><th>Estudiantes</th><th>Asistencia</th><th>Académico</th><th>Señales</th></tr></thead>
+      <tbody>${sections.map(s=>`<tr>
+        <td>${s.grade_name}</td><td>${s.section_name}</td><td>${s.student_count}</td>
+        <td>${fmt(s.attendance_rate,'%')}</td><td>${fmt(s.academic_average_percent,'%')}</td><td>${s.open_signals}</td>
+      </tr>`).join('')}</tbody></table>` : '<div class="card empty">Sin secciones activas.</div>';
+
+    document.getElementById('signals').innerHTML = signals.length ? signals.map(s=>`
+      <div class="signal">
+        <div><span class="pill ${s.severity}">${s.severity}</span></div>
+        <div><strong>${s.signal_type}</strong><div class="sub">${s.summary}</div></div>
+        <div>${fmt(s.metric_value)} / umbral ${fmt(s.threshold_value)}</div>
+        <button onclick="resolveSignal('${s.id}')">Resolver</button>
+      </div>`).join('') : '<div class="empty">No hay señales abiertas.</div>';
+
+    document.getElementById('status').textContent='Dashboard actualizado.';
+  }catch(e){
+    document.getElementById('status').textContent='No se pudo cargar: '+e.message;
+  }
+}
+async function refreshSignals(){
+  try{
+    const r = await api('/signals/refresh',{method:'POST'});
+    document.getElementById('status').textContent=`Señales actualizadas: ${r.detected_or_refreshed}; cerradas: ${r.auto_closed}.`;
+    await load();
+  }catch(e){ document.getElementById('status').textContent='Error: '+e.message; }
+}
+async function resolveSignal(id){
+  const note = prompt('Nota de resolución:');
+  if(!note) return;
+  try{
+    await api(`/signals/${id}/resolve`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({resolution_note:note})
+    });
+    await load();
+  }catch(e){ document.getElementById('status').textContent='Error: '+e.message; }
+}
+if(token()) load();
+</script>
+</body>
+</html>
