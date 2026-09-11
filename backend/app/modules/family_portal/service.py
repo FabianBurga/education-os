@@ -63,7 +63,7 @@ def guardian_me(session: Session, guardian: GuardianPrincipal) -> GuardianMe:
             SELECT p.given_names, p.family_names
             FROM guardian_profiles gp
             JOIN persons p ON p.id = gp.person_id
-            WHERE gp.id = :guardian_profile_id
+            WHERE gp.id = CAST(:guardian_profile_id AS uuid)
             """
         ).bindparams(guardian_profile_id=str(guardian.guardian_profile_id))
     ).first()
@@ -75,7 +75,7 @@ def guardian_me(session: Session, guardian: GuardianPrincipal) -> GuardianMe:
             """
             SELECT COUNT(*)
             FROM guardian_student_portal_access
-            WHERE guardian_profile_id = :guardian_profile_id
+            WHERE guardian_profile_id = CAST(:guardian_profile_id AS uuid)
               AND status = 'ACTIVE'
             """
         ).bindparams(guardian_profile_id=str(guardian.guardian_profile_id))
@@ -116,7 +116,7 @@ def children(session: Session, guardian: GuardianPrincipal) -> list[ChildCard]:
              AND ssa.status = 'ACTIVE'
             LEFT JOIN sections s ON s.id = ssa.section_id
             LEFT JOIN grade_levels gl ON gl.id = s.grade_level_id
-            WHERE pa.guardian_profile_id = :guardian_profile_id
+            WHERE pa.guardian_profile_id = CAST(:guardian_profile_id AS uuid)
               AND pa.status = 'ACTIVE'
               AND sp.status = 'ACTIVE'
             ORDER BY p.family_names, p.given_names
@@ -160,7 +160,7 @@ def child_overview(
               ON ar.student_section_assignment_id = ssa.id
             LEFT JOIN attendance_codes ac
               ON ac.id = ar.attendance_code_id
-            WHERE e.student_profile_id = :student_profile_id
+            WHERE e.student_profile_id = CAST(:student_profile_id AS uuid)
               AND e.status = 'ACTIVE'
               AND ssa.status = 'ACTIVE'
             """
@@ -186,7 +186,7 @@ def child_overview(
             LEFT JOIN grade_entries ge
               ON ge.student_section_assignment_id = ssa.id
             LEFT JOIN assessments a ON a.id = ge.assessment_id
-            WHERE e.student_profile_id = :student_profile_id
+            WHERE e.student_profile_id = CAST(:student_profile_id AS uuid)
               AND e.status = 'ACTIVE'
               AND ssa.status = 'ACTIVE'
             """
@@ -232,7 +232,7 @@ def child_attendance(
             JOIN attendance_codes ac ON ac.id = ar.attendance_code_id
             LEFT JOIN course_offerings co ON co.id = cs.course_offering_id
             LEFT JOIN subjects sub ON sub.id = co.subject_id
-            WHERE e.student_profile_id = :student_profile_id
+            WHERE e.student_profile_id = CAST(:student_profile_id AS uuid)
             ORDER BY cs.session_date DESC, cs.starts_at DESC
             LIMIT :limit
             """
@@ -283,7 +283,7 @@ def child_grades(
             LEFT JOIN course_offerings co ON co.id = a.course_offering_id
             LEFT JOIN subjects sub ON sub.id = co.subject_id
             LEFT JOIN grading_periods gp ON gp.id = a.grading_period_id
-            WHERE e.student_profile_id = :student_profile_id
+            WHERE e.student_profile_id = CAST(:student_profile_id AS uuid)
             ORDER BY gp.sequence NULLS LAST, a.due_on DESC NULLS LAST, a.title
             """
         ).bindparams(student_profile_id=str(student_profile_id))
@@ -325,14 +325,14 @@ def list_portal_notices(
             FROM family_notices n
             LEFT JOIN family_notice_receipts r
               ON r.family_notice_id = n.id
-             AND r.guardian_profile_id = :guardian_profile_id
+             AND r.guardian_profile_id = CAST(:guardian_profile_id AS uuid)
             WHERE n.status = 'PUBLISHED'
               AND (
                 n.student_profile_id IS NULL
                 OR EXISTS (
                     SELECT 1
                     FROM guardian_student_portal_access pa
-                    WHERE pa.guardian_profile_id = :guardian_profile_id
+                    WHERE pa.guardian_profile_id = CAST(:guardian_profile_id AS uuid)
                       AND pa.student_profile_id = n.student_profile_id
                       AND pa.status = 'ACTIVE'
                 )
