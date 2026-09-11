@@ -28,6 +28,15 @@ class TeacherPrincipal:
     staff_profile_id: UUID
 
 
+@dataclass(frozen=True, slots=True)
+class StudentPrincipal:
+    user_id: UUID
+    organization_id: UUID
+    institution_id: UUID
+    person_id: UUID
+    student_profile_id: UUID
+
+
 def _person_id_for_user(session: Session, user_id: UUID) -> UUID:
     row = session.exec(
         text(
@@ -307,6 +316,153 @@ def require_teacher_tasks(
         principal,
         "teacher.tasks.manage",
         "Teacher task-management permission required",
+    )
+
+
+
+def _active_student_profile_id(
+    session: Session,
+    principal: CurrentPrincipal,
+) -> UUID:
+    person_id = _person_id_for_user(session, principal.user_id)
+    row = session.exec(
+        text(
+            """
+            SELECT id
+            FROM student_profiles
+            WHERE person_id = CAST(:person_id AS uuid)
+              AND institution_id = CAST(:institution_id AS uuid)
+              AND status = 'ACTIVE'
+            """
+        ).bindparams(
+            person_id=str(person_id),
+            institution_id=str(principal.institution_id),
+        )
+    ).first()
+
+    if row is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Active student profile required",
+        )
+    return row[0]
+
+
+def _require_student_permission(
+    session: Session,
+    principal: CurrentPrincipal,
+    permission_key: str,
+    detail: str,
+) -> StudentPrincipal:
+    student_profile_id = _active_student_profile_id(session, principal)
+    person_id = _person_id_for_user(session, principal.user_id)
+    if not _permission_exists(session, principal, permission_key):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=detail,
+        )
+    return StudentPrincipal(
+        user_id=principal.user_id,
+        organization_id=principal.organization_id,
+        institution_id=principal.institution_id,
+        person_id=person_id,
+        student_profile_id=student_profile_id,
+    )
+
+
+def require_student_access(
+    principal: CurrentPrincipal = Depends(get_current_principal),
+    session: Session = Depends(get_session),
+) -> StudentPrincipal:
+    return _require_student_permission(
+        session,
+        principal,
+        "student.console.access",
+        "Student Console permission required",
+    )
+
+
+def require_student_profile(
+    principal: CurrentPrincipal = Depends(get_current_principal),
+    session: Session = Depends(get_session),
+) -> StudentPrincipal:
+    return _require_student_permission(
+        session,
+        principal,
+        "student.profile.view",
+        "Student profile permission required",
+    )
+
+
+def require_student_classes(
+    principal: CurrentPrincipal = Depends(get_current_principal),
+    session: Session = Depends(get_session),
+) -> StudentPrincipal:
+    return _require_student_permission(
+        session,
+        principal,
+        "student.classes.view",
+        "Student class-view permission required",
+    )
+
+
+def require_student_schedule(
+    principal: CurrentPrincipal = Depends(get_current_principal),
+    session: Session = Depends(get_session),
+) -> StudentPrincipal:
+    return _require_student_permission(
+        session,
+        principal,
+        "student.schedule.view",
+        "Student schedule permission required",
+    )
+
+
+def require_student_attendance(
+    principal: CurrentPrincipal = Depends(get_current_principal),
+    session: Session = Depends(get_session),
+) -> StudentPrincipal:
+    return _require_student_permission(
+        session,
+        principal,
+        "student.attendance.view",
+        "Student attendance permission required",
+    )
+
+
+def require_student_grades(
+    principal: CurrentPrincipal = Depends(get_current_principal),
+    session: Session = Depends(get_session),
+) -> StudentPrincipal:
+    return _require_student_permission(
+        session,
+        principal,
+        "student.grades.view",
+        "Student grade permission required",
+    )
+
+
+def require_student_notices(
+    principal: CurrentPrincipal = Depends(get_current_principal),
+    session: Session = Depends(get_session),
+) -> StudentPrincipal:
+    return _require_student_permission(
+        session,
+        principal,
+        "student.notices.view",
+        "Student notice permission required",
+    )
+
+
+def require_student_progress(
+    principal: CurrentPrincipal = Depends(get_current_principal),
+    session: Session = Depends(get_session),
+) -> StudentPrincipal:
+    return _require_student_permission(
+        session,
+        principal,
+        "student.progress.view",
+        "Student progress permission required",
     )
 
 

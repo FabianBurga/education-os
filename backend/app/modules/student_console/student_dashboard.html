@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Education OS · Student Console</title>
+<style>
+:root{
+  --bg:#f4f6f9;--card:#fff;--ink:#172033;--muted:#6d7685;--line:#e4e8ee;
+  --nav:#203751;--accent:#315f87;--soft:#eef3f7;--good:#2c7051;--warn:#9a6819;
+  --bad:#983848
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+.head{max-width:1500px;margin:auto;padding:16px 22px;display:flex;gap:16px;justify-content:space-between;align-items:center}
+h1{font-size:21px;margin:0}.sub{font-size:12px;color:var(--muted);margin-top:3px}
+.auth{display:flex;gap:7px;align-items:center}.auth input{width:320px}
+input,button{border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:#fff;color:var(--ink)}
+button{cursor:pointer;font-weight:680}.primary{background:var(--nav);border-color:var(--nav);color:#fff}
+main{max-width:1500px;margin:auto;padding:22px}
+.notice{background:#fff;border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:11px;padding:11px 13px;font-size:12px;color:var(--muted)}
+.metrics{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-top:14px}
+.metric,.card{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 2px 10px #17203308}
+.metric{padding:14px}.value{font-size:25px;font-weight:780;margin-top:5px}.label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.055em;font-weight:750}
+.nav{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.nav button.active{background:var(--nav);border-color:var(--nav);color:#fff}
+.panel{display:none}.panel.active{display:block}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.card{padding:15px}.wide{grid-column:1/-1}
+.card h2{font-size:15px;margin:0 0 11px}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);font-size:12px;vertical-align:top}th{font-size:10px;text-transform:uppercase;color:var(--muted);background:#fafbfc}
+.pill{display:inline-flex;padding:4px 7px;border-radius:999px;background:var(--soft);font-size:10px;font-weight:800}.pill.MISSING,.pill.ABSENT{background:#f7e8ec;color:var(--bad)}.pill.LATE{background:#fff3df;color:var(--warn)}.pill.GRADED,.pill.PRESENT{background:#edf7f1;color:var(--good)}
+.empty{padding:24px;text-align:center;color:var(--muted)}.status{font-size:12px;color:var(--muted);margin-top:14px;min-height:20px}
+.profile{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.profile div{background:#fafbfc;border:1px solid var(--line);padding:10px;border-radius:9px}.profile strong{display:block;font-size:11px;color:var(--muted);margin-bottom:3px}
+.progressbar{height:8px;background:#edf0f4;border-radius:999px;overflow:hidden;margin-top:4px}.progressbar span{display:block;height:100%;background:#315f87}
+@media(max-width:1100px){.metrics{grid-template-columns:repeat(3,1fr)}.grid{grid-template-columns:1fr}.wide{grid-column:auto}}
+@media(max-width:720px){.head{align-items:flex-start;flex-direction:column}.auth{width:100%;flex-wrap:wrap}.auth input{width:100%}.metrics{grid-template-columns:repeat(2,1fr)}.profile{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><div class="head">
+<div><h1>Student Console</h1><div class="sub">Education OS · mi información académica</div></div>
+<div class="auth">
+<input id="student-token" type="password" placeholder="Bearer token STUDENT">
+<button id="student-connect" class="primary" onclick="connectStudent()">Conectar</button>
+<button id="student-refresh" onclick="loadStudentAll()">Actualizar</button>
+</div>
+</div></header>
+<main>
+<div id="student-safety-notice" class="notice">Este espacio muestra únicamente tus registros académicos, asistencia, calificaciones, pendientes y avisos visibles. No muestra etiquetas internas de riesgo ni toma decisiones automáticas sobre ti.</div>
+<div id="student-metrics" class="metrics"></div>
+
+<div id="student-nav" class="nav">
+<button id="tab-home-btn" class="active" onclick="studentTab('student-home',this)">Inicio</button>
+<button id="tab-classes-btn" onclick="studentTab('student-classes-panel',this)">Mis clases</button>
+<button id="tab-schedule-btn" onclick="studentTab('student-schedule-panel',this)">Horario</button>
+<button id="tab-attendance-btn" onclick="studentTab('student-attendance-panel',this)">Asistencia</button>
+<button id="tab-grades-btn" onclick="studentTab('student-grades-panel',this)">Calificaciones</button>
+<button id="tab-pending-btn" onclick="studentTab('student-pending-panel',this)">Pendientes</button>
+<button id="tab-notices-btn" onclick="studentTab('student-notices-panel',this)">Avisos</button>
+</div>
+
+<section id="student-home" class="panel active">
+<div class="grid">
+<div class="card">
+<h2>Mi perfil académico</h2>
+<div id="student-profile-body" class="empty">Conecta tu cuenta.</div>
+</div>
+<div class="card">
+<h2>Progreso por asignatura</h2>
+<div id="student-progress-body"></div>
+</div>
+</div>
+</section>
+
+<section id="student-classes-panel" class="panel">
+<div class="card"><h2>Mis clases</h2><div id="student-classes-body"></div></div>
+</section>
+
+<section id="student-schedule-panel" class="panel">
+<div class="card"><h2>Horario</h2><div id="student-schedule-body"></div></div>
+</section>
+
+<section id="student-attendance-panel" class="panel">
+<div class="card"><h2>Mi asistencia</h2><div id="student-attendance-body"></div></div>
+</section>
+
+<section id="student-grades-panel" class="panel">
+<div class="card"><h2>Mis calificaciones</h2><div id="student-grades-body"></div></div>
+</section>
+
+<section id="student-pending-panel" class="panel">
+<div class="card"><h2>Pendientes académicos</h2><div id="student-pending-body"></div></div>
+</section>
+
+<section id="student-notices-panel" class="panel">
+<div class="card"><h2>Avisos</h2><div id="student-notices-body"></div></div>
+</section>
+
+<div id="student-status" class="status"></div>
+</main>
+<script>
+const studentTokenEl=document.getElementById('student-token');
+studentTokenEl.value=sessionStorage.getItem('education_os_student_token')||'';
+let studentState={profile:null,summary:null,classes:[],schedule:[],attendance:[],grades:[],pending:[],progress:[],notices:[]};
+
+function studentHeaders(){return studentTokenEl.value.trim()?{'Authorization':'Bearer '+studentTokenEl.value.trim(),'Content-Type':'application/json'}:{'Content-Type':'application/json'}}
+async function studentApi(path){
+ const r=await fetch('/api/v1/student'+path,{headers:studentHeaders()});
+ const txt=await r.text();let body=null;try{body=txt?JSON.parse(txt):null}catch{body=txt}
+ if(!r.ok)throw new Error(`${r.status} ${body?.detail||txt}`);
+ return body;
+}
+function connectStudent(){sessionStorage.setItem('education_os_student_token',studentTokenEl.value.trim());loadStudentAll()}
+function studentTab(id,b){document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));document.querySelectorAll('#student-nav button').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');b.classList.add('active')}
+function e(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function metric(l,v,d=''){return `<div class="metric"><div class="label">${e(l)}</div><div class="value">${e(v)}</div><div class="sub">${e(d)}</div></div>`}
+function setStudentStatus(t){document.getElementById('student-status').textContent=t}
+const dayName={1:'Lunes',2:'Martes',3:'Miércoles',4:'Jueves',5:'Viernes',6:'Sábado',7:'Domingo'};
+
+async function loadStudentAll(){
+ if(!studentTokenEl.value.trim()){setStudentStatus('Ingresa un token STUDENT.');return}
+ setStudentStatus('Actualizando...');
+ try{
+  const [profile,summary,classes,schedule,attendance,grades,pending,progress,notices]=await Promise.all([
+   studentApi('/me'),studentApi('/summary'),studentApi('/classes'),studentApi('/schedule'),
+   studentApi('/attendance'),studentApi('/grades'),studentApi('/pending'),studentApi('/progress'),studentApi('/notices')
+  ]);
+  studentState={profile,summary,classes,schedule,attendance,grades,pending,progress,notices};
+  renderStudentSummary();renderStudentProfile();renderStudentClasses();renderStudentSchedule();
+  renderStudentAttendance();renderStudentGrades();renderStudentPending();renderStudentProgress();renderStudentNotices();
+  setStudentStatus('Student Console actualizado.');
+ }catch(err){setStudentStatus('Error: '+err.message)}
+}
+function renderStudentSummary(){
+ const s=studentState.summary||{};
+ document.getElementById('student-metrics').innerHTML=[
+  metric('Clases',s.active_classes??0,'activas'),
+  metric('Horario',s.schedule_slots??0,'bloques'),
+  metric('Presentes',s.attendance_present??0),
+  metric('Ausencias',s.attendance_absent??0,`${s.attendance_late??0} tardanzas`),
+  metric('Promedio',s.academic_average_percent==null?'—':`${s.academic_average_percent}%`),
+  metric('Pendientes',s.pending_assessments??0,`${s.published_notices??0} avisos`)
+ ].join('');
+}
+function renderStudentProfile(){
+ const p=studentState.profile||{};
+ document.getElementById('student-profile-body').innerHTML=`<div class="profile">
+ <div><strong>Estudiante</strong><span id="student-profile-name">${e(p.student_name||'—')}</span></div>
+ <div><strong>Código</strong>${e(p.student_code||'—')}</div>
+ <div><strong>Período</strong>${e(p.academic_period_name||'—')}</div>
+ <div><strong>Campus</strong>${e(p.campus_name||'—')}</div>
+ <div><strong>Grado</strong>${e(p.grade_name||'—')}</div>
+ <div><strong>Sección</strong>${e(p.section_name||'—')}</div>
+ </div>`;
+}
+function renderStudentClasses(){
+ const xs=studentState.classes||[];
+ document.getElementById('student-classes-body').innerHTML=xs.length?`<table id="student-classes-table"><thead><tr><th>Asignatura</th><th>Área</th><th>Grado / sección</th><th>Docente</th></tr></thead><tbody>${xs.map(x=>`<tr><td><strong>${e(x.subject_name)}</strong><div class="sub">${e(x.subject_code)}</div></td><td>${e(x.subject_area||'—')}</td><td>${e(x.grade_name)} · ${e(x.section_name)}</td><td>${e((x.teachers||[]).join(', ')||'—')}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">Sin clases activas.</div>';
+}
+function renderStudentSchedule(){
+ const xs=studentState.schedule||[];
+ document.getElementById('student-schedule-body').innerHTML=xs.length?`<table id="student-schedule-table"><thead><tr><th>Día</th><th>Hora</th><th>Asignatura</th><th>Aula</th></tr></thead><tbody>${xs.map(x=>`<tr><td>${e(dayName[x.weekday]??('Día '+x.weekday))}</td><td>${e(x.starts_at)}–${e(x.ends_at)}</td><td>${e(x.subject_name)}</td><td>${e(x.room_label||'—')}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">No hay horario registrado.</div>';
+}
+function renderStudentAttendance(){
+ const xs=studentState.attendance||[];
+ document.getElementById('student-attendance-body').innerHTML=xs.length?`<table id="student-attendance-table"><thead><tr><th>Fecha</th><th>Asignatura</th><th>Estado</th><th>Tardanza</th><th>Nota</th></tr></thead><tbody>${xs.map(x=>`<tr><td>${e(x.session_date)}</td><td>${e(x.subject_name)}</td><td><span class="pill ${e(x.semantic)}">${e(x.attendance_label)}</span></td><td>${x.minutes_late?e(x.minutes_late+' min'):'—'}</td><td>${e(x.note||'—')}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">No hay registros de asistencia.</div>';
+}
+function renderStudentGrades(){
+ const xs=studentState.grades||[];
+ document.getElementById('student-grades-body').innerHTML=xs.length?`<table id="student-grades-table"><thead><tr><th>Asignatura</th><th>Evaluación</th><th>Estado</th><th>Nota</th><th>%</th><th>Retroalimentación</th></tr></thead><tbody>${xs.map(x=>`<tr><td>${e(x.subject_name)}</td><td>${e(x.assessment_title)}<div class="sub">${e(x.grading_period_name)} · ${e(x.category_name)}</div></td><td><span class="pill ${e(x.status)}">${e(x.status)}</span></td><td>${x.score==null?'—':e(x.score+' / '+x.max_score)}</td><td>${x.percentage==null?'—':e(x.percentage+'%')}</td><td>${e(x.feedback||'—')}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">No hay calificaciones registradas.</div>';
+}
+function renderStudentPending(){
+ const xs=studentState.pending||[];
+ document.getElementById('student-pending-body').innerHTML=xs.length?`<table id="student-pending-table"><thead><tr><th>Asignatura</th><th>Actividad</th><th>Fecha</th><th>Estado</th></tr></thead><tbody>${xs.map(x=>`<tr><td>${e(x.subject_name)}</td><td>${e(x.assessment_title)}</td><td>${e(x.due_on||'—')}</td><td><span class="pill ${x.overdue?'MISSING':''}">${x.overdue?'Vencido':e(x.status)}</span></td></tr>`).join('')}</tbody></table>`:'<div class="empty">No hay pendientes.</div>';
+}
+function renderStudentProgress(){
+ const xs=studentState.progress||[];
+ document.getElementById('student-progress-body').innerHTML=xs.length?xs.map(x=>{const avg=x.academic_average_percent;return `<div style="padding:8px 0;border-bottom:1px solid #e4e8ee"><strong>${e(x.subject_name)}</strong><div class="sub">Promedio ${avg==null?'—':e(avg+'%')} · ${e(x.graded_items)} calificadas · ${e(x.missing_items)} faltantes · ${e(x.absent_records)} ausencias</div><div class="progressbar"><span style="width:${avg==null?0:Math.max(0,Math.min(100,avg))}%"></span></div></div>`}).join(''):'<div class="empty">Sin datos suficientes de progreso.</div>';
+}
+function renderStudentNotices(){
+ const xs=studentState.notices||[];
+ document.getElementById('student-notices-body').innerHTML=xs.length?`<table id="student-notices-table"><thead><tr><th>Tipo</th><th>Aviso</th><th>Alcance</th><th>Publicado</th></tr></thead><tbody>${xs.map(x=>`<tr><td>${e(x.notice_type)}</td><td><strong>${e(x.title)}</strong><div class="sub">${e(x.body)}</div></td><td>${x.is_personal?'Personal':'General'}</td><td>${e(x.published_at||'—')}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">Sin avisos publicados.</div>';
+}
+if(studentTokenEl.value.trim())loadStudentAll();
+</script>
+</body>
+</html>

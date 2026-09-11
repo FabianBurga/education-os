@@ -14,9 +14,11 @@ from app.api.v1.m7_router import router as m7_router
 from app.api.v1.m8_router import router as m8_router
 from app.api.v1.m9_router import router as m9_router
 from app.api.v1.m10_router import router as m10_router
+from app.api.v1.m11_router import router as m11_router
 from app.db.session import get_session
 
 router = APIRouter()
+router.include_router(m11_router)
 router.include_router(m10_router)
 router.include_router(m9_router)
 router.include_router(m8_router)
