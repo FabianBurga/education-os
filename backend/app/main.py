@@ -5,18 +5,29 @@ from fastapi.responses import FileResponse
 
 from app.api.v1.router import router as api_v1_router
 from app.core.config import settings
+from app.observability.configuration import (
+    assert_production_runtime_configuration,
+)
+from app.observability.router import router as observability_router
+from app.observability.runtime import RuntimeObservabilityMiddleware
+
+assert_production_runtime_configuration(settings)
 
 app = FastAPI(
     title=settings.APP_NAME,
     version="0.15.0",
 )
 
+app.add_middleware(RuntimeObservabilityMiddleware)
+
 
 @app.get("/health")
 def health() -> dict[str, str]:
+    # Compatibility contract required by frozen M15/M16 verifiers.
     return {"status": "ok", "milestone": "M15"}
 
 
+app.include_router(observability_router)
 app.include_router(api_v1_router, prefix=settings.API_V1_PREFIX)
 
 FRONTEND_DIST = (

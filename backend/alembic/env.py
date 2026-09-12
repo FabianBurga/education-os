@@ -24,8 +24,15 @@ from app.modules.tenancy.models import (  # noqa: F401
     Organization,
 )
 
+owner_database_url = settings.OWNER_DATABASE_URL
+if not owner_database_url:
+    raise RuntimeError(
+        "OWNER_DATABASE_URL is required for Alembic migrations. "
+        "Do not inject owner credentials into the runtime application process."
+    )
+
 config = context.config
-config.set_main_option("sqlalchemy.url", settings.OWNER_DATABASE_URL)
+config.set_main_option("sqlalchemy.url", owner_database_url)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
@@ -35,7 +42,7 @@ target_metadata = SQLModel.metadata
 
 def run_migrations_offline() -> None:
     context.configure(
-        url=settings.OWNER_DATABASE_URL,
+        url=owner_database_url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
