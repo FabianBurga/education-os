@@ -42,7 +42,9 @@ jobs:
 
       - name: Create runtime DB role
         run: |
-          PGPASSWORD=education_owner_dev psql             -h localhost -U education_owner -d education_os             -c "CREATE ROLE education_app LOGIN PASSWORD 'education_app_dev' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;"
+          PGPASSWORD=education_owner_dev psql \
+            -h localhost -U education_owner -d education_os \
+            -c "CREATE ROLE education_app LOGIN PASSWORD 'education_app_dev' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;"
 
       - name: Install backend
         working-directory: backend
@@ -52,7 +54,7 @@ jobs:
 
       - name: Lint
         working-directory: backend
-        run: ruff check app tests
+        run: ruff check app tests tools
 
       - name: Migrate
         working-directory: backend
@@ -61,3 +63,29 @@ jobs:
       - name: Test
         working-directory: backend
         run: pytest -q
+
+  frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install frontend
+        working-directory: frontend
+        run: npm install --package-lock=false --no-audit --no-fund
+
+      - name: Typecheck
+        working-directory: frontend
+        run: npm run typecheck
+
+      - name: Test
+        working-directory: frontend
+        run: npm run test
+
+      - name: Build
+        working-directory: frontend
+        run: npm run build
