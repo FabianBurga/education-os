@@ -32,6 +32,11 @@ CRITICAL_TABLES = (
     "communications",
     "communication_targets",
     "communication_recipients",
+    "billing_concepts",
+    "billing_accounts",
+    "billing_charges",
+    "billing_payments",
+    "billing_allocations",
     "pilot_readiness_runs",
 )
 CRITICAL_TABLES_SQL = (
@@ -40,7 +45,9 @@ CRITICAL_TABLES_SQL = (
     "'intelligence_signals', 'automation_rules', 'automation_cases', "
     "'automation_tasks', 'guardian_student_portal_access', 'family_notices', "
     "'family_notice_receipts', 'communication_templates', 'communications', "
-    "'communication_targets', 'communication_recipients', 'pilot_readiness_runs'"
+    "'communication_targets', 'communication_recipients', 'billing_concepts', "
+    "'billing_accounts', 'billing_charges', 'billing_payments', "
+    "'billing_allocations', 'pilot_readiness_runs'"
 )
 
 
@@ -137,7 +144,7 @@ def _migration_check(session: Session) -> ReadinessCheck:
     )
     return ReadinessCheck(
         code="ALEMBIC_HEAD",
-        passed=revision == "0015_m13",
+        passed=revision == "0016_m14",
         detail=f"database revision={revision}",
     )
 
