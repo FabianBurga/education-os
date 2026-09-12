@@ -13,6 +13,16 @@ export interface ModuleDefinition {
 
 export const MODULES: ModuleDefinition[] = [
   {
+    id: "control-plane",
+    label: "Control institucional",
+    shortLabel: "Control",
+    description:
+      "Gobierno de capacidades, políticas, revisiones y salud operativa de la institución.",
+    permission: "control_plane.view",
+    legacyPath: "/api/v1/control-plane/dashboard",
+    audience: "Rectorado / Administración",
+  },
+  {
     id: "administration",
     label: "Administración",
     shortLabel: "Admin",
