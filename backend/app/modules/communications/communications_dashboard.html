@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Education OS · Communications Center</title>
+<style>
+:root{
+  --bg:#f4f6f8;--card:#fff;--ink:#172033;--muted:#697386;--line:#e1e6ec;
+  --nav:#1f3b57;--accent:#315f88;--soft:#eef3f7;--ok:#2f6d52;--warn:#9b6917;
+  --bad:#943848;--draft:#fff6e8;--published:#edf7f1;--archived:#f1f2f4
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.head{max-width:1500px;margin:auto;padding:16px 22px;display:flex;justify-content:space-between;gap:16px;align-items:center}
+h1{font-size:21px;margin:0}.sub{font-size:12px;color:var(--muted);margin-top:3px}
+.auth{display:flex;gap:7px;align-items:center}.auth input{width:330px}
+input,textarea,select,button{border:1px solid var(--line);border-radius:9px;padding:9px 10px;background:#fff;color:var(--ink);font:inherit}
+textarea{min-height:118px;resize:vertical}
+button{cursor:pointer;font-weight:700}.primary{background:var(--nav);border-color:var(--nav);color:#fff}.accent{background:var(--accent);border-color:var(--accent);color:#fff}.danger{color:var(--bad)}
+main{max-width:1500px;margin:auto;padding:22px}
+.noticebar{background:#fff;border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:11px;padding:12px 14px;font-size:12px;color:var(--muted)}
+.metrics{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;margin:14px 0}
+.metric,.card{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 2px 10px #17203308}
+.metric{padding:13px}.label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:800}.value{font-size:24px;font-weight:800;margin-top:5px}
+.layout{display:grid;grid-template-columns:390px 1fr;gap:14px}.card{padding:15px}.card h2{font-size:15px;margin:0 0 11px}.card h3{font-size:13px;margin:14px 0 8px}
+.field{margin:10px 0}.field label{display:block;font-size:11px;color:var(--muted);font-weight:750;margin-bottom:5px}.field input,.field textarea,.field select{width:100%}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.spacer{flex:1}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);font-size:12px;vertical-align:top}
+th{font-size:10px;text-transform:uppercase;color:var(--muted);background:#fafbfc}
+.pill{display:inline-flex;padding:4px 7px;border-radius:999px;font-size:10px;font-weight:800}.pill.DRAFT{background:var(--draft);color:var(--warn)}.pill.PUBLISHED{background:var(--published);color:var(--ok)}.pill.ARCHIVED{background:var(--archived);color:var(--muted)}
+.target{display:flex;justify-content:space-between;gap:7px;padding:7px 8px;border:1px solid var(--line);border-radius:8px;margin-top:6px;font-size:11px}.target strong{display:block}.target .meta{color:var(--muted)}
+.status{font-size:12px;color:var(--muted);margin-top:13px;min-height:19px}.empty{padding:24px;text-align:center;color:var(--muted)}
+.tabs{display:flex;gap:8px;margin-bottom:12px}.tabs button.active{background:var(--nav);color:#fff;border-color:var(--nav)}.panel{display:none}.panel.active{display:block}
+.delivery{padding:8px 0;border-bottom:1px solid var(--line)}.delivery:last-child{border:0}.delivery .meta{font-size:11px;color:var(--muted)}
+.preview{background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:10px;font-size:12px}
+@media(max-width:1150px){.metrics{grid-template-columns:repeat(4,1fr)}.layout{grid-template-columns:1fr}}
+@media(max-width:720px){.head{flex-direction:column;align-items:flex-start}.auth{width:100%;flex-wrap:wrap}.auth input{width:100%}.metrics{grid-template-columns:repeat(2,1fr)}.row{grid-template-columns:1fr}main{padding:14px}}
+</style>
+</head>
+<body>
+<header><div class="head">
+<div><h1>Communications Center</h1><div class="sub">Education OS · comunicación institucional segmentada y trazable</div></div>
+<div class="auth">
+<input id="token" type="password" placeholder="Bearer token autorizado">
+<button class="primary" onclick="connect()">Conectar</button>
+<button onclick="loadAll()">Actualizar</button>
+</div>
+</div></header>
+
+<main>
+<div class="noticebar">
+M13 gestiona comunicaciones institucionales in-app hacia familias vinculadas. La publicación resuelve destinatarios por alcance y proyecta avisos compatibles con Family Portal / Guardian Console. No envía SMS ni correo externo en esta versión.
+</div>
+
+<div id="metrics" class="metrics"></div>
+
+<div class="layout">
+<section class="card">
+<h2>Nuevo borrador</h2>
+
+<div class="field">
+<label>Plantilla</label>
+<select id="template" onchange="applyTemplate()"><option value="">Sin plantilla</option></select>
+</div>
+
+<div class="field"><label>Título</label><input id="title" maxlength="200" placeholder="Ej. Reunión de representantes"></div>
+<div class="field"><label>Mensaje</label><textarea id="body" maxlength="4000" placeholder="Escribe el mensaje institucional"></textarea></div>
+
+<div class="row">
+<div class="field"><label>Tipo</label>
+<select id="noticeType">
+<option>ANNOUNCEMENT</option><option>GENERAL</option><option>REMINDER</option><option>ACADEMIC</option><option>ATTENDANCE</option>
+</select></div>
+<div class="field"><label>Confirmación</label>
+<select id="ack"><option value="false">No requerida</option><option value="true">Requerida</option></select></div>
+</div>
+
+<h3>Alcance</h3>
+<div class="row">
+<div class="field"><label>Tipo de destino</label>
+<select id="targetType" onchange="loadTargetOptions()">
+<option value="INSTITUTION">Institución</option>
+<option value="CAMPUS">Campus</option>
+<option value="SECTION">Sección</option>
+<option value="COURSE">Curso / asignatura</option>
+<option value="STUDENT">Estudiante</option>
+<option value="FAMILY">Familia / hogar</option>
+</select></div>
+<div class="field"><label>Destino</label><select id="targetOption"></select></div>
+</div>
+
+<div class="actions">
+<button onclick="addDraftTarget()">Agregar destino</button>
+<button class="accent" onclick="createDraft()">Crear borrador</button>
+</div>
+<div id="draftTargets"></div>
+<div id="draftPreview" class="preview" style="display:none"></div>
+</section>
+
+<section>
+<div class="tabs">
+<button class="active" onclick="tab('messagesPanel',this)">Mensajes</button>
+<button onclick="tab('templatesPanel',this)">Plantillas</button>
+<button onclick="tab('deliveryPanel',this)">Entrega</button>
+</div>
+
+<div id="messagesPanel" class="panel active card">
+<div class="toolbar"><h2 style="margin:0">Comunicaciones</h2><div class="spacer"></div><button onclick="loadMessages()">Actualizar</button></div>
+<div id="messagesBody"></div>
+</div>
+
+<div id="templatesPanel" class="panel card">
+<h2>Plantillas reutilizables</h2>
+<div class="row">
+<div class="field"><label>Nombre</label><input id="tplName"></div>
+<div class="field"><label>Tipo</label><select id="tplType"><option>ANNOUNCEMENT</option><option>GENERAL</option><option>REMINDER</option><option>ACADEMIC</option><option>ATTENDANCE</option></select></div>
+</div>
+<div class="field"><label>Título base</label><input id="tplTitle"></div>
+<div class="field"><label>Cuerpo base</label><textarea id="tplBody"></textarea></div>
+<div class="field"><label><input id="tplAck" type="checkbox"> Requiere confirmación</label></div>
+<div class="actions"><button class="accent" onclick="createTemplate()">Guardar plantilla</button></div>
+<div id="templatesBody"></div>
+</div>
+
+<div id="deliveryPanel" class="panel card">
+<h2>Estado de entrega</h2>
+<div id="deliveryBody" class="empty">Selecciona “Entrega” en una comunicación publicada.</div>
+</div>
+</section>
+</div>
+
+<div id="status" class="status"></div>
+</main>
+
+<script>
+const tokenEl=document.getElementById('token');
+tokenEl.value=sessionStorage.getItem('education_os_communications_token')||'';
+let state={templates:[],messages:[],draftTargets:[],activeDelivery:null};
+
+function headers(){const h={'Content-Type':'application/json'};if(tokenEl.value.trim())h.Authorization='Bearer '+tokenEl.value.trim();return h}
+async function api(path,opts={}){
+ const r=await fetch('/api/v1/communications'+path,{...opts,headers:{...headers(),...(opts.headers||{})}});
+ const txt=await r.text();let body=null;try{body=txt?JSON.parse(txt):null}catch{body=txt}
+ if(!r.ok)throw new Error(`${r.status} ${body?.detail||txt}`);return body;
+}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function setStatus(t){document.getElementById('status').textContent=t}
+function tab(id,b){document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');b.classList.add('active')}
+function metric(label,value){return `<div class="metric"><div class="label">${label}</div><div class="value">${value}</div></div>`}
+function connect(){sessionStorage.setItem('education_os_communications_token',tokenEl.value.trim());loadAll()}
+
+async function loadAll(){
+ if(!tokenEl.value.trim()){setStatus('Ingresa un token autorizado.');return}
+ setStatus('Actualizando Communications Center...');
+ try{
+   const [summary,templates,messages]=await Promise.all([api('/summary'),api('/templates'),api('/messages')]);
+   state.templates=templates;state.messages=messages;
+   document.getElementById('metrics').innerHTML=[
+    metric('Borradores',summary.draft_messages),metric('Publicados',summary.published_messages),metric('Archivados',summary.archived_messages),
+    metric('Plantillas',summary.active_templates),metric('Entregados',summary.delivered_recipients),metric('Leídos',summary.read_recipients),metric('Confirmados',summary.acknowledged_recipients)
+   ].join('');
+   renderTemplates();renderMessages();await loadTargetOptions();
+   setStatus('Communications Center actualizado.');
+ }catch(e){setStatus('No se pudo cargar: '+e.message)}
+}
+
+function renderTemplates(){
+ const sel=document.getElementById('template');
+ sel.innerHTML='<option value="">Sin plantilla</option>'+state.templates.filter(x=>x.status==='ACTIVE').map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join('');
+ document.getElementById('templatesBody').innerHTML=state.templates.length?`
+ <table><thead><tr><th>Nombre</th><th>Tipo</th><th>Confirmación</th><th>Estado</th></tr></thead><tbody>
+ ${state.templates.map(x=>`<tr><td><strong>${esc(x.name)}</strong><div class="sub">${esc(x.title_template)}</div></td><td>${esc(x.notice_type)}</td><td>${x.requires_acknowledgement?'Sí':'No'}</td><td>${esc(x.status)}</td></tr>`).join('')}
+ </tbody></table>`:'<div class="empty">No hay plantillas.</div>';
+}
+function applyTemplate(){
+ const id=document.getElementById('template').value;const t=state.templates.find(x=>x.id===id);if(!t)return;
+ document.getElementById('title').value=t.title_template;document.getElementById('body').value=t.body_template;
+ document.getElementById('noticeType').value=t.notice_type;document.getElementById('ack').value=String(t.requires_acknowledgement);
+}
+async function createTemplate(){
+ try{
+  const payload={
+   name:document.getElementById('tplName').value.trim(),
+   title_template:document.getElementById('tplTitle').value.trim(),
+   body_template:document.getElementById('tplBody').value.trim(),
+   notice_type:document.getElementById('tplType').value,
+   requires_acknowledgement:document.getElementById('tplAck').checked
+  };
+  await api('/templates',{method:'POST',body:JSON.stringify(payload)});setStatus('Plantilla creada.');await loadAll();
+ }catch(e){setStatus('Error de plantilla: '+e.message)}
+}
+async function loadTargetOptions(){
+ if(!tokenEl.value.trim())return;
+ try{
+  const type=document.getElementById('targetType').value;const rows=await api('/target-options?target_type='+encodeURIComponent(type));
+  document.getElementById('targetOption').innerHTML=rows.map(x=>`<option value="${x.id}" data-label="${esc(x.label)}">${esc(x.label)}${x.secondary?' · '+esc(x.secondary):''}</option>`).join('');
+ }catch(e){setStatus('Error de destinos: '+e.message)}
+}
+function addDraftTarget(){
+ const type=document.getElementById('targetType').value;const sel=document.getElementById('targetOption');if(!sel.value)return;
+ const label=sel.options[sel.selectedIndex]?.text||sel.value;const key=type+'|'+sel.value;
+ if(!state.draftTargets.some(x=>x.key===key))state.draftTargets.push({key,target_type:type,target_id:sel.value,label});
+ renderDraftTargets();
+}
+function removeDraftTarget(key){state.draftTargets=state.draftTargets.filter(x=>x.key!==key);renderDraftTargets()}
+function renderDraftTargets(){
+ const box=document.getElementById('draftTargets');
+ box.innerHTML=state.draftTargets.map(x=>`<div class="target"><div><strong>${esc(x.target_type)}</strong><span class="meta">${esc(x.label)}</span></div><button onclick="removeDraftTarget('${x.key}')">Quitar</button></div>`).join('');
+}
+async function createDraft(){
+ try{
+  if(!state.draftTargets.length){setStatus('Agrega al menos un destino.');return}
+  const payload={
+   template_id:document.getElementById('template').value||null,
+   title:document.getElementById('title').value.trim(),
+   body:document.getElementById('body').value.trim(),
+   notice_type:document.getElementById('noticeType').value,
+   requires_acknowledgement:document.getElementById('ack').value==='true'
+  };
+  const msg=await api('/messages',{method:'POST',body:JSON.stringify(payload)});
+  await api(`/messages/${msg.id}/targets`,{method:'PUT',body:JSON.stringify({targets:state.draftTargets.map(x=>({target_type:x.target_type,target_id:x.target_id}))})});
+  const p=await api(`/messages/${msg.id}/preview`);
+  document.getElementById('draftPreview').style.display='block';
+  document.getElementById('draftPreview').innerHTML=`Borrador creado. Estudiantes objetivo: <strong>${p.target_students}</strong> · familias alcanzables: <strong>${p.guardian_recipients}</strong> · sin vínculo activo: <strong>${p.unreachable_students}</strong>.`;
+  state.draftTargets=[];renderDraftTargets();await loadMessages();setStatus('Borrador creado y segmentación calculada.');
+ }catch(e){setStatus('Error al crear borrador: '+e.message)}
+}
+
+async function loadMessages(){state.messages=await api('/messages');renderMessages()}
+function renderMessages(){
+ const body=document.getElementById('messagesBody');
+ body.innerHTML=state.messages.length?`<table><thead><tr><th>Estado</th><th>Comunicación</th><th>Tipo</th><th>Destinos</th><th>Familias</th><th>Acciones</th></tr></thead><tbody>
+ ${state.messages.map(x=>`<tr>
+ <td><span class="pill ${esc(x.status)}">${esc(x.status)}</span></td>
+ <td><strong>${esc(x.title)}</strong><div class="sub">${new Date(x.created_at).toLocaleString()}</div></td>
+ <td>${esc(x.notice_type)}${x.requires_acknowledgement?'<div class="sub">requiere confirmación</div>':''}</td>
+ <td>${x.target_count}</td><td>${x.recipient_count}</td>
+ <td><div class="actions">
+ ${x.status==='DRAFT'?`<button onclick="preview('${x.id}')">Vista previa</button><button class="accent" onclick="publishMessage('${x.id}')">Publicar</button>`:''}
+ ${x.status==='PUBLISHED'?`<button onclick="showDelivery('${x.id}')">Entrega</button>`:''}
+ ${x.status!=='ARCHIVED'?`<button onclick="archiveMessage('${x.id}')">Archivar</button>`:''}
+ </div></td></tr>`).join('')}
+ </tbody></table>`:'<div class="empty">No hay comunicaciones.</div>';
+}
+async function preview(id){
+ try{const p=await api(`/messages/${id}/preview`);setStatus(`Vista previa: ${p.target_students} estudiantes objetivo · ${p.guardian_recipients} destinatarios familiares · ${p.unreachable_students} estudiantes sin familia alcanzable.`)}
+ catch(e){setStatus('Error de vista previa: '+e.message)}
+}
+async function publishMessage(id){
+ if(!confirm('¿Publicar esta comunicación a las familias resueltas?'))return;
+ try{const r=await api(`/messages/${id}/publish`,{method:'POST'});setStatus(`Publicado: ${r.students_reached} estudiantes · ${r.guardian_recipients} destinatarios familiares.`);await loadAll()}
+ catch(e){setStatus('Error al publicar: '+e.message)}
+}
+async function archiveMessage(id){
+ try{await api(`/messages/${id}/archive`,{method:'POST'});setStatus('Comunicación archivada.');await loadAll()}
+ catch(e){setStatus('Error al archivar: '+e.message)}
+}
+async function showDelivery(id){
+ try{
+  const r=await api(`/messages/${id}/delivery`);state.activeDelivery=r;
+  document.getElementById('deliveryBody').innerHTML=`<div class="preview"><strong>${esc(r.title)}</strong><br>Destinatarios: ${r.recipients_total} · leídos: ${r.read} · confirmados: ${r.acknowledged}</div>`+
+  (r.recipients.length?r.recipients.map(x=>`<div class="delivery"><strong>${esc(x.guardian_name)}</strong> · ${esc(x.student_name)}<div class="meta">${esc(x.status)} · entregado ${new Date(x.delivered_at).toLocaleString()}</div></div>`).join(''):'<div class="empty">Sin destinatarios.</div>');
+  const btn=[...document.querySelectorAll('.tabs button')][2];tab('deliveryPanel',btn);setStatus('Estado de entrega actualizado.');
+ }catch(e){setStatus('Error de entrega: '+e.message)}
+}
+if(tokenEl.value.trim())loadAll();
+</script>
+</body>
+</html>
