@@ -1,33 +1,10 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import {
-  QueryClient,
-  QueryClientProvider,
-} from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
-
 import { router } from "./router";
 import "./styles.css";
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 30_000,
-      retry: 0,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
-
-const root = document.getElementById("root");
-if (!root) {
-  throw new Error("Education OS root element was not found");
-}
-
-createRoot(root).render(
-  <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
-  </StrictMode>,
-);
+const queryClient=new QueryClient({defaultOptions:{queries:{staleTime:30_000,retry:0,refetchOnWindowFocus:false}}});
+if("serviceWorker" in navigator){window.addEventListener("load",()=>{void navigator.serviceWorker.register("/app/sw.js",{scope:"/app/"});});}
+const root=document.getElementById("root");if(!root)throw new Error("Education OS root element was not found");
+createRoot(root).render(<StrictMode><QueryClientProvider client={queryClient}><RouterProvider router={router}/></QueryClientProvider></StrictMode>);
