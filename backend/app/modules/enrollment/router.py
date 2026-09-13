@@ -138,6 +138,8 @@ def create_enrollment(payload: EnrollmentCreate, principal: PrincipalDep, sessio
     session.refresh(enrollment)
     return enrollment
 
+
+@router.get("/enrollments/{enrollment_id}", response_model=EnrollmentRead)
 def get_enrollment(enrollment_id: UUID, _: PrincipalDep, session: SessionDep):
     enrollment = session.get(Enrollment, enrollment_id)
     if enrollment is None:
