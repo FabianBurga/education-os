@@ -320,6 +320,42 @@ def require_teacher_tasks(
 
 
 
+
+def require_student_timeline_read(
+    principal: CurrentPrincipal = Depends(get_current_principal),
+    session: Session = Depends(get_session),
+) -> CurrentPrincipal:
+    return _require_staff_permission(
+        session,
+        principal,
+        "student_timeline.read",
+        "Student timeline permission required",
+    )
+
+
+def require_student_timeline_restricted(
+    principal: CurrentPrincipal = Depends(get_current_principal),
+    session: Session = Depends(get_session),
+) -> CurrentPrincipal:
+    return _require_staff_permission(
+        session,
+        principal,
+        "student_timeline.read_restricted",
+        "Restricted student timeline permission required",
+    )
+
+
+def require_student_timeline_confidential(
+    principal: CurrentPrincipal = Depends(get_current_principal),
+    session: Session = Depends(get_session),
+) -> CurrentPrincipal:
+    return _require_staff_permission(
+        session,
+        principal,
+        "student_timeline.read_confidential",
+        "Confidential student timeline permission required",
+    )
+
 def _active_student_profile_id(
     session: Session,
     principal: CurrentPrincipal,
