@@ -74,17 +74,11 @@ def signals_refresh_api(principal: PrincipalDep, session: SessionDep):
 def signals_resolve_api(
     signal_id: UUID,
     payload: SignalResolve,
-    _: PrincipalDep,
+    principal: PrincipalDep,
     session: SessionDep,
 ):
-    return resolve_signal(session, signal_id, payload)
+    return resolve_signal(session, principal, signal_id, payload)
 
-
-@router.get(
-    "/rector/dashboard",
-    response_class=HTMLResponse,
-    include_in_schema=False,
-)
 def rector_dashboard_html():
     path = Path(__file__).with_name("rector_dashboard.html")
     return HTMLResponse(path.read_text(encoding="utf-8"))

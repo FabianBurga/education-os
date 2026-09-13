@@ -15,6 +15,8 @@ from app.modules.attendance.schemas import (
     AttendanceRecordUpsert,
     ClassSessionCreate,
 )
+from app.modules.enrollment.models import Enrollment
+from app.modules.events.service import enqueue_canonical_event
 
 
 def _get(session: Session, model, entity_id: UUID, label: str):
@@ -102,6 +104,7 @@ def upsert_record(
         "Student section assignment",
     )
     _get(session, AttendanceCode, payload.attendance_code_id, "Attendance code")
+    enrollment = _get(session, Enrollment, assignment.enrollment_id, "Enrollment")
 
     if assignment.section_id != class_session.section_id:
         raise HTTPException(
@@ -112,7 +115,8 @@ def upsert_record(
     existing = session.exec(
         select(AttendanceRecord).where(
             AttendanceRecord.class_session_id == class_session_id,
-            AttendanceRecord.student_section_assignment_id == payload.student_section_assignment_id,
+            AttendanceRecord.student_section_assignment_id
+            == payload.student_section_assignment_id,
         )
     ).first()
 
@@ -121,6 +125,23 @@ def upsert_record(
         existing.minutes_late = payload.minutes_late
         existing.note = payload.note
         session.add(existing)
+        enqueue_canonical_event(
+            session,
+            institution_id=principal.institution_id,
+            event_type="student.attendance.updated",
+            event_version=1,
+            aggregate_type="attendance_record",
+            aggregate_id=existing.id,
+            actor_user_id=principal.user_id,
+            payload={
+                "student_profile_id": str(enrollment.student_profile_id),
+                "student_section_assignment_id": str(assignment.id),
+                "class_session_id": str(class_session.id),
+                "section_id": str(class_session.section_id),
+                "attendance_code_id": str(existing.attendance_code_id),
+                "minutes_late": int(existing.minutes_late or 0),
+            },
+        )
         session.commit()
         session.refresh(existing)
         return existing
@@ -133,6 +154,23 @@ def upsert_record(
         **payload.model_dump(),
     )
     session.add(entity)
+    enqueue_canonical_event(
+        session,
+        institution_id=principal.institution_id,
+        event_type="student.attendance.recorded",
+        event_version=1,
+        aggregate_type="attendance_record",
+        aggregate_id=entity.id,
+        actor_user_id=principal.user_id,
+        payload={
+            "student_profile_id": str(enrollment.student_profile_id),
+            "student_section_assignment_id": str(assignment.id),
+            "class_session_id": str(class_session.id),
+            "section_id": str(class_session.section_id),
+            "attendance_code_id": str(entity.attendance_code_id),
+            "minutes_late": int(entity.minutes_late or 0),
+        },
+    )
     session.commit()
     session.refresh(entity)
     return entity

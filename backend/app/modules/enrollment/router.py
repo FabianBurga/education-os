@@ -10,6 +10,7 @@ from sqlmodel import Session, select
 from app.api.deps import CurrentPrincipal, get_current_principal
 from app.db.session import get_session
 from app.modules.enrollment.models import AcademicPeriod, Enrollment
+from app.modules.events.service import enqueue_canonical_event
 from app.modules.students.models import StudentProfile
 
 router = APIRouter(tags=["enrollment"])
@@ -113,12 +114,30 @@ def create_enrollment(payload: EnrollmentCreate, principal: PrincipalDep, sessio
         **payload.model_dump(),
     )
     session.add(enrollment)
+    enqueue_canonical_event(
+        session,
+        institution_id=principal.institution_id,
+        event_type="student.enrollment.created",
+        event_version=1,
+        aggregate_type="enrollment",
+        aggregate_id=enrollment.id,
+        actor_user_id=principal.user_id,
+        payload={
+            "student_profile_id": str(enrollment.student_profile_id),
+            "academic_period_id": str(enrollment.academic_period_id),
+            "campus_id": str(enrollment.campus_id),
+            "status": enrollment.status,
+            "enrolled_on": (
+                enrollment.enrolled_on.isoformat()
+                if enrollment.enrolled_on is not None
+                else None
+            ),
+        },
+    )
     session.commit()
     session.refresh(enrollment)
     return enrollment
 
-
-@router.get("/enrollments/{enrollment_id}", response_model=EnrollmentRead)
 def get_enrollment(enrollment_id: UUID, _: PrincipalDep, session: SessionDep):
     enrollment = session.get(Enrollment, enrollment_id)
     if enrollment is None:
@@ -130,15 +149,36 @@ def get_enrollment(enrollment_id: UUID, _: PrincipalDep, session: SessionDep):
 def update_enrollment_status(
     enrollment_id: UUID,
     payload: EnrollmentStatusUpdate,
-    _: PrincipalDep,
+    principal: PrincipalDep,
     session: SessionDep,
 ):
     enrollment = session.get(Enrollment, enrollment_id)
     if enrollment is None:
         raise HTTPException(status_code=404, detail="Enrollment not found")
+    previous_status = enrollment.status
     enrollment.status = payload.status
     enrollment.withdrawn_on = payload.withdrawn_on
     session.add(enrollment)
+    enqueue_canonical_event(
+        session,
+        institution_id=principal.institution_id,
+        event_type="student.enrollment.status_changed",
+        event_version=1,
+        aggregate_type="enrollment",
+        aggregate_id=enrollment.id,
+        actor_user_id=principal.user_id,
+        payload={
+            "student_profile_id": str(enrollment.student_profile_id),
+            "academic_period_id": str(enrollment.academic_period_id),
+            "previous_status": previous_status,
+            "status": enrollment.status,
+            "withdrawn_on": (
+                enrollment.withdrawn_on.isoformat()
+                if enrollment.withdrawn_on is not None
+                else None
+            ),
+        },
+    )
     session.commit()
     session.refresh(enrollment)
     return enrollment

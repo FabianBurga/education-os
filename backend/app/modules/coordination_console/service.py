@@ -334,7 +334,7 @@ def resolve_coordination_signal(
     signal_id: UUID,
     payload: SignalResolve,
 ):
-    signal = resolve_signal(session, signal_id, payload)
+    signal = resolve_signal(session, principal, signal_id, payload)
     _audit(
         session,
         principal,

@@ -6,6 +6,7 @@ from sqlalchemy import text
 from sqlmodel import Session, select
 
 from app.api.deps import CurrentPrincipal
+from app.modules.events.service import enqueue_canonical_event
 from app.modules.intelligence.models import IntelligenceSignal
 from app.modules.intelligence.schemas import (
     AcademicTrendPoint,
@@ -276,24 +277,47 @@ def _upsert_signal(
         session.add(existing)
         return
 
-    session.add(
-        IntelligenceSignal(
-            organization_id=principal.organization_id,
-            institution_id=principal.institution_id,
-            academic_period_id=academic_period_id,
-            section_id=section_id,
-            student_profile_id=student_profile_id,
-            signal_type=signal_type,
-            severity=_severity(signal_type, metric_value, threshold_value),
-            metric_value=metric_value,
-            threshold_value=threshold_value,
-            summary=summary,
-            status="OPEN",
-            detected_at=now,
-            last_seen_at=now,
-        )
+    signal = IntelligenceSignal(
+        organization_id=principal.organization_id,
+        institution_id=principal.institution_id,
+        academic_period_id=academic_period_id,
+        section_id=section_id,
+        student_profile_id=student_profile_id,
+        signal_type=signal_type,
+        severity=_severity(signal_type, metric_value, threshold_value),
+        metric_value=metric_value,
+        threshold_value=threshold_value,
+        summary=summary,
+        status="OPEN",
+        detected_at=now,
+        last_seen_at=now,
     )
-
+    session.add(signal)
+    enqueue_canonical_event(
+        session,
+        institution_id=principal.institution_id,
+        event_type="student.signal.opened",
+        event_version=1,
+        aggregate_type="intelligence_signal",
+        aggregate_id=signal.id,
+        actor_user_id=principal.user_id,
+        payload={
+            "student_profile_id": str(signal.student_profile_id),
+            "academic_period_id": (
+                str(signal.academic_period_id)
+                if signal.academic_period_id is not None
+                else None
+            ),
+            "section_id": (
+                str(signal.section_id) if signal.section_id is not None else None
+            ),
+            "signal_type": signal.signal_type,
+            "severity": signal.severity,
+            "metric_value": float(signal.metric_value),
+            "threshold_value": float(signal.threshold_value),
+            "summary": signal.summary,
+        },
+    )
 
 def refresh_signals(
     session: Session,
@@ -439,6 +463,32 @@ def refresh_signals(
             signal.resolved_at = now
             signal.resolution_note = "Cierre automático: la condición dejó de cumplirse."
             session.add(signal)
+            enqueue_canonical_event(
+                session,
+                institution_id=principal.institution_id,
+                event_type="student.signal.closed",
+                event_version=1,
+                aggregate_type="intelligence_signal",
+                aggregate_id=signal.id,
+                actor_user_id=principal.user_id,
+                payload={
+                    "student_profile_id": str(signal.student_profile_id),
+                    "academic_period_id": (
+                        str(signal.academic_period_id)
+                        if signal.academic_period_id is not None
+                        else None
+                    ),
+                    "section_id": (
+                        str(signal.section_id)
+                        if signal.section_id is not None
+                        else None
+                    ),
+                    "signal_type": signal.signal_type,
+                    "severity": signal.severity,
+                    "closure_type": "AUTO",
+                    "resolution_note": signal.resolution_note,
+                },
+            )
             auto_closed += 1
 
     session.commit()
@@ -450,6 +500,7 @@ def refresh_signals(
 
 def resolve_signal(
     session: Session,
+    principal: CurrentPrincipal,
     signal_id: UUID,
     payload: SignalResolve,
 ) -> IntelligenceSignal:
@@ -463,6 +514,30 @@ def resolve_signal(
     signal.resolved_at = datetime.now(UTC)
     signal.resolution_note = payload.resolution_note
     session.add(signal)
+    enqueue_canonical_event(
+        session,
+        institution_id=principal.institution_id,
+        event_type="student.signal.resolved",
+        event_version=1,
+        aggregate_type="intelligence_signal",
+        aggregate_id=signal.id,
+        actor_user_id=principal.user_id,
+        payload={
+            "student_profile_id": str(signal.student_profile_id),
+            "academic_period_id": (
+                str(signal.academic_period_id)
+                if signal.academic_period_id is not None
+                else None
+            ),
+            "section_id": (
+                str(signal.section_id) if signal.section_id is not None else None
+            ),
+            "signal_type": signal.signal_type,
+            "severity": signal.severity,
+            "closure_type": "HUMAN",
+            "resolution_note": signal.resolution_note,
+        },
+    )
     session.commit()
     session.refresh(signal)
     return signal

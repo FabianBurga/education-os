@@ -5,7 +5,8 @@ from sqlmodel import Session, select
 
 from app.api.deps import CurrentPrincipal
 from app.modules.academics.models import CourseOffering, StudentSectionAssignment
-from app.modules.enrollment.models import AcademicPeriod
+from app.modules.enrollment.models import AcademicPeriod, Enrollment
+from app.modules.events.service import enqueue_canonical_event
 from app.modules.grades.models import (
     Assessment,
     AssessmentCategory,
@@ -193,6 +194,7 @@ def upsert_entry(
         payload.student_section_assignment_id,
         "Student section assignment",
     )
+    enrollment = _get(session, Enrollment, assignment.enrollment_id, "Enrollment")
 
     if assignment.section_id != assessment.section_id:
         raise HTTPException(
@@ -213,7 +215,8 @@ def upsert_entry(
     existing = session.exec(
         select(GradeEntry).where(
             GradeEntry.assessment_id == assessment_id,
-            GradeEntry.student_section_assignment_id == payload.student_section_assignment_id,
+            GradeEntry.student_section_assignment_id
+            == payload.student_section_assignment_id,
         )
     ).first()
 
@@ -222,6 +225,25 @@ def upsert_entry(
         existing.status = payload.status
         existing.feedback = payload.feedback
         session.add(existing)
+        enqueue_canonical_event(
+            session,
+            institution_id=principal.institution_id,
+            event_type="student.grade.updated",
+            event_version=1,
+            aggregate_type="grade_entry",
+            aggregate_id=existing.id,
+            actor_user_id=principal.user_id,
+            payload={
+                "student_profile_id": str(enrollment.student_profile_id),
+                "student_section_assignment_id": str(assignment.id),
+                "assessment_id": str(assessment.id),
+                "section_id": str(assessment.section_id),
+                "status": existing.status,
+                "score": (
+                    float(existing.score) if existing.score is not None else None
+                ),
+            },
+        )
         session.commit()
         session.refresh(existing)
         return existing
@@ -234,6 +256,23 @@ def upsert_entry(
         **payload.model_dump(),
     )
     session.add(entity)
+    enqueue_canonical_event(
+        session,
+        institution_id=principal.institution_id,
+        event_type="student.grade.recorded",
+        event_version=1,
+        aggregate_type="grade_entry",
+        aggregate_id=entity.id,
+        actor_user_id=principal.user_id,
+        payload={
+            "student_profile_id": str(enrollment.student_profile_id),
+            "student_section_assignment_id": str(assignment.id),
+            "assessment_id": str(assessment.id),
+            "section_id": str(assessment.section_id),
+            "status": entity.status,
+            "score": float(entity.score) if entity.score is not None else None,
+        },
+    )
     session.commit()
     session.refresh(entity)
     return entity
