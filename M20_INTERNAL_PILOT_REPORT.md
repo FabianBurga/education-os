@@ -1,4 +1,4 @@
-﻿# Education OS â€” M20 Internal Pilot Validation Report
+# Education OS â€” M20 Internal Pilot Validation Report
 
 Date: 2026-09-13  
 Release under test: `m20-teacher-offline-pwa-v0.20.0`  

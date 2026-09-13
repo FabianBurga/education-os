@@ -1,4 +1,4 @@
-﻿# Education OS â€” Testing Playbook
+# Education OS â€” Testing Playbook
 
 This file is the operational baseline for future Education OS integrations.
 
