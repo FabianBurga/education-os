@@ -28,7 +28,7 @@ SessionDep = Annotated[Session, Depends(get_session)]
 )
 def student_timeline(
     student_profile_id: UUID,
-    _: TimelinePrincipalDep,
+    principal: TimelinePrincipalDep,
     session: SessionDep,
     limit: int = Query(default=50, ge=1, le=100),
     before_position: int | None = Query(default=None, ge=1),
@@ -38,6 +38,7 @@ def student_timeline(
     try:
         return list_student_timeline(
             session,
+            principal,
             student_profile_id=student_profile_id,
             limit=limit,
             before_position=before_position,

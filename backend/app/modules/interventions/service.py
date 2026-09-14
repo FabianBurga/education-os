@@ -25,6 +25,7 @@ from app.modules.interventions.schemas import (
     InterventionResolve,
     InterventionTransition,
 )
+from app.modules.m21_access import require_student_scope
 
 _ALLOWED_TRANSITIONS: dict[str, frozenset[str]] = {
     "OPEN": frozenset({"IN_PROGRESS"}),
@@ -337,7 +338,14 @@ def get_intervention(
     intervention_id: UUID,
 ) -> Intervention:
     _require_permission(session, principal, "intervention.read")
-    return _get_intervention(session, principal, intervention_id)
+    entity = _get_intervention(session, principal, intervention_id)
+    require_student_scope(
+        session,
+        principal,
+        entity.student_profile_id,
+        permission_key="intervention.read",
+    )
+    return entity
 
 
 def list_student_interventions(
@@ -350,6 +358,12 @@ def list_student_interventions(
     sensitivity_filter: str | None = None,
 ) -> list[Intervention]:
     _require_permission(session, principal, "intervention.read")
+    require_student_scope(
+        session,
+        principal,
+        student_profile_id,
+        permission_key="intervention.read",
+    )
     statement = (
         select(Intervention)
         .where(Intervention.student_profile_id == student_profile_id)
@@ -921,7 +935,15 @@ def get_intervention_action(
     action_id: UUID,
 ) -> InterventionAction:
     _require_permission(session, principal, "intervention.read")
-    return _get_action(session, principal, action_id)
+    action = _get_action(session, principal, action_id)
+    parent = _parent_for_action(session, principal, action)
+    require_student_scope(
+        session,
+        principal,
+        parent.student_profile_id,
+        permission_key="intervention.read",
+    )
+    return action
 
 
 def list_intervention_actions(
@@ -933,7 +955,13 @@ def list_intervention_actions(
     status_filter: str | None = None,
 ) -> list[InterventionAction]:
     _require_permission(session, principal, "intervention.read")
-    _get_intervention(session, principal, intervention_id)
+    parent = _get_intervention(session, principal, intervention_id)
+    require_student_scope(
+        session,
+        principal,
+        parent.student_profile_id,
+        permission_key="intervention.read",
+    )
 
     statement = (
         select(InterventionAction)
@@ -979,7 +1007,19 @@ def get_intervention_followup(
     followup_id: UUID,
 ) -> InterventionFollowUp:
     _require_permission(session, principal, "intervention.read")
-    return _get_followup(session, principal, followup_id)
+    followup = _get_followup(session, principal, followup_id)
+    parent = _get_intervention(
+        session,
+        principal,
+        followup.intervention_id,
+    )
+    require_student_scope(
+        session,
+        principal,
+        parent.student_profile_id,
+        permission_key="intervention.read",
+    )
+    return followup
 
 
 def list_intervention_followups(
@@ -991,7 +1031,13 @@ def list_intervention_followups(
     sensitivity_filter: str | None = None,
 ) -> list[InterventionFollowUp]:
     _require_permission(session, principal, "intervention.read")
-    _get_intervention(session, principal, intervention_id)
+    parent = _get_intervention(session, principal, intervention_id)
+    require_student_scope(
+        session,
+        principal,
+        parent.student_profile_id,
+        permission_key="intervention.read",
+    )
 
     statement = (
         select(InterventionFollowUp)

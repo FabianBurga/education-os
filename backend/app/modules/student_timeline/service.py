@@ -5,6 +5,8 @@ from uuid import UUID
 from sqlalchemy import text
 from sqlmodel import Session
 
+from app.api.deps import CurrentPrincipal
+from app.modules.m21_access import require_student_scope
 from app.modules.student_timeline.schemas import (
     StudentTimelineEntryRead,
     StudentTimelinePage,
@@ -53,6 +55,7 @@ def _normalized_sensitivity(sensitivity: str | None) -> str | None:
 
 def list_student_timeline(
     session: Session,
+    principal: CurrentPrincipal,
     *,
     student_profile_id: UUID,
     limit: int = 50,
@@ -71,6 +74,13 @@ def list_student_timeline(
     category = _normalized_category(category)
     sensitivity = _normalized_sensitivity(sensitivity)
     limit = _bounded_limit(limit)
+
+    require_student_scope(
+        session,
+        principal,
+        student_profile_id,
+        permission_key="student_timeline.read",
+    )
 
     rows = session.exec(
         text(
