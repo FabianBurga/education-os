@@ -66,6 +66,30 @@ EVENT_SPECS: dict[str, TimelineEventSpec] = {
         category="SIGNAL",
         title="Student signal resolved",
     ),
+    "student.intervention.opened": TimelineEventSpec(
+        category="INTERVENTION",
+        title="Intervention opened",
+    ),
+    "student.intervention.assigned": TimelineEventSpec(
+        category="INTERVENTION",
+        title="Intervention assigned",
+    ),
+    "student.intervention.status_changed": TimelineEventSpec(
+        category="INTERVENTION",
+        title="Intervention status changed",
+    ),
+    "student.intervention.cancelled": TimelineEventSpec(
+        category="INTERVENTION",
+        title="Intervention cancelled",
+    ),
+    "student.intervention.resolved": TimelineEventSpec(
+        category="OUTCOME",
+        title="Intervention resolved",
+    ),
+    "student.intervention.closed": TimelineEventSpec(
+        category="OUTCOME",
+        title="Intervention closed",
+    ),
 }
 
 SAFE_CONTEXT_KEYS: dict[str, tuple[str, ...]] = {
@@ -131,6 +155,91 @@ SAFE_CONTEXT_KEYS: dict[str, tuple[str, ...]] = {
         "severity",
         "closure_type",
     ),
+    "student.intervention.opened": (
+        "intervention_id",
+        "intervention_type",
+        "status",
+        "severity",
+        "sensitivity",
+        "origin_type",
+        "assigned_role_code",
+        "assigned_user_id",
+        "academic_period_id",
+        "section_id",
+        "target_at",
+    ),
+    "student.intervention.assigned": (
+        "intervention_id",
+        "intervention_type",
+        "status",
+        "severity",
+        "sensitivity",
+        "origin_type",
+        "assigned_role_code",
+        "assigned_user_id",
+        "academic_period_id",
+        "section_id",
+        "target_at",
+    ),
+    "student.intervention.status_changed": (
+        "intervention_id",
+        "intervention_type",
+        "previous_status",
+        "status",
+        "severity",
+        "sensitivity",
+        "origin_type",
+        "assigned_role_code",
+        "assigned_user_id",
+        "academic_period_id",
+        "section_id",
+        "target_at",
+    ),
+    "student.intervention.cancelled": (
+        "intervention_id",
+        "intervention_type",
+        "previous_status",
+        "status",
+        "severity",
+        "sensitivity",
+        "origin_type",
+        "assigned_role_code",
+        "assigned_user_id",
+        "academic_period_id",
+        "section_id",
+        "target_at",
+        "cancellation_reason_recorded",
+    ),
+    "student.intervention.resolved": (
+        "intervention_id",
+        "intervention_type",
+        "previous_status",
+        "status",
+        "severity",
+        "sensitivity",
+        "origin_type",
+        "assigned_role_code",
+        "assigned_user_id",
+        "academic_period_id",
+        "section_id",
+        "target_at",
+        "outcome_type",
+    ),
+    "student.intervention.closed": (
+        "intervention_id",
+        "intervention_type",
+        "previous_status",
+        "status",
+        "severity",
+        "sensitivity",
+        "origin_type",
+        "assigned_role_code",
+        "assigned_user_id",
+        "academic_period_id",
+        "section_id",
+        "target_at",
+        "outcome_type",
+    ),
 }
 
 
@@ -153,11 +262,31 @@ def _required_student_profile_id(payload: dict[str, Any], event_type: str) -> UU
 
 
 def _importance(event_type: str, payload: dict[str, Any]) -> str:
-    if event_type.startswith("student.signal."):
+    if event_type.startswith(("student.signal.", "student.intervention.")):
         severity = str(payload.get("severity") or "").upper()
+        if severity == "CRITICAL":
+            return "CRITICAL"
         if severity == "HIGH":
             return "HIGH"
+        if event_type.startswith("student.intervention.") and severity == "LOW":
+            return "LOW"
     return "NORMAL"
+
+
+def _sensitivity(
+    event_type: str,
+    payload: dict[str, Any],
+    spec: TimelineEventSpec,
+) -> str:
+    if not event_type.startswith("student.intervention."):
+        return spec.sensitivity
+
+    value = str(payload.get("sensitivity") or "").upper()
+    if value not in {"GENERAL", "RESTRICTED", "CONFIDENTIAL"}:
+        raise TimelineProjectionError(
+            f"{event_type} has invalid or missing sensitivity"
+        )
+    return value
 
 
 def _safe_summary(event_type: str, payload: dict[str, Any]) -> str | None:
@@ -227,7 +356,7 @@ def map_ledger_event(
         "event_version": event_version,
         "category": spec.category,
         "importance": _importance(event_type, payload),
-        "sensitivity": spec.sensitivity,
+        "sensitivity": _sensitivity(event_type, payload, spec),
         "title": spec.title,
         "summary": _safe_summary(event_type, payload),
         "source_aggregate_type": aggregate_type,
