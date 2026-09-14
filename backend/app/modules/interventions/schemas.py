@@ -103,3 +103,51 @@ class InterventionRead(BaseModel):
 class InterventionPage(BaseModel):
     items: list[InterventionRead]
     count: int
+
+
+
+class InterventionActionCreate(BaseModel):
+    action_type: str = Field(default="REVIEW", min_length=1, max_length=40)
+    title: str = Field(min_length=1, max_length=240)
+    description: str | None = Field(default=None, max_length=2000)
+    assigned_role_code: str | None = Field(default=None, max_length=60)
+    assigned_user_id: UUID | None = None
+    due_at: datetime | None = None
+
+
+class InterventionActionAssign(BaseModel):
+    assigned_role_code: str | None = Field(default=None, max_length=60)
+    assigned_user_id: UUID | None = None
+    due_at: datetime | None = None
+
+    @model_validator(mode="after")
+    def assignment_target_present(self):
+        if self.assigned_role_code is None and self.assigned_user_id is None:
+            raise ValueError(
+                "assigned_role_code or assigned_user_id is required"
+            )
+        return self
+
+
+class InterventionActionTransition(BaseModel):
+    status: str = Field(pattern="^(ACKNOWLEDGED|IN_PROGRESS|CANCELLED)$")
+
+
+class InterventionActionComplete(BaseModel):
+    completion_note: str | None = Field(default=None, max_length=2000)
+
+
+class InterventionFollowUpCreate(BaseModel):
+    followup_type: str = Field(
+        pattern=(
+            "^(MEETING|PHONE_CALL|FAMILY_CONTACT|STUDENT_CONVERSATION|"
+            "TEACHER_REVIEW|ACADEMIC_REVIEW|ATTENDANCE_REVIEW|"
+            "PSYCHOLOGY_SESSION|REFERRAL|OTHER)$"
+        )
+    )
+    sensitivity: str = Field(
+        default="GENERAL",
+        pattern="^(GENERAL|RESTRICTED|CONFIDENTIAL)$",
+    )
+    note: str = Field(min_length=1, max_length=4000)
+    observed_at: datetime

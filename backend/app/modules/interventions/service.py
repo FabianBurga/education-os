@@ -7,12 +7,21 @@ from sqlmodel import Session, select
 
 from app.api.deps import CurrentPrincipal
 from app.modules.events.service import enqueue_canonical_event
-from app.modules.interventions.models import Intervention
+from app.modules.interventions.models import (
+    Intervention,
+    InterventionAction,
+    InterventionFollowUp,
+)
 from app.modules.interventions.schemas import (
+    InterventionActionAssign,
+    InterventionActionComplete,
+    InterventionActionCreate,
+    InterventionActionTransition,
     InterventionAssign,
     InterventionCancel,
     InterventionClose,
     InterventionCreate,
+    InterventionFollowUpCreate,
     InterventionResolve,
     InterventionTransition,
 )
@@ -27,6 +36,17 @@ _ALLOWED_TRANSITIONS: dict[str, frozenset[str]] = {
 }
 
 _TERMINAL_STATES = {"CLOSED", "CANCELLED"}
+
+_ACTION_TRANSITIONS: dict[str, frozenset[str]] = {
+    "OPEN": frozenset({"ACKNOWLEDGED", "IN_PROGRESS", "CANCELLED"}),
+    "ACKNOWLEDGED": frozenset({"IN_PROGRESS", "CANCELLED"}),
+    "IN_PROGRESS": frozenset({"CANCELLED"}),
+    "COMPLETED": frozenset(),
+    "CANCELLED": frozenset(),
+    "OVERDUE": frozenset({"ACKNOWLEDGED", "IN_PROGRESS", "CANCELLED"}),
+}
+
+_ACTION_TERMINAL_STATES = {"COMPLETED", "CANCELLED"}
 
 
 def utcnow() -> datetime:
@@ -492,3 +512,333 @@ def cancel_intervention(
     session.commit()
     session.refresh(entity)
     return entity
+
+
+def _ensure_intervention_operational(entity: Intervention) -> None:
+    if entity.status in _TERMINAL_STATES:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                f"Intervention in terminal state {entity.status} "
+                "cannot receive actions or follow-ups"
+            ),
+        )
+
+
+def _get_action(
+    session: Session,
+    principal: CurrentPrincipal,
+    action_id: UUID,
+) -> InterventionAction:
+    action = session.get(InterventionAction, action_id)
+    if action is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Intervention action not found in authorized scope",
+        )
+    if (
+        action.organization_id != principal.organization_id
+        or action.institution_id != principal.institution_id
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Intervention action not found in authorized scope",
+        )
+    return action
+
+
+def _parent_for_action(
+    session: Session,
+    principal: CurrentPrincipal,
+    action: InterventionAction,
+) -> Intervention:
+    return _get_intervention(session, principal, action.intervention_id)
+
+
+def _safe_action_event_payload(
+    parent: Intervention,
+    action: InterventionAction,
+) -> dict[str, object]:
+    return {
+        "student_profile_id": str(parent.student_profile_id),
+        "intervention_id": str(parent.id),
+        "action_id": str(action.id),
+        "action_type": action.action_type,
+        "status": action.status,
+        "sensitivity": parent.sensitivity,
+        "severity": parent.severity,
+        "assigned_role_code": action.assigned_role_code,
+        "assigned_user_id": (
+            str(action.assigned_user_id) if action.assigned_user_id else None
+        ),
+        "due_at": action.due_at.isoformat() if action.due_at else None,
+    }
+
+
+def _emit_action_event(
+    session: Session,
+    principal: CurrentPrincipal,
+    parent: Intervention,
+    action: InterventionAction,
+    event_type: str,
+    *,
+    extra: dict[str, object] | None = None,
+) -> None:
+    payload = _safe_action_event_payload(parent, action)
+    if extra:
+        payload.update(extra)
+
+    enqueue_canonical_event(
+        session,
+        institution_id=principal.institution_id,
+        event_type=event_type,
+        event_version=1,
+        aggregate_type="intervention_action",
+        aggregate_id=action.id,
+        actor_user_id=principal.user_id,
+        payload=payload,
+        metadata={"human_authorized": True},
+    )
+
+
+def _emit_followup_event(
+    session: Session,
+    principal: CurrentPrincipal,
+    parent: Intervention,
+    followup: InterventionFollowUp,
+) -> None:
+    enqueue_canonical_event(
+        session,
+        institution_id=principal.institution_id,
+        event_type="student.intervention.followup_recorded",
+        event_version=1,
+        aggregate_type="intervention_followup",
+        aggregate_id=followup.id,
+        actor_user_id=principal.user_id,
+        payload={
+            "student_profile_id": str(parent.student_profile_id),
+            "intervention_id": str(parent.id),
+            "followup_id": str(followup.id),
+            "followup_type": followup.followup_type,
+            "sensitivity": followup.sensitivity,
+            "severity": parent.severity,
+            "observed_at": followup.observed_at.isoformat(),
+        },
+        metadata={"human_authorized": True},
+    )
+
+
+def _validate_action_transition(current: str, target: str) -> None:
+    if current in _ACTION_TERMINAL_STATES:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Action in terminal state {current} cannot transition",
+        )
+    allowed = _ACTION_TRANSITIONS.get(current, frozenset())
+    if target not in allowed:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Invalid action transition: {current} -> {target}",
+        )
+
+
+def create_intervention_action(
+    session: Session,
+    principal: CurrentPrincipal,
+    intervention_id: UUID,
+    payload: InterventionActionCreate,
+) -> InterventionAction:
+    _require_permission(session, principal, "intervention.action.manage")
+    parent = _get_intervention(session, principal, intervention_id)
+    _ensure_intervention_operational(parent)
+    _assert_assignee(session, principal, payload.assigned_user_id)
+
+    now = utcnow()
+    action = InterventionAction(
+        organization_id=principal.organization_id,
+        institution_id=principal.institution_id,
+        intervention_id=parent.id,
+        action_type=payload.action_type,
+        title=payload.title,
+        description=payload.description,
+        status="OPEN",
+        assigned_role_code=payload.assigned_role_code,
+        assigned_user_id=payload.assigned_user_id,
+        due_at=payload.due_at,
+        created_by_user_id=principal.user_id,
+        created_at=now,
+        updated_at=now,
+    )
+    session.add(action)
+    _emit_action_event(
+        session,
+        principal,
+        parent,
+        action,
+        "student.intervention.action_created",
+    )
+    session.commit()
+    session.refresh(action)
+    return action
+
+
+def assign_intervention_action(
+    session: Session,
+    principal: CurrentPrincipal,
+    action_id: UUID,
+    payload: InterventionActionAssign,
+) -> InterventionAction:
+    _require_permission(session, principal, "intervention.action.manage")
+    action = _get_action(session, principal, action_id)
+    parent = _parent_for_action(session, principal, action)
+    _ensure_intervention_operational(parent)
+    if action.status in _ACTION_TERMINAL_STATES:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Cannot assign action in terminal state {action.status}",
+        )
+    _assert_assignee(session, principal, payload.assigned_user_id)
+
+    action.assigned_role_code = payload.assigned_role_code
+    action.assigned_user_id = payload.assigned_user_id
+    action.due_at = payload.due_at
+    action.updated_at = utcnow()
+    session.add(action)
+    _emit_action_event(
+        session,
+        principal,
+        parent,
+        action,
+        "student.intervention.action_assigned",
+    )
+    session.commit()
+    session.refresh(action)
+    return action
+
+
+def transition_intervention_action(
+    session: Session,
+    principal: CurrentPrincipal,
+    action_id: UUID,
+    payload: InterventionActionTransition,
+) -> InterventionAction:
+    _require_permission(session, principal, "intervention.action.manage")
+    action = _get_action(session, principal, action_id)
+    parent = _parent_for_action(session, principal, action)
+    _ensure_intervention_operational(parent)
+
+    previous_status = action.status
+    _validate_action_transition(previous_status, payload.status)
+    now = utcnow()
+    action.status = payload.status
+    if payload.status == "ACKNOWLEDGED":
+        action.acknowledged_at = now
+    elif payload.status == "IN_PROGRESS":
+        if action.acknowledged_at is None:
+            action.acknowledged_at = now
+        action.started_at = now
+
+    action.updated_at = now
+    session.add(action)
+    event_type = {
+        "ACKNOWLEDGED": "student.intervention.action_acknowledged",
+        "IN_PROGRESS": "student.intervention.action_started",
+        "CANCELLED": "student.intervention.action_cancelled",
+    }[payload.status]
+    _emit_action_event(
+        session,
+        principal,
+        parent,
+        action,
+        event_type,
+        extra={"previous_status": previous_status},
+    )
+    session.commit()
+    session.refresh(action)
+    return action
+
+
+def complete_intervention_action(
+    session: Session,
+    principal: CurrentPrincipal,
+    action_id: UUID,
+    payload: InterventionActionComplete,
+) -> InterventionAction:
+    _require_permission(session, principal, "intervention.action.manage")
+    action = _get_action(session, principal, action_id)
+    parent = _parent_for_action(session, principal, action)
+    _ensure_intervention_operational(parent)
+
+    if action.status not in {"ACKNOWLEDGED", "IN_PROGRESS", "OVERDUE"}:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Cannot complete action from state {action.status}",
+        )
+
+    now = utcnow()
+    previous_status = action.status
+    action.status = "COMPLETED"
+    action.completed_at = now
+    action.completed_by_user_id = principal.user_id
+    action.completion_note = payload.completion_note
+    action.updated_at = now
+    session.add(action)
+    _emit_action_event(
+        session,
+        principal,
+        parent,
+        action,
+        "student.intervention.action_completed",
+        extra={
+            "previous_status": previous_status,
+            "completion_note_recorded": bool(payload.completion_note),
+        },
+    )
+    session.commit()
+    session.refresh(action)
+    return action
+
+
+def create_intervention_followup(
+    session: Session,
+    principal: CurrentPrincipal,
+    intervention_id: UUID,
+    payload: InterventionFollowUpCreate,
+) -> InterventionFollowUp:
+    _require_permission(session, principal, "intervention.followup.create")
+    parent = _get_intervention(session, principal, intervention_id)
+    _ensure_intervention_operational(parent)
+
+    if parent.sensitivity == "CONFIDENTIAL" and payload.sensitivity != "CONFIDENTIAL":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "Follow-up sensitivity cannot be lower than "
+                "a CONFIDENTIAL intervention"
+            ),
+        )
+    if parent.sensitivity == "RESTRICTED" and payload.sensitivity == "GENERAL":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "Follow-up sensitivity cannot be lower than "
+                "a RESTRICTED intervention"
+            ),
+        )
+
+    followup = InterventionFollowUp(
+        organization_id=principal.organization_id,
+        institution_id=principal.institution_id,
+        intervention_id=parent.id,
+        followup_type=payload.followup_type,
+        sensitivity=payload.sensitivity,
+        note=payload.note,
+        observed_at=payload.observed_at,
+        created_by_user_id=principal.user_id,
+        created_at=utcnow(),
+    )
+    session.add(followup)
+    _emit_followup_event(session, principal, parent, followup)
+    session.commit()
+    session.refresh(followup)
+    return followup
