@@ -3,7 +3,7 @@ from uuid import UUID
 
 from fastapi import HTTPException, status
 from sqlalchemy import text
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from app.api.deps import CurrentPrincipal
 from app.modules.events.service import enqueue_canonical_event
@@ -253,6 +253,38 @@ def _validate_transition(current: str, target: str) -> None:
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Invalid intervention transition: {current} -> {target}",
         )
+
+
+def get_intervention(
+    session: Session,
+    principal: CurrentPrincipal,
+    intervention_id: UUID,
+) -> Intervention:
+    _require_permission(session, principal, "intervention.read")
+    return _get_intervention(session, principal, intervention_id)
+
+
+def list_student_interventions(
+    session: Session,
+    principal: CurrentPrincipal,
+    *,
+    student_profile_id: UUID,
+    limit: int = 50,
+    status_filter: str | None = None,
+    sensitivity_filter: str | None = None,
+) -> list[Intervention]:
+    _require_permission(session, principal, "intervention.read")
+    statement = (
+        select(Intervention)
+        .where(Intervention.student_profile_id == student_profile_id)
+        .order_by(Intervention.opened_at.desc(), Intervention.id.desc())
+        .limit(max(1, min(limit, 100)))
+    )
+    if status_filter is not None:
+        statement = statement.where(Intervention.status == status_filter)
+    if sensitivity_filter is not None:
+        statement = statement.where(Intervention.sensitivity == sensitivity_filter)
+    return list(session.exec(statement).all())
 
 
 def create_intervention(

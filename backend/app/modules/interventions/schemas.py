@@ -66,3 +66,40 @@ class InterventionClose(BaseModel):
 
 class InterventionCancel(BaseModel):
     cancellation_reason: str = Field(min_length=1, max_length=1000)
+
+
+class InterventionRead(BaseModel):
+    id: UUID
+    organization_id: UUID
+    institution_id: UUID
+    student_profile_id: UUID
+    academic_period_id: UUID | None = None
+    section_id: UUID | None = None
+    intervention_type: str
+    severity: str
+    status: str
+    sensitivity: str
+    title: str
+    reason: str
+    objective: str | None = None
+    origin_type: str
+    opened_by_user_id: UUID
+    assigned_role_code: str | None = None
+    assigned_user_id: UUID | None = None
+    opened_at: datetime
+    target_at: datetime | None = None
+    resolved_at: datetime | None = None
+    closed_at: datetime | None = None
+    outcome_type: str | None = None
+    outcome_summary: str | None = None
+    outcome_recorded_at: datetime | None = None
+    outcome_recorded_by_user_id: UUID | None = None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class InterventionPage(BaseModel):
+    items: list[InterventionRead]
+    count: int

@@ -356,6 +356,66 @@ def require_student_timeline_confidential(
         "Confidential student timeline permission required",
     )
 
+
+def require_intervention_read(
+    principal: CurrentPrincipal = Depends(get_current_principal),
+    session: Session = Depends(get_session),
+) -> CurrentPrincipal:
+    return _require_staff_permission(
+        session, principal, "intervention.read",
+        "Intervention read permission required",
+    )
+
+
+def require_intervention_create(
+    principal: CurrentPrincipal = Depends(get_current_principal),
+    session: Session = Depends(get_session),
+) -> CurrentPrincipal:
+    return _require_staff_permission(
+        session, principal, "intervention.create",
+        "Intervention create permission required",
+    )
+
+
+def require_intervention_update(
+    principal: CurrentPrincipal = Depends(get_current_principal),
+    session: Session = Depends(get_session),
+) -> CurrentPrincipal:
+    return _require_staff_permission(
+        session, principal, "intervention.update",
+        "Intervention update permission required",
+    )
+
+
+def require_intervention_assign(
+    principal: CurrentPrincipal = Depends(get_current_principal),
+    session: Session = Depends(get_session),
+) -> CurrentPrincipal:
+    return _require_staff_permission(
+        session, principal, "intervention.assign",
+        "Intervention assignment permission required",
+    )
+
+
+def require_intervention_resolve(
+    principal: CurrentPrincipal = Depends(get_current_principal),
+    session: Session = Depends(get_session),
+) -> CurrentPrincipal:
+    return _require_staff_permission(
+        session, principal, "intervention.resolve",
+        "Intervention resolve permission required",
+    )
+
+
+def require_intervention_close(
+    principal: CurrentPrincipal = Depends(get_current_principal),
+    session: Session = Depends(get_session),
+) -> CurrentPrincipal:
+    return _require_staff_permission(
+        session, principal, "intervention.close",
+        "Intervention close permission required",
+    )
+
 def _active_student_profile_id(
     session: Session,
     principal: CurrentPrincipal,
