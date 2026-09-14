@@ -416,6 +416,30 @@ def require_intervention_close(
         "Intervention close permission required",
     )
 
+
+def require_intervention_action_manage(
+    principal: CurrentPrincipal = Depends(get_current_principal),
+    session: Session = Depends(get_session),
+) -> CurrentPrincipal:
+    return _require_staff_permission(
+        session,
+        principal,
+        "intervention.action.manage",
+        "Intervention action-management permission required",
+    )
+
+
+def require_intervention_followup_create(
+    principal: CurrentPrincipal = Depends(get_current_principal),
+    session: Session = Depends(get_session),
+) -> CurrentPrincipal:
+    return _require_staff_permission(
+        session,
+        principal,
+        "intervention.followup.create",
+        "Intervention follow-up creation permission required",
+    )
+
 def _active_student_profile_id(
     session: Session,
     principal: CurrentPrincipal,

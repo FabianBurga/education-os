@@ -842,3 +842,96 @@ def create_intervention_followup(
     session.commit()
     session.refresh(followup)
     return followup
+
+def get_intervention_action(
+    session: Session,
+    principal: CurrentPrincipal,
+    action_id: UUID,
+) -> InterventionAction:
+    _require_permission(session, principal, "intervention.read")
+    return _get_action(session, principal, action_id)
+
+
+def list_intervention_actions(
+    session: Session,
+    principal: CurrentPrincipal,
+    *,
+    intervention_id: UUID,
+    limit: int = 50,
+    status_filter: str | None = None,
+) -> list[InterventionAction]:
+    _require_permission(session, principal, "intervention.read")
+    _get_intervention(session, principal, intervention_id)
+
+    statement = (
+        select(InterventionAction)
+        .where(InterventionAction.intervention_id == intervention_id)
+        .order_by(
+            InterventionAction.created_at.desc(),
+            InterventionAction.id.desc(),
+        )
+        .limit(max(1, min(limit, 100)))
+    )
+    if status_filter is not None:
+        statement = statement.where(
+            InterventionAction.status == status_filter
+        )
+    return list(session.exec(statement).all())
+
+
+def _get_followup(
+    session: Session,
+    principal: CurrentPrincipal,
+    followup_id: UUID,
+) -> InterventionFollowUp:
+    followup = session.get(InterventionFollowUp, followup_id)
+    if followup is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Intervention follow-up not found in authorized scope",
+        )
+    if (
+        followup.organization_id != principal.organization_id
+        or followup.institution_id != principal.institution_id
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Intervention follow-up not found in authorized scope",
+        )
+    return followup
+
+
+def get_intervention_followup(
+    session: Session,
+    principal: CurrentPrincipal,
+    followup_id: UUID,
+) -> InterventionFollowUp:
+    _require_permission(session, principal, "intervention.read")
+    return _get_followup(session, principal, followup_id)
+
+
+def list_intervention_followups(
+    session: Session,
+    principal: CurrentPrincipal,
+    *,
+    intervention_id: UUID,
+    limit: int = 50,
+    sensitivity_filter: str | None = None,
+) -> list[InterventionFollowUp]:
+    _require_permission(session, principal, "intervention.read")
+    _get_intervention(session, principal, intervention_id)
+
+    statement = (
+        select(InterventionFollowUp)
+        .where(InterventionFollowUp.intervention_id == intervention_id)
+        .order_by(
+            InterventionFollowUp.observed_at.desc(),
+            InterventionFollowUp.id.desc(),
+        )
+        .limit(max(1, min(limit, 100)))
+    )
+    if sensitivity_filter is not None:
+        statement = statement.where(
+            InterventionFollowUp.sensitivity == sensitivity_filter
+        )
+    return list(session.exec(statement).all())

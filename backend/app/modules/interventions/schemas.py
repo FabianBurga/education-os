@@ -151,3 +151,51 @@ class InterventionFollowUpCreate(BaseModel):
     )
     note: str = Field(min_length=1, max_length=4000)
     observed_at: datetime
+
+class InterventionActionRead(BaseModel):
+    id: UUID
+    organization_id: UUID
+    institution_id: UUID
+    intervention_id: UUID
+    action_type: str
+    title: str
+    description: str | None = None
+    status: str
+    assigned_role_code: str | None = None
+    assigned_user_id: UUID | None = None
+    due_at: datetime | None = None
+    acknowledged_at: datetime | None = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    completed_by_user_id: UUID | None = None
+    completion_note: str | None = None
+    created_by_user_id: UUID
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class InterventionActionPage(BaseModel):
+    items: list[InterventionActionRead]
+    count: int
+
+
+class InterventionFollowUpRead(BaseModel):
+    id: UUID
+    organization_id: UUID
+    institution_id: UUID
+    intervention_id: UUID
+    followup_type: str
+    sensitivity: str
+    note: str
+    observed_at: datetime
+    created_by_user_id: UUID
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class InterventionFollowUpPage(BaseModel):
+    items: list[InterventionFollowUpRead]
+    count: int
