@@ -279,3 +279,12 @@ class InterventionSuggestionRefreshRead(BaseModel):
     refreshed: int
     expired: int
     pending: int
+
+
+
+class InterventionSuggestionAccept(BaseModel):
+    review_note: str = Field(min_length=1, max_length=1000)
+
+
+class InterventionSuggestionDismiss(BaseModel):
+    review_note: str = Field(min_length=1, max_length=1000)

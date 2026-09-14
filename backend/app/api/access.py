@@ -464,6 +464,18 @@ def require_intervention_suggestion_generate(
         "Intervention suggestion generation permission required",
     )
 
+
+def require_intervention_suggestion_review(
+    principal: CurrentPrincipal = Depends(get_current_principal),
+    session: Session = Depends(get_session),
+) -> CurrentPrincipal:
+    return _require_staff_permission(
+        session,
+        principal,
+        "intervention.suggestion.review",
+        "Intervention suggestion review permission required",
+    )
+
 def _active_student_profile_id(
     session: Session,
     principal: CurrentPrincipal,

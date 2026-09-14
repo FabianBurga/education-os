@@ -14,6 +14,7 @@ from app.api.access import (
     require_intervention_resolve,
     require_intervention_suggestion_generate,
     require_intervention_suggestion_read,
+    require_intervention_suggestion_review,
     require_intervention_update,
 )
 from app.api.deps import CurrentPrincipal
@@ -39,6 +40,8 @@ from app.modules.interventions.schemas import (
     InterventionPage,
     InterventionRead,
     InterventionResolve,
+    InterventionSuggestionAccept,
+    InterventionSuggestionDismiss,
     InterventionSuggestionPage,
     InterventionSuggestionRead,
     InterventionSuggestionRefreshRead,
@@ -67,6 +70,8 @@ from app.modules.interventions.suggestion_engine import (
     refresh_intervention_suggestions,
 )
 from app.modules.interventions.suggestion_service import (
+    accept_intervention_suggestion,
+    dismiss_intervention_suggestion,
     get_intervention_suggestion,
     list_intervention_suggestions,
 )
@@ -96,6 +101,11 @@ SuggestionReadPrincipalDep = Annotated[
 SuggestionGeneratePrincipalDep = Annotated[
     CurrentPrincipal,
     Depends(require_intervention_suggestion_generate),
+]
+
+SuggestionReviewPrincipalDep = Annotated[
+    CurrentPrincipal,
+    Depends(require_intervention_suggestion_review),
 ]
 
 
@@ -206,6 +216,42 @@ def get_intervention_suggestion_api(
         session,
         principal,
         suggestion_id,
+    )
+
+
+@router.post(
+    "/suggestions/{suggestion_id}/accept",
+    response_model=InterventionSuggestionRead,
+)
+def accept_intervention_suggestion_api(
+    suggestion_id: UUID,
+    payload: InterventionSuggestionAccept,
+    principal: SuggestionReviewPrincipalDep,
+    session: SessionDep,
+):
+    return accept_intervention_suggestion(
+        session,
+        principal,
+        suggestion_id,
+        payload,
+    )
+
+
+@router.post(
+    "/suggestions/{suggestion_id}/dismiss",
+    response_model=InterventionSuggestionRead,
+)
+def dismiss_intervention_suggestion_api(
+    suggestion_id: UUID,
+    payload: InterventionSuggestionDismiss,
+    principal: SuggestionReviewPrincipalDep,
+    session: SessionDep,
+):
+    return dismiss_intervention_suggestion(
+        session,
+        principal,
+        suggestion_id,
+        payload,
     )
 
 
