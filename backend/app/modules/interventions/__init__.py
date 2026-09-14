@@ -3,6 +3,8 @@ from app.modules.interventions.models import (
     InterventionAction,
     InterventionFollowUp,
     InterventionLink,
+    InterventionSuggestion,
+    InterventionSuggestionEvidence,
 )
 from app.modules.interventions.service import (
     assign_intervention,
@@ -23,6 +25,8 @@ __all__ = [
     "InterventionAction",
     "InterventionFollowUp",
     "InterventionLink",
+    "InterventionSuggestion",
+    "InterventionSuggestionEvidence",
     "assign_intervention",
     "assign_intervention_action",
     "cancel_intervention",

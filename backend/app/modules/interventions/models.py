@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import CheckConstraint, UniqueConstraint
+from sqlalchemy import CheckConstraint, Index, UniqueConstraint, text
 from sqlmodel import Field, SQLModel
 
 
@@ -159,4 +159,91 @@ class InterventionFollowUp(SQLModel, table=True):
     observed_at: datetime
 
     created_by_user_id: UUID
+    created_at: datetime = Field(default_factory=utcnow)
+
+
+class InterventionSuggestion(SQLModel, table=True):
+    __tablename__ = "intervention_suggestions"
+    __table_args__ = (
+        CheckConstraint(
+            "rule_version >= 1",
+            name="ck_intervention_suggestions_rule_version",
+        ),
+        CheckConstraint(
+            "generation_mode = 'RULE_ENGINE'",
+            name="ck_intervention_suggestions_generation_mode",
+        ),
+        CheckConstraint(
+            "severity IN ('LOW','MEDIUM','HIGH','CRITICAL')",
+            name="ck_intervention_suggestions_severity",
+        ),
+        CheckConstraint(
+            "sensitivity IN ('GENERAL','RESTRICTED','CONFIDENTIAL')",
+            name="ck_intervention_suggestions_sensitivity",
+        ),
+        CheckConstraint(
+            "status IN ('PENDING','ACCEPTED','DISMISSED','EXPIRED')",
+            name="ck_intervention_suggestions_status",
+        ),
+        Index(
+            "uq_intervention_suggestions_pending_dedupe",
+            "institution_id",
+            "dedupe_key",
+            unique=True,
+            postgresql_where=text("status = 'PENDING'"),
+        ),
+    )
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    organization_id: UUID = Field(index=True)
+    institution_id: UUID = Field(index=True)
+    student_profile_id: UUID = Field(index=True)
+    academic_period_id: UUID | None = Field(default=None, index=True)
+    section_id: UUID | None = Field(default=None, index=True)
+
+    rule_key: str = Field(max_length=80)
+    rule_version: int = Field(default=1)
+    generation_mode: str = Field(default="RULE_ENGINE", max_length=30)
+    dedupe_key: str = Field(max_length=180)
+
+    recommended_intervention_type: str = Field(max_length=60)
+    severity: str = Field(max_length=20)
+    sensitivity: str = Field(default="GENERAL", max_length=20)
+    title: str = Field(max_length=240)
+    rationale_summary: str = Field(max_length=1200)
+    status: str = Field(default="PENDING", max_length=20)
+
+    generated_at: datetime = Field(default_factory=utcnow)
+    last_seen_at: datetime = Field(default_factory=utcnow)
+    reviewed_at: datetime | None = None
+    reviewed_by_user_id: UUID | None = None
+    review_note: str | None = Field(default=None, max_length=1000)
+    accepted_intervention_id: UUID | None = None
+
+    created_at: datetime = Field(default_factory=utcnow)
+    updated_at: datetime = Field(default_factory=utcnow)
+
+
+class InterventionSuggestionEvidence(SQLModel, table=True):
+    __tablename__ = "intervention_suggestion_evidence"
+    __table_args__ = (
+        CheckConstraint(
+            "evidence_type IN "
+            "('INTELLIGENCE_SIGNAL','TIMELINE_ENTRY','EVENT_LEDGER')",
+            name="ck_intervention_suggestion_evidence_type",
+        ),
+        UniqueConstraint(
+            "suggestion_id",
+            "evidence_type",
+            "evidence_id",
+            name="uq_intervention_suggestion_evidence_identity",
+        ),
+    )
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    organization_id: UUID = Field(index=True)
+    institution_id: UUID = Field(index=True)
+    suggestion_id: UUID = Field(index=True)
+    evidence_type: str = Field(max_length=40)
+    evidence_id: UUID
     created_at: datetime = Field(default_factory=utcnow)

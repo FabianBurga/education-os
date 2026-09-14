@@ -224,3 +224,50 @@ class InstitutionalInterventionQueue(BaseModel):
     status_counts: dict[str, int]
     overdue_count: int
     unassigned_count: int
+
+
+class InterventionSuggestionEvidenceRead(BaseModel):
+    id: UUID
+    suggestion_id: UUID
+    evidence_type: str
+    evidence_id: UUID
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class InterventionSuggestionRead(BaseModel):
+    id: UUID
+    organization_id: UUID
+    institution_id: UUID
+    student_profile_id: UUID
+    academic_period_id: UUID | None = None
+    section_id: UUID | None = None
+    rule_key: str
+    rule_version: int
+    generation_mode: str
+    dedupe_key: str
+    recommended_intervention_type: str
+    severity: str
+    sensitivity: str
+    title: str
+    rationale_summary: str
+    status: str
+    generated_at: datetime
+    last_seen_at: datetime
+    reviewed_at: datetime | None = None
+    reviewed_by_user_id: UUID | None = None
+    review_note: str | None = None
+    accepted_intervention_id: UUID | None = None
+    created_at: datetime
+    updated_at: datetime
+    evidence: list[InterventionSuggestionEvidenceRead] = Field(
+        default_factory=list
+    )
+
+    model_config = {"from_attributes": True}
+
+
+class InterventionSuggestionPage(BaseModel):
+    items: list[InterventionSuggestionRead]
+    count: int
