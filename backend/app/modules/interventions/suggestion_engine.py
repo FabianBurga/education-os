@@ -275,6 +275,52 @@ def _build_candidates(
     return candidates
 
 
+def _reviewed_suggestion_suppresses_candidate(
+    session: Session,
+    *,
+    dedupe_key: str,
+    evidence_signal_ids: tuple[UUID, ...],
+) -> bool:
+    target_evidence = set(evidence_signal_ids)
+    if not target_evidence:
+        return False
+
+    reviewed = list(
+        session.exec(
+            select(InterventionSuggestion)
+            .where(
+                InterventionSuggestion.dedupe_key == dedupe_key,
+                InterventionSuggestion.rule_version == 1,
+                InterventionSuggestion.generation_mode == "RULE_ENGINE",
+                InterventionSuggestion.status.in_(
+                    ("ACCEPTED", "DISMISSED")
+                ),
+            )
+            .order_by(
+                InterventionSuggestion.reviewed_at.desc(),
+                InterventionSuggestion.updated_at.desc(),
+            )
+        ).all()
+    )
+
+    for suggestion in reviewed:
+        evidence = list(
+            session.exec(
+                select(InterventionSuggestionEvidence).where(
+                    InterventionSuggestionEvidence.suggestion_id
+                    == suggestion.id,
+                    InterventionSuggestionEvidence.evidence_type
+                    == "INTELLIGENCE_SIGNAL",
+                )
+            ).all()
+        )
+        evidence_ids = {item.evidence_id for item in evidence}
+        if evidence_ids == target_evidence:
+            return True
+
+    return False
+
+
 def _emit_suggestion_event(
     session: Session,
     principal: CurrentPrincipal,
@@ -353,6 +399,16 @@ def refresh_intervention_suggestions(
                 InterventionSuggestion.status == "PENDING",
             )
         ).first()
+
+        if (
+            suggestion is None
+            and _reviewed_suggestion_suppresses_candidate(
+                session,
+                dedupe_key=dedupe_key,
+                evidence_signal_ids=candidate.evidence_signal_ids,
+            )
+        ):
+            continue
 
         if suggestion is None:
             suggestion = InterventionSuggestion(
