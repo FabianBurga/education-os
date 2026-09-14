@@ -271,3 +271,11 @@ class InterventionSuggestionRead(BaseModel):
 class InterventionSuggestionPage(BaseModel):
     items: list[InterventionSuggestionRead]
     count: int
+
+
+
+class InterventionSuggestionRefreshRead(BaseModel):
+    generated: int
+    refreshed: int
+    expired: int
+    pending: int

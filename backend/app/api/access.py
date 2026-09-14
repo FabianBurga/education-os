@@ -440,6 +440,30 @@ def require_intervention_followup_create(
         "Intervention follow-up creation permission required",
     )
 
+
+def require_intervention_suggestion_read(
+    principal: CurrentPrincipal = Depends(get_current_principal),
+    session: Session = Depends(get_session),
+) -> CurrentPrincipal:
+    return _require_staff_permission(
+        session,
+        principal,
+        "intervention.suggestion.read",
+        "Intervention suggestion read permission required",
+    )
+
+
+def require_intervention_suggestion_generate(
+    principal: CurrentPrincipal = Depends(get_current_principal),
+    session: Session = Depends(get_session),
+) -> CurrentPrincipal:
+    return _require_staff_permission(
+        session,
+        principal,
+        "intervention.suggestion.generate",
+        "Intervention suggestion generation permission required",
+    )
+
 def _active_student_profile_id(
     session: Session,
     principal: CurrentPrincipal,

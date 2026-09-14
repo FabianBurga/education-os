@@ -12,6 +12,8 @@ from app.api.access import (
     require_intervention_followup_create,
     require_intervention_read,
     require_intervention_resolve,
+    require_intervention_suggestion_generate,
+    require_intervention_suggestion_read,
     require_intervention_update,
 )
 from app.api.deps import CurrentPrincipal
@@ -37,6 +39,9 @@ from app.modules.interventions.schemas import (
     InterventionPage,
     InterventionRead,
     InterventionResolve,
+    InterventionSuggestionPage,
+    InterventionSuggestionRead,
+    InterventionSuggestionRefreshRead,
     InterventionTransition,
 )
 from app.modules.interventions.service import (
@@ -58,6 +63,13 @@ from app.modules.interventions.service import (
     transition_intervention,
     transition_intervention_action,
 )
+from app.modules.interventions.suggestion_engine import (
+    refresh_intervention_suggestions,
+)
+from app.modules.interventions.suggestion_service import (
+    get_intervention_suggestion,
+    list_intervention_suggestions,
+)
 
 router = APIRouter(prefix="/interventions", tags=["interventions"])
 
@@ -75,6 +87,15 @@ ActionManagePrincipalDep = Annotated[
 FollowUpCreatePrincipalDep = Annotated[
     CurrentPrincipal,
     Depends(require_intervention_followup_create),
+]
+
+SuggestionReadPrincipalDep = Annotated[
+    CurrentPrincipal,
+    Depends(require_intervention_suggestion_read),
+]
+SuggestionGeneratePrincipalDep = Annotated[
+    CurrentPrincipal,
+    Depends(require_intervention_suggestion_generate),
 ]
 
 
@@ -118,6 +139,73 @@ def institutional_intervention_queue_api(
         assigned_user_id=assigned_user_id,
         overdue_only=overdue_only,
         unassigned_only=unassigned_only,
+    )
+
+
+@router.post(
+    "/suggestions/refresh",
+    response_model=InterventionSuggestionRefreshRead,
+)
+def refresh_intervention_suggestions_api(
+    principal: SuggestionGeneratePrincipalDep,
+    session: SessionDep,
+):
+    result = refresh_intervention_suggestions(session, principal)
+    return InterventionSuggestionRefreshRead(
+        generated=result.generated,
+        refreshed=result.refreshed,
+        expired=result.expired,
+        pending=result.pending,
+    )
+
+
+@router.get("/suggestions", response_model=InterventionSuggestionPage)
+def list_intervention_suggestions_api(
+    principal: SuggestionReadPrincipalDep,
+    session: SessionDep,
+    limit: int = Query(default=50, ge=1, le=100),
+    status_filter: str | None = Query(
+        default=None,
+        alias="status",
+        pattern="^(PENDING|ACCEPTED|DISMISSED|EXPIRED)$",
+    ),
+    severity_filter: str | None = Query(
+        default=None,
+        alias="severity",
+        pattern="^(LOW|MEDIUM|HIGH|CRITICAL)$",
+    ),
+    sensitivity_filter: str | None = Query(
+        default=None,
+        alias="sensitivity",
+        pattern="^(GENERAL|RESTRICTED|CONFIDENTIAL)$",
+    ),
+    student_profile_id: UUID | None = Query(default=None),
+):
+    items = list_intervention_suggestions(
+        session,
+        principal,
+        limit=limit,
+        status_filter=status_filter,
+        severity_filter=severity_filter,
+        sensitivity_filter=sensitivity_filter,
+        student_profile_id=student_profile_id,
+    )
+    return InterventionSuggestionPage(items=items, count=len(items))
+
+
+@router.get(
+    "/suggestions/{suggestion_id}",
+    response_model=InterventionSuggestionRead,
+)
+def get_intervention_suggestion_api(
+    suggestion_id: UUID,
+    principal: SuggestionReadPrincipalDep,
+    session: SessionDep,
+):
+    return get_intervention_suggestion(
+        session,
+        principal,
+        suggestion_id,
     )
 
 
