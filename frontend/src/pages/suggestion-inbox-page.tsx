@@ -11,6 +11,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
 import { useAppContext } from "../app-context";
@@ -574,6 +575,19 @@ export function SuggestionInboxPage() {
                     <dd className="mt-1 break-all font-mono text-xs text-slate-700">
                       {selected.student_profile_id}
                     </dd>
+                  </div>
+                  <div>
+                    <Link
+                      to="/m21/students/$studentProfileId"
+                      params={{
+                        studentProfileId:
+                          selected.student_profile_id,
+                      }}
+                      className="inline-flex h-9 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 transition hover:bg-slate-100"
+                      data-testid="m21-open-student-360"
+                    >
+                      Abrir Student 360
+                    </Link>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div>

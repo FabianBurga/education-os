@@ -10,6 +10,7 @@ import { purgeTeacherOfflinePartition } from "./lib/teacher-offline-store";
 import { teacherOfflinePartitionKey } from "./teacher-offline-core";
 import { ContextPage } from "./pages/context-page";
 import { HomePage } from "./pages/home-page";
+import { Student360Page } from "./pages/student-360-page";
 import { SuggestionInboxPage } from "./pages/suggestion-inbox-page";
 import { WorkspacePage } from "./pages/workspace-page";
 import type { UiBootstrap } from "./types/bootstrap";
@@ -20,7 +21,9 @@ const indexRoute=createRoute({getParentRoute:()=>rootRoute,path:"/",component:Ho
 const contextRoute=createRoute({getParentRoute:()=>rootRoute,path:"/context",component:ContextPage});
 const workspaceRoute=createRoute({getParentRoute:()=>rootRoute,path:"/workspace/$moduleId",component:WorkspaceRouteComponent});
 const suggestionInboxRoute=createRoute({getParentRoute:()=>rootRoute,path:"/m21/suggestions",component:SuggestionInboxPage});
+const student360Route=createRoute({getParentRoute:()=>rootRoute,path:"/m21/students/$studentProfileId",component:Student360RouteComponent});
 function WorkspaceRouteComponent(){const{moduleId}=workspaceRoute.useParams();return<WorkspacePage moduleId={moduleId}/>;}
-const routeTree=rootRoute.addChildren([indexRoute,contextRoute,workspaceRoute,suggestionInboxRoute]);
+function Student360RouteComponent(){const{studentProfileId}=student360Route.useParams();return<Student360Page studentProfileId={studentProfileId}/>;}
+const routeTree=rootRoute.addChildren([indexRoute,contextRoute,workspaceRoute,suggestionInboxRoute,student360Route]);
 export const router=createRouter({routeTree,basepath:"/app",defaultPreload:"intent",defaultPreloadStaleTime:0});
 declare module "@tanstack/react-router"{interface Register{router:typeof router}}
