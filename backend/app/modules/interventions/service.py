@@ -7,6 +7,11 @@ from sqlmodel import Session, select
 
 from app.api.deps import CurrentPrincipal
 from app.modules.events.service import enqueue_canonical_event
+from app.modules.interventions.institutional_views import (
+    action_read_for_principal,
+    followup_read_for_principal,
+    intervention_read_for_principal,
+)
 from app.modules.interventions.models import (
     Intervention,
     InterventionAction,
@@ -345,7 +350,11 @@ def get_intervention(
         entity.student_profile_id,
         permission_key="intervention.read",
     )
-    return entity
+    return intervention_read_for_principal(
+        session,
+        principal,
+        entity,
+    )
 
 
 def list_student_interventions(
@@ -374,7 +383,11 @@ def list_student_interventions(
         statement = statement.where(Intervention.status == status_filter)
     if sensitivity_filter is not None:
         statement = statement.where(Intervention.sensitivity == sensitivity_filter)
-    return list(session.exec(statement).all())
+    entities = list(session.exec(statement).all())
+    return [
+        intervention_read_for_principal(session, principal, entity)
+        for entity in entities
+    ]
 
 
 def create_intervention(
@@ -943,7 +956,12 @@ def get_intervention_action(
         parent.student_profile_id,
         permission_key="intervention.read",
     )
-    return action
+    return action_read_for_principal(
+        session,
+        principal,
+        action,
+        parent_sensitivity=parent.sensitivity,
+    )
 
 
 def list_intervention_actions(
@@ -976,7 +994,16 @@ def list_intervention_actions(
         statement = statement.where(
             InterventionAction.status == status_filter
         )
-    return list(session.exec(statement).all())
+    actions = list(session.exec(statement).all())
+    return [
+        action_read_for_principal(
+            session,
+            principal,
+            action,
+            parent_sensitivity=parent.sensitivity,
+        )
+        for action in actions
+    ]
 
 
 def _get_followup(
@@ -1019,7 +1046,11 @@ def get_intervention_followup(
         parent.student_profile_id,
         permission_key="intervention.read",
     )
-    return followup
+    return followup_read_for_principal(
+        session,
+        principal,
+        followup,
+    )
 
 
 def list_intervention_followups(
@@ -1052,4 +1083,12 @@ def list_intervention_followups(
         statement = statement.where(
             InterventionFollowUp.sensitivity == sensitivity_filter
         )
-    return list(session.exec(statement).all())
+    followups = list(session.exec(statement).all())
+    return [
+        followup_read_for_principal(
+            session,
+            principal,
+            followup,
+        )
+        for followup in followups
+    ]

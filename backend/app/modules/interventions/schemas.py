@@ -80,7 +80,7 @@ class InterventionRead(BaseModel):
     status: str
     sensitivity: str
     title: str
-    reason: str
+    reason: str | None = None
     objective: str | None = None
     origin_type: str
     opened_by_user_id: UUID
@@ -96,6 +96,7 @@ class InterventionRead(BaseModel):
     outcome_recorded_by_user_id: UUID | None = None
     created_at: datetime
     updated_at: datetime
+    protected_detail: bool = False
 
     model_config = {"from_attributes": True}
 
@@ -172,6 +173,7 @@ class InterventionActionRead(BaseModel):
     created_by_user_id: UUID
     created_at: datetime
     updated_at: datetime
+    protected_detail: bool = False
 
     model_config = {"from_attributes": True}
 
@@ -188,10 +190,11 @@ class InterventionFollowUpRead(BaseModel):
     intervention_id: UUID
     followup_type: str
     sensitivity: str
-    note: str
+    note: str | None = None
     observed_at: datetime
     created_by_user_id: UUID
     created_at: datetime
+    protected_detail: bool = False
 
     model_config = {"from_attributes": True}
 
@@ -199,3 +202,25 @@ class InterventionFollowUpRead(BaseModel):
 class InterventionFollowUpPage(BaseModel):
     items: list[InterventionFollowUpRead]
     count: int
+
+class InstitutionalInterventionItem(BaseModel):
+    id: UUID
+    student_profile_id: UUID
+    intervention_type: str
+    severity: str
+    status: str
+    sensitivity: str
+    title: str
+    assigned_role_code: str | None = None
+    assigned_user_id: UUID | None = None
+    target_at: datetime | None = None
+    opened_at: datetime
+    protected_detail: bool = True
+
+
+class InstitutionalInterventionQueue(BaseModel):
+    items: list[InstitutionalInterventionItem]
+    count: int
+    status_counts: dict[str, int]
+    overdue_count: int
+    unassigned_count: int

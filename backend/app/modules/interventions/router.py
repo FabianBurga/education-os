@@ -16,7 +16,11 @@ from app.api.access import (
 )
 from app.api.deps import CurrentPrincipal
 from app.db.session import get_session
+from app.modules.interventions.institutional_views import (
+    list_institutional_intervention_queue,
+)
 from app.modules.interventions.schemas import (
+    InstitutionalInterventionQueue,
     InterventionActionAssign,
     InterventionActionComplete,
     InterventionActionCreate,
@@ -81,6 +85,40 @@ def create_intervention_api(
     session: SessionDep,
 ):
     return create_intervention(session, principal, payload)
+
+
+@router.get(
+    "/institutional/queue",
+    response_model=InstitutionalInterventionQueue,
+)
+def institutional_intervention_queue_api(
+    principal: ReadPrincipalDep,
+    session: SessionDep,
+    limit: int = Query(default=50, ge=1, le=100),
+    status_filter: str | None = Query(
+        default=None,
+        alias="status",
+        pattern="^(OPEN|IN_PROGRESS|MONITORING|RESOLVED|CLOSED|CANCELLED)$",
+    ),
+    severity_filter: str | None = Query(
+        default=None,
+        alias="severity",
+        pattern="^(LOW|MEDIUM|HIGH|CRITICAL)$",
+    ),
+    assigned_user_id: UUID | None = Query(default=None),
+    overdue_only: bool = Query(default=False),
+    unassigned_only: bool = Query(default=False),
+):
+    return list_institutional_intervention_queue(
+        session,
+        principal,
+        limit=limit,
+        status_filter=status_filter,
+        severity_filter=severity_filter,
+        assigned_user_id=assigned_user_id,
+        overdue_only=overdue_only,
+        unassigned_only=unassigned_only,
+    )
 
 
 @router.get("/{intervention_id}", response_model=InterventionRead)
