@@ -275,6 +275,62 @@ def _validate_transition(current: str, target: str) -> None:
         )
 
 
+def _assert_no_active_actions(
+    session: Session,
+    intervention_id: UUID,
+    *,
+    operation: str,
+) -> None:
+    row = session.exec(
+        text(
+            """
+            SELECT COUNT(*)
+            FROM intervention_actions
+            WHERE intervention_id = CAST(:intervention_id AS uuid)
+              AND status IN ('OPEN','ACKNOWLEDGED','IN_PROGRESS','OVERDUE')
+            """
+        ),
+        params={"intervention_id": str(intervention_id)},
+    ).one()
+    active_count = int(row[0])
+    if active_count:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                f"Cannot {operation} intervention while "
+                f"{active_count} active action(s) remain"
+            ),
+        )
+
+
+def _assert_close_outcome_consistent(
+    entity: Intervention,
+    payload: InterventionClose,
+) -> None:
+    if (
+        entity.outcome_type is None
+        or entity.outcome_summary is None
+        or entity.outcome_recorded_at is None
+        or entity.outcome_recorded_by_user_id is None
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="RESOLVED intervention is missing a recorded outcome",
+        )
+
+    if (
+        payload.outcome_type != entity.outcome_type
+        or payload.outcome_summary != entity.outcome_summary
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "Close outcome must match the outcome recorded "
+                "when the intervention was resolved"
+            ),
+        )
+
+
 def get_intervention(
     session: Session,
     principal: CurrentPrincipal,
@@ -390,19 +446,22 @@ def transition_intervention(
     _validate_transition(previous_status, payload.status)
 
     entity.status = payload.status
+    event_type = "student.intervention.status_changed"
     if previous_status == "RESOLVED":
         entity.resolved_at = None
+        entity.closed_at = None
         entity.outcome_type = None
         entity.outcome_summary = None
         entity.outcome_recorded_at = None
         entity.outcome_recorded_by_user_id = None
+        event_type = "student.intervention.reopened"
     entity.updated_at = utcnow()
     session.add(entity)
     _emit(
         session,
         principal,
         entity,
-        "student.intervention.status_changed",
+        event_type,
         extra={"previous_status": previous_status},
     )
     session.commit()
@@ -423,6 +482,12 @@ def resolve_intervention(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Cannot resolve intervention from state {entity.status}",
         )
+
+    _assert_no_active_actions(
+        session,
+        entity.id,
+        operation="resolve",
+    )
 
     now = utcnow()
     previous_status = entity.status
@@ -459,6 +524,13 @@ def close_intervention(
             status_code=status.HTTP_409_CONFLICT,
             detail="Only RESOLVED interventions may be closed",
         )
+
+    _assert_no_active_actions(
+        session,
+        entity.id,
+        operation="close",
+    )
+    _assert_close_outcome_consistent(entity, payload)
 
     now = utcnow()
     entity.status = "CLOSED"

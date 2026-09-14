@@ -173,7 +173,7 @@ def test_projector_contract_contains_idempotency_and_checkpoint():
         / "student_timeline"
         / "projector.py"
     ).read_text(encoding="utf-8")
-    assert len(EVENT_SPECS) == 22
+    assert len(EVENT_SPECS) == 23
     assert "ON CONFLICT (institution_id, ledger_event_id) DO NOTHING" in source
     assert "projection_checkpoints" in source
     assert "position > :last_position" in source

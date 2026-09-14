@@ -90,6 +90,10 @@ EVENT_SPECS: dict[str, TimelineEventSpec] = {
         category="OUTCOME",
         title="Intervention closed",
     ),
+    "student.intervention.reopened": TimelineEventSpec(
+        category="INTERVENTION",
+        title="Intervention reopened",
+    ),
     "student.intervention.action_created": TimelineEventSpec(
         category="ACTION",
         title="Intervention action created",
@@ -267,6 +271,20 @@ SAFE_CONTEXT_KEYS: dict[str, tuple[str, ...]] = {
         "section_id",
         "target_at",
         "outcome_type",
+    ),
+    "student.intervention.reopened": (
+        "intervention_id",
+        "intervention_type",
+        "previous_status",
+        "status",
+        "severity",
+        "sensitivity",
+        "origin_type",
+        "assigned_role_code",
+        "assigned_user_id",
+        "academic_period_id",
+        "section_id",
+        "target_at",
     ),
     "student.intervention.action_created": (
         "intervention_id",
