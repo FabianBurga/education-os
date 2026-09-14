@@ -21,12 +21,15 @@ from app.modules.interventions.schemas import (
     InterventionActionAssign,
     InterventionActionComplete,
     InterventionActionCreate,
+    InterventionActionRead,
     InterventionActionTransition,
     InterventionAssign,
     InterventionCancel,
     InterventionClose,
     InterventionCreate,
     InterventionFollowUpCreate,
+    InterventionFollowUpRead,
+    InterventionRead,
     InterventionResolve,
     InterventionTransition,
 )
@@ -394,7 +397,7 @@ def create_intervention(
     session: Session,
     principal: CurrentPrincipal,
     payload: InterventionCreate,
-) -> Intervention:
+) -> InterventionRead:
     _require_permission(session, principal, "intervention.create")
     _assert_student_in_tenant(session, principal, payload.student_profile_id)
     _assert_optional_context_in_tenant(
@@ -432,7 +435,11 @@ def create_intervention(
     _emit(session, principal, entity, "student.intervention.opened")
     session.commit()
     session.refresh(entity)
-    return entity
+    return intervention_read_for_principal(
+        session,
+        principal,
+        entity,
+    )
 
 
 def assign_intervention(
@@ -440,7 +447,7 @@ def assign_intervention(
     principal: CurrentPrincipal,
     intervention_id: UUID,
     payload: InterventionAssign,
-) -> Intervention:
+) -> InterventionRead:
     _require_permission(session, principal, "intervention.assign")
     entity = _get_intervention(session, principal, intervention_id)
     if entity.status in _TERMINAL_STATES:
@@ -458,7 +465,11 @@ def assign_intervention(
     _emit(session, principal, entity, "student.intervention.assigned")
     session.commit()
     session.refresh(entity)
-    return entity
+    return intervention_read_for_principal(
+        session,
+        principal,
+        entity,
+    )
 
 
 def transition_intervention(
@@ -466,7 +477,7 @@ def transition_intervention(
     principal: CurrentPrincipal,
     intervention_id: UUID,
     payload: InterventionTransition,
-) -> Intervention:
+) -> InterventionRead:
     _require_permission(session, principal, "intervention.update")
     entity = _get_intervention(session, principal, intervention_id)
     previous_status = entity.status
@@ -493,7 +504,11 @@ def transition_intervention(
     )
     session.commit()
     session.refresh(entity)
-    return entity
+    return intervention_read_for_principal(
+        session,
+        principal,
+        entity,
+    )
 
 
 def resolve_intervention(
@@ -501,7 +516,7 @@ def resolve_intervention(
     principal: CurrentPrincipal,
     intervention_id: UUID,
     payload: InterventionResolve,
-) -> Intervention:
+) -> InterventionRead:
     _require_permission(session, principal, "intervention.resolve")
     entity = _get_intervention(session, principal, intervention_id)
     if entity.status not in {"IN_PROGRESS", "MONITORING"}:
@@ -535,7 +550,11 @@ def resolve_intervention(
     )
     session.commit()
     session.refresh(entity)
-    return entity
+    return intervention_read_for_principal(
+        session,
+        principal,
+        entity,
+    )
 
 
 def close_intervention(
@@ -543,7 +562,7 @@ def close_intervention(
     principal: CurrentPrincipal,
     intervention_id: UUID,
     payload: InterventionClose,
-) -> Intervention:
+) -> InterventionRead:
     _require_permission(session, principal, "intervention.close")
     entity = _get_intervention(session, principal, intervention_id)
     if entity.status != "RESOLVED":
@@ -577,7 +596,11 @@ def close_intervention(
     )
     session.commit()
     session.refresh(entity)
-    return entity
+    return intervention_read_for_principal(
+        session,
+        principal,
+        entity,
+    )
 
 
 def cancel_intervention(
@@ -585,7 +608,7 @@ def cancel_intervention(
     principal: CurrentPrincipal,
     intervention_id: UUID,
     payload: InterventionCancel,
-) -> Intervention:
+) -> InterventionRead:
     _require_permission(session, principal, "intervention.update")
     entity = _get_intervention(session, principal, intervention_id)
     if entity.status in _TERMINAL_STATES:
@@ -610,7 +633,11 @@ def cancel_intervention(
     )
     session.commit()
     session.refresh(entity)
-    return entity
+    return intervention_read_for_principal(
+        session,
+        principal,
+        entity,
+    )
 
 
 def _ensure_intervention_operational(entity: Intervention) -> None:
@@ -746,7 +773,7 @@ def create_intervention_action(
     principal: CurrentPrincipal,
     intervention_id: UUID,
     payload: InterventionActionCreate,
-) -> InterventionAction:
+) -> InterventionActionRead:
     _require_permission(session, principal, "intervention.action.manage")
     parent = _get_intervention(session, principal, intervention_id)
     _ensure_intervention_operational(parent)
@@ -778,7 +805,12 @@ def create_intervention_action(
     )
     session.commit()
     session.refresh(action)
-    return action
+    return action_read_for_principal(
+        session,
+        principal,
+        action,
+        parent_sensitivity=parent.sensitivity,
+    )
 
 
 def assign_intervention_action(
@@ -786,7 +818,7 @@ def assign_intervention_action(
     principal: CurrentPrincipal,
     action_id: UUID,
     payload: InterventionActionAssign,
-) -> InterventionAction:
+) -> InterventionActionRead:
     _require_permission(session, principal, "intervention.action.manage")
     action = _get_action(session, principal, action_id)
     parent = _parent_for_action(session, principal, action)
@@ -812,7 +844,12 @@ def assign_intervention_action(
     )
     session.commit()
     session.refresh(action)
-    return action
+    return action_read_for_principal(
+        session,
+        principal,
+        action,
+        parent_sensitivity=parent.sensitivity,
+    )
 
 
 def transition_intervention_action(
@@ -820,7 +857,7 @@ def transition_intervention_action(
     principal: CurrentPrincipal,
     action_id: UUID,
     payload: InterventionActionTransition,
-) -> InterventionAction:
+) -> InterventionActionRead:
     _require_permission(session, principal, "intervention.action.manage")
     action = _get_action(session, principal, action_id)
     parent = _parent_for_action(session, principal, action)
@@ -854,7 +891,12 @@ def transition_intervention_action(
     )
     session.commit()
     session.refresh(action)
-    return action
+    return action_read_for_principal(
+        session,
+        principal,
+        action,
+        parent_sensitivity=parent.sensitivity,
+    )
 
 
 def complete_intervention_action(
@@ -862,7 +904,7 @@ def complete_intervention_action(
     principal: CurrentPrincipal,
     action_id: UUID,
     payload: InterventionActionComplete,
-) -> InterventionAction:
+) -> InterventionActionRead:
     _require_permission(session, principal, "intervention.action.manage")
     action = _get_action(session, principal, action_id)
     parent = _parent_for_action(session, principal, action)
@@ -895,7 +937,12 @@ def complete_intervention_action(
     )
     session.commit()
     session.refresh(action)
-    return action
+    return action_read_for_principal(
+        session,
+        principal,
+        action,
+        parent_sensitivity=parent.sensitivity,
+    )
 
 
 def create_intervention_followup(
@@ -903,7 +950,7 @@ def create_intervention_followup(
     principal: CurrentPrincipal,
     intervention_id: UUID,
     payload: InterventionFollowUpCreate,
-) -> InterventionFollowUp:
+) -> InterventionFollowUpRead:
     _require_permission(session, principal, "intervention.followup.create")
     parent = _get_intervention(session, principal, intervention_id)
     _ensure_intervention_operational(parent)
@@ -940,7 +987,11 @@ def create_intervention_followup(
     _emit_followup_event(session, principal, parent, followup)
     session.commit()
     session.refresh(followup)
-    return followup
+    return followup_read_for_principal(
+        session,
+        principal,
+        followup,
+    )
 
 def get_intervention_action(
     session: Session,
