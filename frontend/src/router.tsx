@@ -10,6 +10,7 @@ import { purgeTeacherOfflinePartition } from "./lib/teacher-offline-store";
 import { teacherOfflinePartitionKey } from "./teacher-offline-core";
 import { ContextPage } from "./pages/context-page";
 import { HomePage } from "./pages/home-page";
+import { SuggestionInboxPage } from "./pages/suggestion-inbox-page";
 import { WorkspacePage } from "./pages/workspace-page";
 import type { UiBootstrap } from "./types/bootstrap";
 
@@ -18,7 +19,8 @@ const rootRoute=createRootRoute({component:RootLayout});
 const indexRoute=createRoute({getParentRoute:()=>rootRoute,path:"/",component:HomePage});
 const contextRoute=createRoute({getParentRoute:()=>rootRoute,path:"/context",component:ContextPage});
 const workspaceRoute=createRoute({getParentRoute:()=>rootRoute,path:"/workspace/$moduleId",component:WorkspaceRouteComponent});
+const suggestionInboxRoute=createRoute({getParentRoute:()=>rootRoute,path:"/m21/suggestions",component:SuggestionInboxPage});
 function WorkspaceRouteComponent(){const{moduleId}=workspaceRoute.useParams();return<WorkspacePage moduleId={moduleId}/>;}
-const routeTree=rootRoute.addChildren([indexRoute,contextRoute,workspaceRoute]);
+const routeTree=rootRoute.addChildren([indexRoute,contextRoute,workspaceRoute,suggestionInboxRoute]);
 export const router=createRouter({routeTree,basepath:"/app",defaultPreload:"intent",defaultPreloadStaleTime:0});
 declare module "@tanstack/react-router"{interface Register{router:typeof router}}

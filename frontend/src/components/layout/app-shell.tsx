@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import {
   BellRing,
   Building2,
+  ClipboardList,
   GraduationCap,
   Home,
   Landmark,
@@ -59,6 +60,9 @@ function ModuleLink({ module }: { module: ModuleDefinition }) {
 export function AppShell({ children }: { children: ReactNode }) {
   const { bootstrap, signOut } = useAppContext();
   const modules = modulesForContext(bootstrap);
+  const canReadM21Suggestions = bootstrap.permissions.includes(
+    "intervention.suggestion.read",
+  );
 
   return (
     <div className="min-h-screen">
@@ -91,6 +95,14 @@ export function AppShell({ children }: { children: ReactNode }) {
               {module.shortLabel}
             </Link>
           ))}
+          {canReadM21Suggestions ? (
+            <Link
+              to="/m21/suggestions"
+              className="whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700"
+            >
+              Sugerencias
+            </Link>
+          ) : null}
         </nav>
       </header>
 
@@ -137,6 +149,20 @@ export function AppShell({ children }: { children: ReactNode }) {
             {modules.map((module) => (
               <ModuleLink key={module.id} module={module} />
             ))}
+
+            {canReadM21Suggestions ? (
+              <Link
+                to="/m21/suggestions"
+                className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+                activeProps={{
+                  className:
+                    "flex items-center gap-3 rounded-xl bg-slate-900 px-3 py-2.5 text-sm font-semibold text-white",
+                }}
+              >
+                <ClipboardList className="h-4 w-4" />
+                Sugerencias M21
+              </Link>
+            ) : null}
 
             <Link
               to="/context"
