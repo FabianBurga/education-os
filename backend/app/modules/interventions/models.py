@@ -90,3 +90,73 @@ class InterventionLink(SQLModel, table=True):
     entity_id: UUID
     created_by_user_id: UUID
     created_at: datetime = Field(default_factory=utcnow)
+
+
+class InterventionAction(SQLModel, table=True):
+    __tablename__ = "intervention_actions"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN "
+            "('OPEN','ACKNOWLEDGED','IN_PROGRESS','COMPLETED','CANCELLED','OVERDUE')",
+            name="ck_intervention_actions_status",
+        ),
+        CheckConstraint(
+            "(status <> 'COMPLETED') OR "
+            "(completed_at IS NOT NULL AND completed_by_user_id IS NOT NULL)",
+            name="ck_intervention_actions_completed_requires_actor",
+        ),
+    )
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    organization_id: UUID = Field(index=True)
+    institution_id: UUID = Field(index=True)
+    intervention_id: UUID = Field(index=True)
+
+    action_type: str = Field(default="REVIEW", max_length=40)
+    title: str = Field(max_length=240)
+    description: str | None = Field(default=None, max_length=2000)
+    status: str = Field(default="OPEN", max_length=30)
+
+    assigned_role_code: str | None = Field(default=None, max_length=60)
+    assigned_user_id: UUID | None = Field(default=None, index=True)
+    due_at: datetime | None = Field(default=None, index=True)
+
+    acknowledged_at: datetime | None = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    completed_by_user_id: UUID | None = None
+    completion_note: str | None = Field(default=None, max_length=2000)
+
+    created_by_user_id: UUID
+    created_at: datetime = Field(default_factory=utcnow)
+    updated_at: datetime = Field(default_factory=utcnow)
+
+
+class InterventionFollowUp(SQLModel, table=True):
+    __tablename__ = "intervention_followups"
+    __table_args__ = (
+        CheckConstraint(
+            "followup_type IN "
+            "('MEETING','PHONE_CALL','FAMILY_CONTACT','STUDENT_CONVERSATION',"
+            "'TEACHER_REVIEW','ACADEMIC_REVIEW','ATTENDANCE_REVIEW',"
+            "'PSYCHOLOGY_SESSION','REFERRAL','OTHER')",
+            name="ck_intervention_followups_type",
+        ),
+        CheckConstraint(
+            "sensitivity IN ('GENERAL','RESTRICTED','CONFIDENTIAL')",
+            name="ck_intervention_followups_sensitivity",
+        ),
+    )
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    organization_id: UUID = Field(index=True)
+    institution_id: UUID = Field(index=True)
+    intervention_id: UUID = Field(index=True)
+
+    followup_type: str = Field(max_length=50)
+    sensitivity: str = Field(default="GENERAL", max_length=20)
+    note: str = Field(max_length=4000)
+    observed_at: datetime
+
+    created_by_user_id: UUID
+    created_at: datetime = Field(default_factory=utcnow)
