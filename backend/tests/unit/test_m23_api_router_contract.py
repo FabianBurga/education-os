@@ -23,7 +23,12 @@ def test_copilot_routes_match_frozen_m23_contract():
     assert 'prefix="/copilot"' in source
     assert '"/queries"' in source
     assert '"/runs/{run_id}"' in source
-    assert "action-proposals" not in source
+    assert '\"/action-proposals\"' in source
+    assert '\"/action-proposals/{proposal_id}/approve\"' in source
+    assert '\"/action-proposals/{proposal_id}/reject\"' in source
+    assert '\"/action-proposals/create\"' not in source
+    assert "execute-anything" not in source
+    assert "arbitrary-sql" not in source
 
 
 def test_copilot_router_does_not_accept_provider_or_model_selection():

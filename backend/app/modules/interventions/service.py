@@ -397,6 +397,8 @@ def create_intervention(
     session: Session,
     principal: CurrentPrincipal,
     payload: InterventionCreate,
+    *,
+    commit: bool = True,
 ) -> InterventionRead:
     _require_permission(session, principal, "intervention.create")
     _assert_student_in_tenant(session, principal, payload.student_profile_id)
@@ -433,7 +435,10 @@ def create_intervention(
     )
     session.add(entity)
     _emit(session, principal, entity, "student.intervention.opened")
-    session.commit()
+    if commit:
+        session.commit()
+    else:
+        session.flush()
     session.refresh(entity)
     return intervention_read_for_principal(
         session,

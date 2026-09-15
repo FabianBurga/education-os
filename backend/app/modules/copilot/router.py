@@ -8,6 +8,16 @@ from sqlmodel import Session
 
 from app.api.deps import CurrentPrincipal, get_current_principal
 from app.db.session import get_session
+from app.modules.copilot.action_schemas import (
+    ActionProposalApproveRequest,
+    ActionProposalRead,
+    ActionProposalRejectRequest,
+)
+from app.modules.copilot.actions import (
+    approve_action_proposal,
+    list_action_proposals,
+    reject_action_proposal,
+)
 from app.modules.copilot.advisory import generate_advisory_answer
 from app.modules.copilot.api_schemas import (
     CopilotQueryRequest,
@@ -76,3 +86,50 @@ def read_copilot_run(
             detail="Copilot run not found",
         )
     return run
+
+
+@router.get(
+    "/action-proposals",
+    response_model=list[ActionProposalRead],
+)
+def read_action_proposals(
+    principal: PrincipalDep,
+    session: SessionDep,
+) -> list[ActionProposalRead]:
+    return list_action_proposals(session, principal)
+
+
+@router.post(
+    "/action-proposals/{proposal_id}/approve",
+    response_model=ActionProposalRead,
+)
+def approve_copilot_action_proposal(
+    proposal_id: UUID,
+    payload: ActionProposalApproveRequest,
+    principal: PrincipalDep,
+    session: SessionDep,
+) -> ActionProposalRead:
+    return approve_action_proposal(
+        session,
+        principal,
+        proposal_id=proposal_id,
+        note=payload.note,
+    )
+
+
+@router.post(
+    "/action-proposals/{proposal_id}/reject",
+    response_model=ActionProposalRead,
+)
+def reject_copilot_action_proposal(
+    proposal_id: UUID,
+    payload: ActionProposalRejectRequest,
+    principal: PrincipalDep,
+    session: SessionDep,
+) -> ActionProposalRead:
+    return reject_action_proposal(
+        session,
+        principal,
+        proposal_id=proposal_id,
+        reason=payload.reason,
+    )

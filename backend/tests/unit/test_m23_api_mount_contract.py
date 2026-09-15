@@ -10,4 +10,10 @@ def test_copilot_leaf_router_exposes_exact_paths():
 
     assert "/copilot/queries" in paths
     assert "/copilot/runs/{run_id}" in paths
-    assert all("action-proposals" not in path for path in paths)
+    assert paths == {
+        "/copilot/queries",
+        "/copilot/runs/{run_id}",
+        "/copilot/action-proposals",
+        "/copilot/action-proposals/{proposal_id}/approve",
+        "/copilot/action-proposals/{proposal_id}/reject",
+    }
