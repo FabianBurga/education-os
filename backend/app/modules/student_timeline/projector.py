@@ -575,7 +575,7 @@ def project_student_timeline(
             """
             SELECT
                 id,
-                position,
+                ledger_position,
                 organization_id,
                 institution_id,
                 event_type,
@@ -588,12 +588,13 @@ def project_student_timeline(
                 payload_json,
                 occurred_at,
                 recorded_at
-            FROM event_ledger
-            WHERE institution_id = CAST(:institution_id AS uuid)
-              AND organization_id = CAST(:organization_id AS uuid)
-              AND position > :last_position
-            ORDER BY position
-            LIMIT :limit
+            FROM m21_student_timeline_source_events(
+                CAST(:organization_id AS uuid),
+                CAST(:institution_id AS uuid),
+                :last_position,
+                :limit
+            )
+            ORDER BY ledger_position
             """
         ),
         params={

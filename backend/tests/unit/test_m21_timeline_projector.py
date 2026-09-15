@@ -176,5 +176,5 @@ def test_projector_contract_contains_idempotency_and_checkpoint():
     assert len(EVENT_SPECS) == 23
     assert "ON CONFLICT (institution_id, ledger_event_id) DO NOTHING" in source
     assert "projection_checkpoints" in source
-    assert "position > :last_position" in source
-    assert "organization_id = CAST(:organization_id AS uuid)" in source
+    assert "m21_student_timeline_source_events" in source
+    assert "FROM event_ledger" not in source
