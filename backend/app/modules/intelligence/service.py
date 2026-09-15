@@ -8,6 +8,7 @@ from sqlmodel import Session, select
 from app.api.deps import CurrentPrincipal
 from app.modules.events.service import enqueue_canonical_event
 from app.modules.intelligence.models import IntelligenceSignal
+from app.modules.intelligence.policy import resolve_intelligence_policy
 from app.modules.intelligence.schemas import (
     AcademicTrendPoint,
     AttendanceTrendPoint,
@@ -323,6 +324,11 @@ def refresh_signals(
     session: Session,
     principal: CurrentPrincipal,
 ) -> SignalRefreshResult:
+    policy = resolve_intelligence_policy(
+        session,
+        organization_id=principal.organization_id,
+        institution_id=principal.institution_id,
+    )
     now = datetime.now(UTC)
     touched: set[tuple[UUID, UUID | None, str]] = set()
 
@@ -353,9 +359,9 @@ def refresh_signals(
         absent = int(absent or 0)
         late = int(late or 0)
 
-        if total >= ATTENDANCE_MIN_RECORDS:
+        if total >= policy.attendance.minimum_records:
             absence_pct = (absent / total) * 100.0 if total else 0.0
-            if absence_pct >= ATTENDANCE_ABSENCE_THRESHOLD:
+            if absence_pct >= policy.attendance.absence_threshold_percent:
                 _upsert_signal(
                     session,
                     principal,
@@ -364,14 +370,14 @@ def refresh_signals(
                     section_id=section_id,
                     signal_type="ATTENDANCE_RISK",
                     metric_value=round(absence_pct, 2),
-                    threshold_value=ATTENDANCE_ABSENCE_THRESHOLD,
+                    threshold_value=policy.attendance.absence_threshold_percent,
                     summary=(
                         f"Ausencias {absence_pct:.1f}% sobre {total} registros de asistencia."
                     ),
                 )
                 touched.add((student_id, period_id, "ATTENDANCE_RISK"))
 
-        if late >= LATE_COUNT_THRESHOLD:
+        if late >= policy.attendance.late_count_threshold:
             _upsert_signal(
                 session,
                 principal,
@@ -380,7 +386,7 @@ def refresh_signals(
                 section_id=section_id,
                 signal_type="REPEATED_LATE",
                 metric_value=float(late),
-                threshold_value=LATE_COUNT_THRESHOLD,
+                threshold_value=float(policy.attendance.late_count_threshold),
                 summary=f"Se registran {late} atrasos en el período.",
             )
             touched.add((student_id, period_id, "REPEATED_LATE"))
@@ -417,9 +423,9 @@ def refresh_signals(
         missing_count = int(missing_count or 0)
 
         if (
-            graded_count >= ACADEMIC_MIN_GRADED
+            graded_count >= policy.academic.minimum_graded_records
             and avg_pct is not None
-            and float(avg_pct) < ACADEMIC_AVERAGE_THRESHOLD
+            and float(avg_pct) < policy.academic.average_threshold_percent
         ):
             metric = round(float(avg_pct), 2)
             _upsert_signal(
@@ -430,7 +436,7 @@ def refresh_signals(
                 section_id=section_id,
                 signal_type="ACADEMIC_RISK",
                 metric_value=metric,
-                threshold_value=ACADEMIC_AVERAGE_THRESHOLD,
+                threshold_value=policy.academic.average_threshold_percent,
                 summary=(
                     f"Promedio normalizado {metric:.1f}% en "
                     f"{graded_count} evaluaciones calificadas."
@@ -438,7 +444,7 @@ def refresh_signals(
             )
             touched.add((student_id, period_id, "ACADEMIC_RISK"))
 
-        if missing_count >= MISSING_WORK_THRESHOLD:
+        if missing_count >= policy.academic.missing_work_threshold:
             _upsert_signal(
                 session,
                 principal,
@@ -447,7 +453,7 @@ def refresh_signals(
                 section_id=section_id,
                 signal_type="MISSING_WORK",
                 metric_value=float(missing_count),
-                threshold_value=MISSING_WORK_THRESHOLD,
+                threshold_value=float(policy.academic.missing_work_threshold),
                 summary=f"Se registran {missing_count} evaluaciones faltantes.",
             )
             touched.add((student_id, period_id, "MISSING_WORK"))
