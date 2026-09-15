@@ -82,6 +82,11 @@ def begin_copilot_preflight(
         )
         return run
 
+    # The evidence FORCE RLS policy verifies the parent Copilot run by run_id.
+    # Persist the allowed parent first so that check is deterministic and does
+    # not depend on ORM flush ordering between unrelated mapped objects.
+    session.flush()
+
     bundle = assemble_governed_evidence(
         session,
         principal,
