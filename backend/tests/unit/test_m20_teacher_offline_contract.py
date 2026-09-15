@@ -61,10 +61,15 @@ def test_router_additive():
         "m1_router",
     ]
 
-    # M21 is additive: it is introduced ahead of the frozen M20->M1 chain,
-    # while the historical chain itself must remain complete and ordered.
-    assert included_names[0] == "m21_router"
-    assert included_names[1:] == legacy_router_order
+    # Routers introduced after M20 are additive. They may appear ahead of the
+    # frozen M20->M1 chain, while that historical chain itself must remain
+    # complete, contiguous and ordered.
+    legacy_start = included_names.index("m20_router")
+    newer_routers = included_names[:legacy_start]
+
+    assert included_names[legacy_start:] == legacy_router_order
+    assert "m21_router" in newer_routers
+    assert len(included_names) == len(set(included_names))
 
     assert "from app.api.v1.m20_router import router as m20_router" in source
     assert "router.include_router(m20_router)" in source
