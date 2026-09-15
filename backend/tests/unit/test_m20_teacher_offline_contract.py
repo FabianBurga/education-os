@@ -40,8 +40,7 @@ def test_router_additive():
 
         included_names.append(call.args[0].id)
 
-    assert included_names[:2] == ["m20_router", "m19_router"]
-    assert included_names == [
+    legacy_router_order = [
         "m20_router",
         "m19_router",
         "m18_router",
@@ -61,6 +60,11 @@ def test_router_additive():
         "m2_router",
         "m1_router",
     ]
+
+    # M21 is additive: it is introduced ahead of the frozen M20->M1 chain,
+    # while the historical chain itself must remain complete and ordered.
+    assert included_names[0] == "m21_router"
+    assert included_names[1:] == legacy_router_order
 
     assert "from app.api.v1.m20_router import router as m20_router" in source
     assert "router.include_router(m20_router)" in source
