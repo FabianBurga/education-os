@@ -159,3 +159,32 @@ class CopilotEvidenceRef(SQLModel, table=True):
         sa_column=Column(JSONB, nullable=False),
     )
     created_at: datetime = Field(default_factory=utcnow, index=True)
+
+class CopilotAdvisoryOutput(SQLModel, table=True):
+    __tablename__ = "copilot_advisory_outputs"
+    __table_args__ = (
+        UniqueConstraint(
+            "run_id",
+            name="uq_copilot_advisory_output_run",
+        ),
+    )
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    organization_id: UUID = Field(index=True)
+    institution_id: UUID = Field(index=True)
+    run_id: UUID = Field(foreign_key="copilot_runs.id", index=True)
+    status: str = Field(max_length=30)
+    answer_text: str = Field(sa_column=Column(Text, nullable=False))
+    citations_json: list = Field(
+        default_factory=list,
+        sa_column=Column(JSONB, nullable=False),
+    )
+    evidence_assessment: str = Field(max_length=20)
+    limitations_json: list = Field(
+        default_factory=list,
+        sa_column=Column(JSONB, nullable=False),
+    )
+    response_sha256: str = Field(max_length=64)
+    provider_response_id: str | None = Field(default=None, max_length=200)
+    created_at: datetime = Field(default_factory=utcnow, index=True)
+
