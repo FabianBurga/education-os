@@ -36,7 +36,9 @@ def test_internal_milestone_routers_keep_required_access_boundaries() -> None:
     for router in (m1_router, m2_router, m3_router, m5_router):
         assert require_staff_access in _dependency_calls(router)
 
-    assert require_coordination_access in _dependency_calls(m4_router)
+    # M22 delegates intelligence authorization to route-level guards.
+    # The M4 parent router must no longer impose coord.console.access.
+    assert require_coordination_access not in _dependency_calls(m4_router)
 
 
 def test_public_students_contract_still_exists() -> None:

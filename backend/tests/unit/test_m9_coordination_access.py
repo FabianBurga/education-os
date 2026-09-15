@@ -19,7 +19,16 @@ def test_coordination_access_requires_explicit_permission() -> None:
 
 def test_m4_intelligence_is_upgraded_to_coordination_boundary() -> None:
     source = (ROOT / "app/api/v1/m4_router.py").read_text(encoding="utf-8")
-    assert "require_coordination_access" in source
+    assert "require_coordination_access" not in source
+    assert "router = APIRouter()" in source
+    assert "router.include_router(intelligence_router)" in source
+
+    intelligence_source = (
+        ROOT / "app/modules/intelligence/router.py"
+    ).read_text(encoding="utf-8")
+    assert "require_intelligence_read" in intelligence_source
+    assert "require_intelligence_manager_read" in intelligence_source
+    assert "require_intelligence_manage" in intelligence_source
     assert "require_staff_access" not in source
 
 
