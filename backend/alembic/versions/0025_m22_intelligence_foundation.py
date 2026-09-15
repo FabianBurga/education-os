@@ -123,6 +123,7 @@ def _policy_constraints(prefix: str) -> list[sa.CheckConstraint]:
             "AND control_revision IS NULL"
             ") OR ("
             "policy_source = 'CONTROL_PLANE' "
+            "AND control_revision IS NOT NULL "
             "AND control_revision > 0"
             ")",
             name=f"ck_{prefix}_policy_provenance",

@@ -38,6 +38,26 @@ def _create_table_names() -> set[str]:
     return names
 
 
+def _ast_string(node: ast.AST) -> str | None:
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return node.value
+    if isinstance(node, ast.JoinedStr):
+        parts: list[str] = []
+        for value in node.values:
+            if isinstance(value, ast.Constant) and isinstance(value.value, str):
+                parts.append(value.value)
+                continue
+            if (
+                isinstance(value, ast.FormattedValue)
+                and isinstance(value.value, ast.Name)
+            ):
+                parts.append("{" + value.value.id + "}")
+                continue
+            return None
+        return "".join(parts)
+    return None
+
+
 def _check_constraint_expressions() -> dict[str, str]:
     constraints: dict[str, str] = {}
     for node in ast.walk(_tree()):
@@ -46,19 +66,17 @@ def _check_constraint_expressions() -> dict[str, str]:
         if _call_name(node) != "sa.CheckConstraint" or not node.args:
             continue
 
-        expr = node.args[0]
-        if not isinstance(expr, ast.Constant) or not isinstance(expr.value, str):
+        expr = _ast_string(node.args[0])
+        if expr is None:
             continue
 
         name = None
         for kw in node.keywords:
-            if kw.arg != "name":
-                continue
-            if isinstance(kw.value, ast.Constant) and isinstance(kw.value.value, str):
-                name = kw.value.value
+            if kw.arg == "name":
+                name = _ast_string(kw.value)
 
         if name:
-            constraints[name] = expr.value
+            constraints[name] = expr
     return constraints
 
 
@@ -106,6 +124,23 @@ def test_m22_0025_policy_provenance_contract():
 
     assert '"policy_json"' not in src
     assert "institution_policy_controls.id" not in src
+
+
+
+def test_m22_0025_policy_provenance_rejects_sql_null_control_revision():
+    checks = _check_constraint_expressions()
+    expr = checks["ck_{prefix}_policy_provenance"]
+
+    assert (
+        "policy_source = 'BUILTIN_DEFAULT' AND control_revision IS NULL"
+        in expr
+    )
+    assert (
+        "policy_source = 'CONTROL_PLANE' "
+        "AND control_revision IS NOT NULL "
+        "AND control_revision > 0"
+        in expr
+    )
 
 
 def test_m22_0025_student_snapshot_contract():
