@@ -10,6 +10,7 @@ import { purgeTeacherOfflinePartition } from "./lib/teacher-offline-store";
 import { teacherOfflinePartitionKey } from "./teacher-offline-core";
 import { ContextPage } from "./pages/context-page";
 import { HomePage } from "./pages/home-page";
+import { InterventionWorkspacePage } from "./pages/intervention-workspace-page";
 import { Student360Page } from "./pages/student-360-page";
 import { SuggestionInboxPage } from "./pages/suggestion-inbox-page";
 import { WorkspacePage } from "./pages/workspace-page";
@@ -22,8 +23,10 @@ const contextRoute=createRoute({getParentRoute:()=>rootRoute,path:"/context",com
 const workspaceRoute=createRoute({getParentRoute:()=>rootRoute,path:"/workspace/$moduleId",component:WorkspaceRouteComponent});
 const suggestionInboxRoute=createRoute({getParentRoute:()=>rootRoute,path:"/m21/suggestions",component:SuggestionInboxPage});
 const student360Route=createRoute({getParentRoute:()=>rootRoute,path:"/m21/students/$studentProfileId",component:Student360RouteComponent});
+const interventionWorkspaceRoute=createRoute({getParentRoute:()=>rootRoute,path:"/m21/interventions/$interventionId",component:InterventionWorkspaceRouteComponent});
 function WorkspaceRouteComponent(){const{moduleId}=workspaceRoute.useParams();return<WorkspacePage moduleId={moduleId}/>;}
 function Student360RouteComponent(){const{studentProfileId}=student360Route.useParams();return<Student360Page studentProfileId={studentProfileId}/>;}
-const routeTree=rootRoute.addChildren([indexRoute,contextRoute,workspaceRoute,suggestionInboxRoute,student360Route]);
+function InterventionWorkspaceRouteComponent(){const{interventionId}=interventionWorkspaceRoute.useParams();return<InterventionWorkspacePage interventionId={interventionId}/>;}
+const routeTree=rootRoute.addChildren([indexRoute,contextRoute,workspaceRoute,suggestionInboxRoute,student360Route,interventionWorkspaceRoute]);
 export const router=createRouter({routeTree,basepath:"/app",defaultPreload:"intent",defaultPreloadStaleTime:0});
 declare module "@tanstack/react-router"{interface Register{router:typeof router}}

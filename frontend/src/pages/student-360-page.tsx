@@ -477,6 +477,14 @@ export function Student360Page({
                           Resultado: {item.outcome_type}
                         </div>
                       ) : null}
+                      <Link
+                        to="/m21/interventions/$interventionId"
+                        params={{ interventionId: item.id }}
+                        className="mt-3 inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 transition hover:bg-slate-100"
+                        data-testid="m21-open-intervention-workspace"
+                      >
+                        Abrir espacio de intervención
+                      </Link>
                     </div>
                   ))}
                 </div>

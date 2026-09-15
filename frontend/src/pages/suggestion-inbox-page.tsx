@@ -649,10 +649,22 @@ export function SuggestionInboxPage() {
 
                 {selected.accepted_intervention_id ? (
                   <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
-                    Intervención creada:{" "}
-                    <span className="break-all font-mono text-xs">
-                      {selected.accepted_intervention_id}
-                    </span>
+                    <div>
+                      Intervención creada:{" "}
+                      <span className="break-all font-mono text-xs">
+                        {selected.accepted_intervention_id}
+                      </span>
+                    </div>
+                    <Link
+                      to="/m21/interventions/$interventionId"
+                      params={{
+                        interventionId:
+                          selected.accepted_intervention_id,
+                      }}
+                      className="mt-3 inline-flex h-8 items-center justify-center rounded-lg border border-emerald-200 bg-white px-3 text-xs font-semibold text-emerald-800 transition hover:bg-emerald-100"
+                    >
+                      Abrir espacio de intervención
+                    </Link>
                   </div>
                 ) : null}
 
