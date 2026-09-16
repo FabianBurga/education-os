@@ -54,14 +54,22 @@ class IntegrationConnectorRead(BaseModel):
 class IntegrationRunRead(BaseModel):
     id: UUID
     connector_id: UUID
+    connector_key: str
+    connector_display_name: str
     mapping_id: UUID | None
     initiated_by_user_id: UUID
     source_kind: str
     mode: str
+    source_filename: str | None
     source_fingerprint_sha256: str
-    idempotency_key: str
     connector_config_version: int
     status: str
+    total_rows: int = Field(ge=0, le=1000)
+    valid_rows: int = Field(ge=0, le=1000)
+    invalid_rows: int = Field(ge=0, le=1000)
+    conflict_rows: int = Field(ge=0, le=1000)
+    applied_rows: int = Field(ge=0, le=1000)
+    failed_rows: int = Field(ge=0, le=1000)
     created_at: datetime
 
 
@@ -75,11 +83,41 @@ class CsvStudentEnrollmentPreviewRead(BaseModel):
 
 class IntegrationRunItemRead(BaseModel):
     id: UUID
-    source_item_key: str
+    source_row_number: int | None = Field(default=None, ge=1, le=1001)
+    external_student_id: str | None = Field(default=None, max_length=120)
     canonical_entity_type: str
     operation_class: str
     status: str
     error_code: str | None
-    detail: dict[str, Any]
-    result_entity_id: UUID | None
+    academic_period_code: str | None = Field(default=None, max_length=40)
+    campus_id: UUID | None = None
+    student_code: str | None = Field(default=None, max_length=64)
+    idempotency_key: str | None = Field(default=None, min_length=64, max_length=64)
+    student_profile_id: UUID | None = None
+    enrollment_id: UUID | None = None
     created_at: datetime
+
+
+class IntegrationRunEventMetadataRead(BaseModel):
+    workflow: str | None = Field(default=None, max_length=80)
+    source_filename: str | None = Field(default=None, max_length=160)
+    source_sha256: str | None = Field(default=None, min_length=64, max_length=64)
+    total_rows: int | None = Field(default=None, ge=0, le=1000)
+    valid_rows: int | None = Field(default=None, ge=0, le=1000)
+    invalid_rows: int | None = Field(default=None, ge=0, le=1000)
+    conflict_rows: int | None = Field(default=None, ge=0, le=1000)
+    dry_run: bool | None = None
+    external_student_id: str | None = Field(default=None, max_length=120)
+    student_profile_id: UUID | None = None
+    enrollment_id: UUID | None = None
+    error_code: str | None = Field(default=None, max_length=80)
+    applied_at: datetime | None = None
+
+
+class IntegrationRunEventRead(BaseModel):
+    sequence: int = Field(ge=1)
+    event_type: str
+    run_item_id: UUID | None
+    actor_user_id: UUID | None
+    created_at: datetime
+    metadata: IntegrationRunEventMetadataRead

@@ -4,7 +4,7 @@ from datetime import UTC, date, datetime
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import func, text
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
@@ -15,6 +15,7 @@ from app.modules.audit.service import record_audit
 from app.modules.enrollment.models import AcademicPeriod
 from app.modules.enrollment.service import create_enrollment_record
 from app.modules.integrations.access import (
+    require_integrations_audit_read,
     require_integrations_manage,
     require_integrations_run,
     require_integrations_view,
@@ -32,6 +33,8 @@ from app.modules.integrations.schemas import (
     CsvStudentEnrollmentPreviewRead,
     IntegrationConnectorCreate,
     IntegrationConnectorRead,
+    IntegrationRunEventMetadataRead,
+    IntegrationRunEventRead,
     IntegrationRunItemRead,
     IntegrationRunRead,
 )
@@ -91,41 +94,110 @@ def set_connector_status(session: Session, principal: CurrentPrincipal, connecto
     return _connector_read(connector)
 
 
-def list_runs(session: Session, principal: CurrentPrincipal) -> list[IntegrationRunRead]:
+RUN_LIST_LIMIT = 100
+RUN_ITEM_LIMIT = 1000
+RUN_EVENT_LIMIT = 100
+
+
+def list_runs(session: Session, principal: CurrentPrincipal, *, limit: int = RUN_LIST_LIMIT) -> list[IntegrationRunRead]:
     require_integrations_view(session, principal)
-    rows = session.exec(text("""
-        SELECT r.id, r.connector_id, r.mapping_id, r.initiated_by_user_id, r.source_kind, r.mode,
-               r.source_fingerprint_sha256, r.idempotency_key, r.connector_config_version,
-               COALESCE((SELECT e.event_type FROM integration_run_events e WHERE e.run_id=r.id AND e.run_item_id IS NULL
-                         ORDER BY e.sequence DESC LIMIT 1), 'CREATED'), r.created_at
-        FROM integration_runs r ORDER BY r.created_at DESC
-    """)).all()
-    return [IntegrationRunRead(id=row[0], connector_id=row[1], mapping_id=row[2], initiated_by_user_id=row[3],
-                               source_kind=row[4], mode=row[5], source_fingerprint_sha256=row[6], idempotency_key=row[7],
-                               connector_config_version=int(row[8]), status=row[9], created_at=row[10]) for row in rows]
+    runs = session.exec(
+        select(IntegrationRun).order_by(IntegrationRun.created_at.desc(), IntegrationRun.id.desc()).limit(limit)
+    ).all()
+    return [_run_read(session, run) for run in runs]
 
 
 def get_run(session: Session, principal: CurrentPrincipal, run_id: UUID) -> IntegrationRunRead:
-    for run in list_runs(session, principal):
-        if run.id == run_id:
-            return run
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Integration run not found")
+    require_integrations_view(session, principal)
+    run = session.get(IntegrationRun, run_id)
+    if run is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Integration run not found")
+    return _run_read(session, run)
 
 
 def _run_read(session: Session, run: IntegrationRun) -> IntegrationRunRead:
+    connector = session.get(IntegrationConnector, run.connector_id)
+    if connector is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Integration connector not found")
     latest = session.exec(
-        select(IntegrationRunEvent.event_type)
+        select(IntegrationRunEvent)
         .where(IntegrationRunEvent.run_id == run.id, IntegrationRunEvent.run_item_id.is_(None))
         .order_by(IntegrationRunEvent.sequence.desc())
         .limit(1)
     ).first()
+    created = session.exec(
+        select(IntegrationRunEvent)
+        .where(IntegrationRunEvent.run_id == run.id, IntegrationRunEvent.event_type == "CREATED")
+        .order_by(IntegrationRunEvent.sequence)
+        .limit(1)
+    ).first()
+    filename = _safe_text(created.metadata_json.get("source_filename"), 160) if created else None
+    counts = _run_counts(session, run.id)
     return IntegrationRunRead(
-        id=run.id, connector_id=run.connector_id, mapping_id=run.mapping_id,
+        id=run.id, connector_id=run.connector_id, connector_key=connector.connector_key,
+        connector_display_name=connector.display_name, mapping_id=run.mapping_id,
         initiated_by_user_id=run.initiated_by_user_id, source_kind=run.source_kind,
-        mode=run.mode, source_fingerprint_sha256=run.source_fingerprint_sha256,
-        idempotency_key=run.idempotency_key, connector_config_version=run.connector_config_version,
-        status=latest or "CREATED", created_at=run.created_at,
+        mode=run.mode, source_filename=filename, source_fingerprint_sha256=run.source_fingerprint_sha256,
+        connector_config_version=run.connector_config_version,
+        status=latest.event_type if latest else "CREATED", created_at=run.created_at, **counts,
     )
+
+
+def _safe_text(value: object, maximum: int) -> str | None:
+    return value[:maximum] if isinstance(value, str) else None
+
+
+def _safe_uuid(value: object) -> UUID | None:
+    try:
+        return UUID(str(value)) if value is not None else None
+    except ValueError:
+        return None
+
+
+def _item_event(session: Session, item_id: UUID) -> IntegrationRunEvent | None:
+    return session.exec(
+        select(IntegrationRunEvent).where(IntegrationRunEvent.run_item_id == item_id)
+        .order_by(IntegrationRunEvent.sequence.desc()).limit(1)
+    ).first()
+
+
+def _item_read(session: Session, item: IntegrationRunItem) -> IntegrationRunItemRead:
+    event = _item_event(session, item.id)
+    status_value, error_code = item.status, item.error_code
+    student_profile_id, enrollment_id = item.result_entity_id, None
+    if event is not None and event.event_type == "ITEM_APPLIED":
+        status_value, error_code = "APPLIED", None
+        student_profile_id = _safe_uuid(event.metadata_json.get("student_profile_id"))
+        enrollment_id = _safe_uuid(event.metadata_json.get("enrollment_id"))
+    elif event is not None and event.event_type == "ITEM_FAILED":
+        status_value = "FAILED"
+        error_code = _safe_text(event.metadata_json.get("error_code"), 80) or "DOMAIN_COMMAND_FAILED"
+    detail = item.detail_json
+    row_number = detail.get("source_row_number")
+    return IntegrationRunItemRead(
+        id=item.id, source_row_number=row_number if isinstance(row_number, int) else None,
+        external_student_id=_safe_text(detail.get("external_student_id"), 120),
+        canonical_entity_type=item.canonical_entity_type, operation_class=item.operation_class,
+        status=status_value, error_code=error_code,
+        academic_period_code=_safe_text(detail.get("academic_period_code"), 40),
+        campus_id=_safe_uuid(detail.get("campus_id")), student_code=_safe_text(detail.get("student_code"), 64),
+        idempotency_key=_safe_text(detail.get("idempotency_key"), 64),
+        student_profile_id=student_profile_id, enrollment_id=enrollment_id, created_at=item.created_at,
+    )
+
+
+def _run_counts(session: Session, run_id: UUID) -> dict[str, int]:
+    items = session.exec(
+        select(IntegrationRunItem).where(IntegrationRunItem.run_id == run_id).limit(RUN_ITEM_LIMIT)
+    ).all()
+    outcomes = [_item_read(session, item).status for item in items]
+    return {
+        "total_rows": len(items), "valid_rows": sum(item.status == "VALID" for item in items),
+        "invalid_rows": sum(item.status == "INVALID" for item in items),
+        "conflict_rows": sum(item.status == "CONFLICT" for item in items),
+        "applied_rows": sum(value == "APPLIED" for value in outcomes),
+        "failed_rows": sum(value == "FAILED" for value in outcomes),
+    }
 
 
 def _append_run_event(
@@ -293,24 +365,47 @@ def _summary(session: Session, run_id: UUID) -> dict[str, int]:
 
 def list_run_items(session: Session, principal: CurrentPrincipal, run_id: UUID) -> list[IntegrationRunItemRead]:
     get_run(session, principal, run_id)
-    items = session.exec(select(IntegrationRunItem).where(IntegrationRunItem.run_id == run_id).order_by(IntegrationRunItem.created_at)).all()
-    result: list[IntegrationRunItemRead] = []
-    for item in items:
-        event = session.exec(select(IntegrationRunEvent).where(
-            IntegrationRunEvent.run_item_id == item.id,
-        ).order_by(IntegrationRunEvent.sequence.desc()).limit(1)).first()
-        status_value, error_code, result_entity_id = item.status, item.error_code, item.result_entity_id
-        if event is not None and event.event_type == "ITEM_APPLIED":
-            status_value, error_code = "APPLIED", None
-            result_entity_id = UUID(event.metadata_json["student_profile_id"])
-        elif event is not None and event.event_type == "ITEM_FAILED":
-            status_value, error_code = "FAILED", event.metadata_json.get("error_code", "DOMAIN_COMMAND_FAILED")
-        result.append(IntegrationRunItemRead(
-            id=item.id, source_item_key=item.source_item_key, canonical_entity_type=item.canonical_entity_type,
-            operation_class=item.operation_class, status=status_value, error_code=error_code,
-            detail=item.detail_json, result_entity_id=result_entity_id, created_at=item.created_at,
-        ))
-    return result
+    items = session.exec(
+        select(IntegrationRunItem).where(IntegrationRunItem.run_id == run_id)
+        .order_by(IntegrationRunItem.created_at, IntegrationRunItem.id).limit(RUN_ITEM_LIMIT)
+    ).all()
+    return [_item_read(session, item) for item in items]
+
+
+def _event_metadata_read(event: IntegrationRunEvent) -> IntegrationRunEventMetadataRead:
+    metadata = event.metadata_json
+    return IntegrationRunEventMetadataRead(
+        workflow=_safe_text(metadata.get("workflow"), 80),
+        source_filename=_safe_text(metadata.get("source_filename"), 160),
+        source_sha256=_safe_text(metadata.get("source_sha256"), 64),
+        total_rows=metadata.get("total_rows") if isinstance(metadata.get("total_rows"), int) else None,
+        valid_rows=metadata.get("valid_rows") if isinstance(metadata.get("valid_rows"), int) else None,
+        invalid_rows=metadata.get("invalid_rows") if isinstance(metadata.get("invalid_rows"), int) else None,
+        conflict_rows=metadata.get("conflict_rows") if isinstance(metadata.get("conflict_rows"), int) else None,
+        dry_run=metadata.get("dry_run") if isinstance(metadata.get("dry_run"), bool) else None,
+        external_student_id=_safe_text(metadata.get("external_student_id"), 120),
+        student_profile_id=_safe_uuid(metadata.get("student_profile_id")),
+        enrollment_id=_safe_uuid(metadata.get("enrollment_id")),
+        error_code=_safe_text(metadata.get("error_code"), 80),
+        applied_at=metadata.get("applied_at") if isinstance(metadata.get("applied_at"), str) else None,
+    )
+
+
+def list_run_events(session: Session, principal: CurrentPrincipal, run_id: UUID) -> list[IntegrationRunEventRead]:
+    require_integrations_view(session, principal)
+    require_integrations_audit_read(session, principal)
+    run = session.get(IntegrationRun, run_id)
+    if run is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Integration run not found")
+    events = session.exec(
+        select(IntegrationRunEvent).where(IntegrationRunEvent.run_id == run.id)
+        .order_by(IntegrationRunEvent.sequence).limit(RUN_EVENT_LIMIT)
+    ).all()
+    return [IntegrationRunEventRead(
+        sequence=event.sequence, event_type=event.event_type, run_item_id=event.run_item_id,
+        actor_user_id=event.actor_user_id, created_at=event.created_at,
+        metadata=_event_metadata_read(event),
+    ) for event in events]
 
 
 def apply_csv_student_enrollment(session: Session, principal: CurrentPrincipal, run_id: UUID) -> IntegrationRunRead:

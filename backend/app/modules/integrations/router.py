@@ -1,7 +1,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Body, Depends, Header, status
+from fastapi import APIRouter, Body, Depends, Header, Query, status
 from sqlmodel import Session
 
 from app.api.deps import CurrentPrincipal, get_current_principal
@@ -10,6 +10,7 @@ from app.modules.integrations.schemas import (
     CsvStudentEnrollmentPreviewRead,
     IntegrationConnectorCreate,
     IntegrationConnectorRead,
+    IntegrationRunEventRead,
     IntegrationRunItemRead,
     IntegrationRunRead,
 )
@@ -19,6 +20,7 @@ from app.modules.integrations.service import (
     get_connector,
     get_run,
     list_connectors,
+    list_run_events,
     list_run_items,
     list_runs,
     preview_csv_student_enrollment,
@@ -79,8 +81,8 @@ def csv_student_enrollment_preview(
 
 
 @router.get("/runs", response_model=list[IntegrationRunRead])
-def runs(principal: PrincipalDep, session: SessionDep):
-    return list_runs(session, principal)
+def runs(principal: PrincipalDep, session: SessionDep, limit: int = Query(default=100, ge=1, le=100)):
+    return list_runs(session, principal, limit=limit)
 
 
 @router.get("/runs/{run_id}", response_model=IntegrationRunRead)
@@ -91,6 +93,11 @@ def run_get(run_id: UUID, principal: PrincipalDep, session: SessionDep):
 @router.get("/runs/{run_id}/items", response_model=list[IntegrationRunItemRead])
 def run_items_get(run_id: UUID, principal: PrincipalDep, session: SessionDep):
     return list_run_items(session, principal, run_id)
+
+
+@router.get("/runs/{run_id}/events", response_model=list[IntegrationRunEventRead])
+def run_events_get(run_id: UUID, principal: PrincipalDep, session: SessionDep):
+    return list_run_events(session, principal, run_id)
 
 
 @router.post("/runs/{run_id}/apply", response_model=IntegrationRunRead)
