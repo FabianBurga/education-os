@@ -49,6 +49,25 @@ def test_action_service_records_approval_before_domain_execution():
     assert 'event_type="FAILED"' in approve
 
 
+def test_action_decisions_serialize_without_proposal_update_privilege():
+    source = SERVICE.read_text(encoding="utf-8")
+
+    assert "FOR UPDATE" not in source
+    assert "pg_advisory_xact_lock" in source
+
+    approve = source.split(
+        "def approve_action_proposal(",
+        1,
+    )[1].split("def reject_action_proposal(", 1)[0]
+    reject = source.split("def reject_action_proposal(", 1)[1]
+
+    for decision in (approve, reject):
+        lock_pos = decision.index("_lock_proposal_lifecycle(")
+        latest_pos = decision.index("_latest_event_type(")
+        insert_pos = decision.index("_insert_event(")
+        assert lock_pos < latest_pos < insert_pos
+
+
 def test_internal_creation_requires_sufficient_evidence():
     source = SERVICE.read_text(encoding="utf-8")
 

@@ -115,10 +115,7 @@ def _get_visible_proposal(
     session: Session,
     principal: CurrentPrincipal,
     proposal_id: UUID,
-    *,
-    for_update: bool = False,
 ) -> dict[str, object]:
-    suffix = " FOR UPDATE OF p" if for_update else ""
     row = session.exec(
         text(
             """
@@ -137,7 +134,6 @@ def _get_visible_proposal(
               AND p.organization_id = CAST(:organization_id AS uuid)
               AND p.institution_id = CAST(:institution_id AS uuid)
             """
-            + suffix
         ),
         params={
             "proposal_id": str(proposal_id),
@@ -152,6 +148,19 @@ def _get_visible_proposal(
             detail="Action proposal not found",
         )
     return dict(row)
+
+
+def _lock_proposal_lifecycle(session: Session, proposal_id: UUID) -> None:
+    session.exec(
+        text(
+            """
+            SELECT pg_advisory_xact_lock(
+                hashtextextended(CAST(:proposal_id AS text), 0)
+            )
+            """
+        ),
+        params={"proposal_id": str(proposal_id)},
+    )
 
 
 def _latest_event_type(session: Session, proposal_id: UUID) -> str:
@@ -467,8 +476,8 @@ def approve_action_proposal(
         session,
         principal,
         proposal_id,
-        for_update=True,
     )
+    _lock_proposal_lifecycle(session, proposal_id)
     latest = _latest_event_type(session, proposal_id)
     if latest != "PROPOSED":
         raise HTTPException(
@@ -545,8 +554,8 @@ def reject_action_proposal(
         session,
         principal,
         proposal_id,
-        for_update=True,
     )
+    _lock_proposal_lifecycle(session, proposal_id)
     latest = _latest_event_type(session, proposal_id)
     if latest != "PROPOSED":
         raise HTTPException(
