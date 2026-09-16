@@ -15,25 +15,34 @@ Branch:
 m23-governed-copilot
 
 Current source commit:
-a955a633d1c2a3b5574a87a7b95eee105f910ded
+d963a55520bf5914d42bb07afe2b3b715874f583
 
 Current Alembic revision:
 0030_m23_action_proposals
 
 Current phase:
-M23-5 Runtime Formal Gate
-
-Next phase after M23-5 closure:
 M23-6 Controlled Pilot + Release
 
 Latest known full regression:
-570 passed, 1 skipped, 4 warnings
+571 passed, 1 skipped, 4 warnings
 
 Latest M23-5 install evidence:
 C:\Users\USER\Downloads\M23_5_ACTION_PROPOSALS_REPORT_V4.json
 
 Latest M23-5 install report SHA256:
 4b990119e36bfad6ddb16aade1502f35c5f7c0296db2efde791394c1a13c8197
+
+M23-5 Runtime Formal Gate:
+PASS
+
+M23-5 closure source commit:
+d963a55520bf5914d42bb07afe2b3b715874f583
+
+M23-5 runtime gate evidence:
+C:\Users\USER\Downloads\M23_5_RUNTIME_FORMAL_GATE_REPORT_V1.json
+
+M23-5 runtime gate report SHA256:
+9533e6a990418f113a44bc26c5aa65e14e3b4fdb0563851d25d4a8ac8431a4ad
 
 ## Repository environment
 Primary repository:
@@ -345,14 +354,26 @@ source:
 DB:
 0029_m23_contract_hardening
 
-M23-5 install:
-PASS
+M23-5:
+Action Proposals + Runtime Formal Gate — COMPLETE
 
-M23-5 source:
+M23-5 install source:
 a955a633d1c2a3b5574a87a7b95eee105f910ded
+
+M23-5 closure source:
+d963a55520bf5914d42bb07afe2b3b715874f583
 
 M23-5 DB:
 0030_m23_action_proposals
+
+M23-5 Runtime Formal Gate:
+PASS
+
+M23-5 closure report:
+C:\Users\USER\Downloads\M23_5_RUNTIME_FORMAL_GATE_REPORT_V1.json
+
+M23-5 closure report SHA256:
+9533e6a990418f113a44bc26c5aa65e14e3b4fdb0563851d25d4a8ac8431a4ad
 
 ## M23-6 target
 Do not begin M23-6 until the M23-5 Runtime Formal Gate is PASS.

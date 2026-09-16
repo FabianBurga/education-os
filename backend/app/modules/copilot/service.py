@@ -118,6 +118,11 @@ def begin_copilot_preflight(
             )
         )
 
+    # The advisory loader reads these references using textual SQL. Flush the
+    # ORM additions explicitly so the governed provider boundary can only see
+    # evidence persisted for this authorized run.
+    session.flush()
+
     run.status = "READY"
     record_audit(
         session,
