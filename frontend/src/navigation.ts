@@ -13,6 +13,15 @@ export interface ModuleDefinition {
 
 export const MODULES: ModuleDefinition[] = [
   {
+    id: "copilot",
+    label: "Copiloto gobernado",
+    shortLabel: "Copiloto",
+    description: "Consultas institucionales con evidencia, trazabilidad y decisiones humanas gobernadas.",
+    permission: "copilot.use",
+    legacyPath: "",
+    audience: "Asesoría institucional",
+  },
+  {
     id: "control-plane",
     label: "Control institucional",
     shortLabel: "Control",

@@ -3,6 +3,7 @@ import {
   BellRing,
   Building2,
   ClipboardList,
+  Bot,
   GraduationCap,
   Home,
   Landmark,
@@ -103,6 +104,9 @@ export function AppShell({ children }: { children: ReactNode }) {
               Sugerencias
             </Link>
           ) : null}
+          {bootstrap.permissions.includes("copilot.use") ? (
+            <Link to="/copilot" className="whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700">Copiloto</Link>
+          ) : null}
         </nav>
       </header>
 
@@ -161,6 +165,13 @@ export function AppShell({ children }: { children: ReactNode }) {
               >
                 <ClipboardList className="h-4 w-4" />
                 Sugerencias M21
+              </Link>
+            ) : null}
+
+            {bootstrap.permissions.includes("copilot.use") ? (
+              <Link to="/copilot" className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900" activeProps={{className:"flex items-center gap-3 rounded-xl bg-slate-900 px-3 py-2.5 text-sm font-semibold text-white"}}>
+                <Bot className="h-4 w-4" />
+                Copiloto gobernado
               </Link>
             ) : null}
 

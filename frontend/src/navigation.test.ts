@@ -61,6 +61,15 @@ describe("M15 role-aware navigation", () => {
     expect(moduleCapabilityState(modules[0], bootstrap)).toBe("disabled");
   });
 
+  it("shows Copilot only when its explicit use permission is granted", () => {
+    expect(
+      modulesForContext(context(["copilot.use"])).map((item) => item.id),
+    ).toEqual(["copilot"]);
+    expect(
+      modulesForContext(context(["copilot.action.approve"])),
+    ).toEqual([]);
+  });
+
   it("resolves stable module ids used by the router", () => {
     expect(findModule("guardian")?.permission).toBe(
       "guardian.console.access",
