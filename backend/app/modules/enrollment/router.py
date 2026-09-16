@@ -4,14 +4,13 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-from sqlalchemy import text
 from sqlmodel import Session, select
 
 from app.api.deps import CurrentPrincipal, get_current_principal
 from app.db.session import get_session
 from app.modules.enrollment.models import AcademicPeriod, Enrollment
+from app.modules.enrollment.service import create_enrollment_record
 from app.modules.events.service import enqueue_canonical_event
-from app.modules.students.models import StudentProfile
 
 router = APIRouter(tags=["enrollment"])
 PrincipalDep = Annotated[CurrentPrincipal, Depends(get_current_principal)]
@@ -97,43 +96,9 @@ def list_enrollments(_: PrincipalDep, session: SessionDep):
 
 @router.post("/enrollments", response_model=EnrollmentRead, status_code=201)
 def create_enrollment(payload: EnrollmentCreate, principal: PrincipalDep, session: SessionDep):
-    if session.get(StudentProfile, payload.student_profile_id) is None:
-        raise HTTPException(status_code=404, detail="Student not found")
-    if session.get(AcademicPeriod, payload.academic_period_id) is None:
-        raise HTTPException(status_code=404, detail="Academic period not found")
-    campus = session.exec(
-        text("SELECT id FROM campuses WHERE id = :campus_id").bindparams(
-            campus_id=payload.campus_id
-        )
-    ).first()
-    if campus is None:
-        raise HTTPException(status_code=404, detail="Campus not found")
-    enrollment = Enrollment(
-        organization_id=principal.organization_id,
-        institution_id=principal.institution_id,
-        **payload.model_dump(),
-    )
-    session.add(enrollment)
-    enqueue_canonical_event(
-        session,
-        institution_id=principal.institution_id,
-        event_type="student.enrollment.created",
-        event_version=1,
-        aggregate_type="enrollment",
-        aggregate_id=enrollment.id,
-        actor_user_id=principal.user_id,
-        payload={
-            "student_profile_id": str(enrollment.student_profile_id),
-            "academic_period_id": str(enrollment.academic_period_id),
-            "campus_id": str(enrollment.campus_id),
-            "status": enrollment.status,
-            "enrolled_on": (
-                enrollment.enrolled_on.isoformat()
-                if enrollment.enrolled_on is not None
-                else None
-            ),
-        },
-    )
+    enrollment = create_enrollment_record(session, principal, student_profile_id=payload.student_profile_id,
+        academic_period_id=payload.academic_period_id, campus_id=payload.campus_id,
+        enrollment_number=payload.enrollment_number, status_value=payload.status, enrolled_on=payload.enrolled_on)
     session.commit()
     session.refresh(enrollment)
     return enrollment

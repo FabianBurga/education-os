@@ -24,9 +24,11 @@ from app.api.v1.m19_router import router as m19_router
 from app.api.v1.m20_router import router as m20_router
 from app.api.v1.m21_router import router as m21_router
 from app.api.v1.m23_router import router as m23_router
+from app.api.v1.m24_router import router as m24_router
 from app.db.session import get_session
 
 router = APIRouter()
+router.include_router(m24_router)
 router.include_router(m23_router)
 router.include_router(m21_router)
 router.include_router(m20_router)

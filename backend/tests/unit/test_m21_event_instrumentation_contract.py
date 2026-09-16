@@ -8,7 +8,7 @@ def _source(relative: str) -> str:
 
 
 def test_m21_enrollment_events_are_canonical():
-    src = _source("enrollment/router.py")
+    src = _source("enrollment/service.py") + _source("enrollment/router.py")
     assert 'event_type="student.enrollment.created"' in src
     assert 'event_type="student.enrollment.status_changed"' in src
 

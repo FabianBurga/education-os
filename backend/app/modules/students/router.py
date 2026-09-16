@@ -1,14 +1,14 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import text
 from sqlmodel import Session, select
 
 from app.api.deps import CurrentPrincipal, get_current_principal
 from app.db.session import get_session
 from app.modules.students.models import StudentProfile
+from app.modules.students.service import create_student_profile, update_student_profile
 
 router = APIRouter(prefix="/students", tags=["students"])
 PrincipalDep = Annotated[CurrentPrincipal, Depends(get_current_principal)]
@@ -35,13 +35,6 @@ class StudentRead(BaseModel):
     status: str
 
 
-def visible_person(session: Session, person_id: UUID) -> bool:
-    row = session.exec(
-        text("SELECT id FROM persons WHERE id = :person_id").bindparams(person_id=person_id)
-    ).first()
-    return row is not None
-
-
 @router.get("", response_model=list[StudentRead])
 def list_students(_: PrincipalDep, session: SessionDep):
     return session.exec(select(StudentProfile).order_by(StudentProfile.created_at.desc())).all()
@@ -49,18 +42,7 @@ def list_students(_: PrincipalDep, session: SessionDep):
 
 @router.post("", response_model=StudentRead, status_code=201)
 def create_student(payload: StudentCreate, principal: PrincipalDep, session: SessionDep):
-    if not visible_person(session, payload.person_id):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Person not found in current tenant",
-        )
-    student = StudentProfile(
-        organization_id=principal.organization_id,
-        institution_id=principal.institution_id,
-        person_id=payload.person_id,
-        student_code=payload.student_code,
-    )
-    session.add(student)
+    student = create_student_profile(session, principal, person_id=payload.person_id, student_code=payload.student_code)
     session.commit()
     session.refresh(student)
     return student
@@ -81,12 +63,7 @@ def update_student(
     _: PrincipalDep,
     session: SessionDep,
 ):
-    student = session.get(StudentProfile, student_id)
-    if student is None:
-        raise HTTPException(status_code=404, detail="Student not found")
-    for key, value in payload.model_dump(exclude_unset=True).items():
-        setattr(student, key, value)
-    session.add(student)
+    student = update_student_profile(session, student_id, payload.model_dump(exclude_unset=True))
     session.commit()
     session.refresh(student)
     return student
