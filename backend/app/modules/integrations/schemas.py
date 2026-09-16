@@ -29,7 +29,7 @@ def _reject_secrets(value: Any) -> Any:
 
 class IntegrationConnectorCreate(BaseModel):
     connector_key: str = Field(pattern=r"^[a-z][a-z0-9_.-]{2,119}$")
-    connector_type: Literal["FILE_CSV"]
+    connector_type: Literal["FILE_CSV", "CSV_STUDENT_ENROLLMENT"]
     display_name: str = Field(min_length=1, max_length=160)
     configuration: dict[str, Any] = Field(default_factory=dict)
 
@@ -62,4 +62,24 @@ class IntegrationRunRead(BaseModel):
     idempotency_key: str
     connector_config_version: int
     status: str
+    created_at: datetime
+
+
+class CsvStudentEnrollmentPreviewRead(BaseModel):
+    run: IntegrationRunRead
+    total_rows: int
+    valid_rows: int
+    invalid_rows: int
+    conflict_rows: int
+
+
+class IntegrationRunItemRead(BaseModel):
+    id: UUID
+    source_item_key: str
+    canonical_entity_type: str
+    operation_class: str
+    status: str
+    error_code: str | None
+    detail: dict[str, Any]
+    result_entity_id: UUID | None
     created_at: datetime

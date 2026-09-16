@@ -101,7 +101,10 @@ def people_create(
     principal: AdminPrincipalDep,
     session: SessionDep,
 ):
-    return create_person(session, principal, payload)
+    person = create_person(session, principal, payload)
+    session.commit()
+    session.refresh(person)
+    return person
 
 
 @router.get("/accounts", response_model=list[AccountAdminRead])

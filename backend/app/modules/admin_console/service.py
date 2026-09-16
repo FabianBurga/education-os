@@ -126,6 +126,7 @@ def create_person(
     principal: CurrentPrincipal,
     payload: PersonAdminCreate,
 ) -> Person:
+    """Canonical person-create command. Caller owns transaction boundaries."""
     entity = Person(
         organization_id=principal.organization_id,
         given_names=payload.given_names.strip(),
@@ -141,8 +142,6 @@ def create_person(
         entity.id,
         {"has_email": bool(entity.primary_email)},
     )
-    session.commit()
-    session.refresh(entity)
     return entity
 
 

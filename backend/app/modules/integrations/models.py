@@ -101,3 +101,23 @@ class IntegrationRunItem(SQLModel, table=True):
     error_code: str | None = Field(default=None, max_length=80)
     detail_json: dict = Field(default_factory=dict, sa_column=Column(JSONB, nullable=False))
     created_at: datetime = Field(default_factory=utcnow, index=True)
+
+
+class IntegrationExternalStudentRef(SQLModel, table=True):
+    """Immutable connector-qualified external identity for create-only student imports."""
+
+    __tablename__ = "integration_external_student_refs"
+    __table_args__ = (
+        UniqueConstraint(
+            "institution_id", "connector_id", "external_student_id",
+            name="uq_integration_external_student_refs_identity",
+        ),
+    )
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    organization_id: UUID = Field(index=True)
+    institution_id: UUID = Field(index=True)
+    connector_id: UUID = Field(foreign_key="integration_connectors.id", index=True)
+    external_student_id: str = Field(max_length=120, index=True)
+    student_profile_id: UUID = Field(foreign_key="student_profiles.id", index=True)
+    created_run_id: UUID = Field(foreign_key="integration_runs.id", index=True)
+    created_at: datetime = Field(default_factory=utcnow, index=True)
