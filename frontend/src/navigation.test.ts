@@ -70,6 +70,11 @@ describe("M15 role-aware navigation", () => {
     ).toEqual([]);
   });
 
+  it("shows Integration Hub only with integrations.view", () => {
+    expect(modulesForContext(context(["integrations.view"])).map((item) => item.id)).toEqual(["integrations"]);
+    expect(modulesForContext(context(["integrations.run"]))).toEqual([]);
+  });
+
   it("resolves stable module ids used by the router", () => {
     expect(findModule("guardian")?.permission).toBe(
       "guardian.console.access",

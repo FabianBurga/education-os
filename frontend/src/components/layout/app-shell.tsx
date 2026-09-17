@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import {
   BellRing,
   Building2,
+  Cable,
   ClipboardList,
   Bot,
   GraduationCap,
@@ -25,6 +26,7 @@ import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 
 const icons: Record<string, typeof Home> = {
+  integrations: Cable,
   administration: Shield,
   coordination: Landmark,
   teacher: GraduationCap,

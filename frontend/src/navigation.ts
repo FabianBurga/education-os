@@ -13,6 +13,15 @@ export interface ModuleDefinition {
 
 export const MODULES: ModuleDefinition[] = [
   {
+    id: "integrations",
+    label: "Centro de integraciones",
+    shortLabel: "Integraciones",
+    description: "Importaciones CSV gobernadas, validación, trazabilidad y seguimiento de ejecuciones.",
+    permission: "integrations.view",
+    legacyPath: "",
+    audience: "Operación institucional",
+  },
+  {
     id: "copilot",
     label: "Copiloto gobernado",
     shortLabel: "Copiloto",
