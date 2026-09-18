@@ -1,22 +1,22 @@
 # Current State
 
-## Formally committed
+## Formally closed
 
-The latest committed source is `57aea73c71a403c2b85024dc0e554c011fa258a7`, `feat(m25): expand governed read-only agents`. It formally closes M25-2. Closed milestones are M20, M21, M22, M23 backend, M24, M25-1, and M25-2.
+M25 - Agentic Control Plane is CLOSED at `bd0fbaa719eae4884d9a6c3ab8600939e88bb433`, `feat(m25): add governed provider-backed explainer`. It is tagged `m25-governed-provider-explainer-v0.25.3` and remotely backed up and verified on `origin` (`FabianBurga/education-os`). The database revision is `0036_m25_run_explainer`.
 
-## Technically closed, pending source-control commit
+M25 status:
 
-M25-3 is validated in the uncommitted worktree at database revision `0036_m25_run_explainer`:
-
-- M25-3A Evidence Pack Foundation â€” PASS / closed within M25-3.
-- M25-3B Provider Routing, Budget Admission, and Fake Provider â€” PASS / closed within M25-3.
-- M25-3C `integration_run_explainer` â€” technically closed.
-- M25-3D controlled fake-provider pilot â€” PASS.
-- M25-3E optional live-provider pilot â€” not executed.
+- M25-1 - CLOSED.
+- M25-2 - CLOSED.
+- M25-3A Evidence Pack Foundation - PASS.
+- M25-3B Provider Routing, Budget Admission, and Fake Provider - PASS.
+- M25-3C `integration_run_explainer` - PASS / CLOSED.
+- M25-3D controlled fake-provider pilot - PASS.
+- M25-3E optional live-provider pilot - OPTIONAL / NOT EXECUTED.
 
 The first provider-backed L0 agent is `integration_run_explainer`. Its fake-provider mode and mandatory deterministic fallback are both validated. Successful controlled provider run: `0f706b7f-de79-4bde-ba15-a3b0795bc67a`; it completed in `FAKE_PROVIDER` mode with one in-process call, one valid opaque citation, 30 micro-USD consumed per budget scope, and no domain mutation.
 
-No OpenAI, Anthropic, or local provider call was made. The historical M23 live-provider HOLD EXTERNAL remains open for API-credit/HTTP-429 availability; M25-3 does not close or supersede it.
+No OpenAI, Anthropic, or local provider call was made. The historical M23 live-provider HOLD EXTERNAL remains open for API-credit/HTTP-429 availability; M25 does not close or supersede it.
 
 ## Validation evidence
 
@@ -28,7 +28,7 @@ No OpenAI, Anthropic, or local provider call was made. The historical M23 live-p
 
 ## Next
 
-Review and create the single approved M25-3 source-control commit. Live-provider pilot work is optional future M25-3E work and is not authorized by this closure.
+M26 - Human Experience Layer / Mentor OS planning/discovery. Live-provider pilot work remains optional M25-3E work and is not authorized by M25 closure.
 
 ## Living documentation rule
 

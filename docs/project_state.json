@@ -1,13 +1,17 @@
 {
   "project": "Education OS",
-  "authoritative_committed_source": "57aea73c71a403c2b85024dc0e554c011fa258a7",
-  "source_base_commit": "57aea73c71a403c2b85024dc0e554c011fa258a7",
+  "authoritative_committed_source": "bd0fbaa719eae4884d9a6c3ab8600939e88bb433",
+  "source_base_commit": "bd0fbaa719eae4884d9a6c3ab8600939e88bb433",
   "database_revision": "0036_m25_run_explainer",
-  "active_milestone": "M25-3",
-  "milestone_status": "TECHNICALLY_CLOSED_PENDING_SOURCE_COMMIT",
-  "validated_uncommitted_slices": ["M25-3A", "M25-3B", "M25-3C", "M25-3D"],
-  "next_slice": "M25-3E optional live-provider pilot",
-  "closed_milestones": ["M20", "M21", "M22", "M23", "M24", "M25-1", "M25-2"],
+  "active_milestone": "M26",
+  "previous_milestone": "M25",
+  "milestone_status": "M25_CLOSED",
+  "m25_status": "CLOSED",
+  "m25_release_tag": "m25-governed-provider-explainer-v0.25.3",
+  "remote_backup": "VERIFIED",
+  "validated_uncommitted_slices": [],
+  "next_slice": "M26 planning/discovery",
+  "closed_milestones": ["M20", "M21", "M22", "M23", "M24", "M25-1", "M25-2", "M25-3A", "M25-3B", "M25-3C", "M25-3D", "M25"],
   "provider_network_calls_enabled": false,
   "provider_validation": "FAKE_PROVIDER_ONLY",
   "fake_provider_pilot": {
@@ -18,5 +22,5 @@
   },
   "live_provider_status": "NOT_EXECUTED_HOLD_EXTERNAL",
   "test_summary": "641 passed, 1 skipped",
-  "next_step": "Create the approved single M25-3 source-control commit"
+  "next_step": "M26 planning/discovery"
 }
