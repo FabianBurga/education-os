@@ -18,7 +18,7 @@ def execute_inspection_tool(
     entity_id: UUID | None,
 ):
     """Closed M25 tool gateway; unknown agent or tool selection is impossible."""
-    if agent_key == "integration_run_advisor" and entity_id is not None:
+    if agent_key in {"integration_run_advisor", "integration_run_explainer"} and entity_id is not None:
         return inspect_integration_run(session, principal, run_id=entity_id)
     if agent_key == "student_timeline_advisor" and entity_id is not None:
         return inspect_student_timeline(session, principal, student_id=entity_id)

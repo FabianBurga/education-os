@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -16,6 +17,13 @@ class StudentTimelineAgentRunCreate(BaseModel):
 
 class InstitutionIntelligenceAgentRunCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
+
+
+class IntegrationRunExplainerCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    integration_run_id: UUID
+    explanation_focus: Literal["SUMMARY", "ERRORS", "OUTCOME"]
 
 
 class AgentIssueRead(BaseModel):
@@ -57,6 +65,24 @@ class IntegrationRunAdvisorOutput(BaseModel):
     issues: list[AgentIssueRead]
     provenance: AgentProvenanceRead
     safe_next_action: str = Field(max_length=500)
+    evidence_refs: list[AgentEvidenceRead]
+
+
+class ProviderFindingRead(BaseModel):
+    text: str = Field(min_length=1, max_length=700)
+    evidence_refs: list[str] = Field(min_length=1, max_length=8)
+
+
+class IntegrationRunExplainerOutput(BaseModel):
+    agent_key: str = "integration_run_explainer"
+    run_id: UUID
+    explanation_focus: Literal["SUMMARY", "ERRORS", "OUTCOME"]
+    explanation_mode: Literal["DETERMINISTIC_FALLBACK", "FAKE_PROVIDER"]
+    provider_failure_code: str | None = None
+    evidence_manifest_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    summary: str = Field(min_length=1, max_length=1_200)
+    key_findings: list[ProviderFindingRead] = Field(max_length=8)
+    caveats: list[str] = Field(max_length=8)
     evidence_refs: list[AgentEvidenceRead]
 
 
@@ -118,6 +144,7 @@ class InstitutionIntelligenceAdvisorOutput(BaseModel):
 
 AgentAdvisorOutput = (
     IntegrationRunAdvisorOutput
+    | IntegrationRunExplainerOutput
     | StudentTimelineAdvisorOutput
     | InstitutionIntelligenceAdvisorOutput
 )

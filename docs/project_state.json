@@ -1,0 +1,22 @@
+{
+  "project": "Education OS",
+  "authoritative_committed_source": "57aea73c71a403c2b85024dc0e554c011fa258a7",
+  "source_base_commit": "57aea73c71a403c2b85024dc0e554c011fa258a7",
+  "database_revision": "0036_m25_run_explainer",
+  "active_milestone": "M25-3",
+  "milestone_status": "TECHNICALLY_CLOSED_PENDING_SOURCE_COMMIT",
+  "validated_uncommitted_slices": ["M25-3A", "M25-3B", "M25-3C", "M25-3D"],
+  "next_slice": "M25-3E optional live-provider pilot",
+  "closed_milestones": ["M20", "M21", "M22", "M23", "M24", "M25-1", "M25-2"],
+  "provider_network_calls_enabled": false,
+  "provider_validation": "FAKE_PROVIDER_ONLY",
+  "fake_provider_pilot": {
+    "status": "PASS",
+    "agent_run_id": "0f706b7f-de79-4bde-ba15-a3b0795bc67a",
+    "network_calls": 0,
+    "domain_mutation": false
+  },
+  "live_provider_status": "NOT_EXECUTED_HOLD_EXTERNAL",
+  "test_summary": "641 passed, 1 skipped",
+  "next_step": "Create the approved single M25-3 source-control commit"
+}

@@ -32,6 +32,10 @@ CAPABILITIES = {
         key="integration.run.inspect", required_permission="integrations.view",
         maximum_autonomy="L0", side_effect_class="NONE",
     ),
+    "integration.run.explain": CapabilityDefinition(
+        key="integration.run.explain", required_permission="integrations.view",
+        maximum_autonomy="L0", side_effect_class="NONE",
+    ),
     "student.timeline.inspect": CapabilityDefinition(
         key="student.timeline.inspect", required_permission="student_timeline.read",
         maximum_autonomy="L0", side_effect_class="NONE",
@@ -70,6 +74,10 @@ AGENTS = {
     "institution_intelligence_advisor": AgentDefinitionRegistry(
         key="institution_intelligence_advisor", capability_keys=("intelligence.snapshot.inspect",),
         tool_keys=("m22.intelligence_snapshot.inspect",), maximum_autonomy="L0",
+    ),
+    "integration_run_explainer": AgentDefinitionRegistry(
+        key="integration_run_explainer", capability_keys=("integration.run.explain",),
+        tool_keys=("m24.integration_run.inspect",), maximum_autonomy="L0",
     ),
 }
 

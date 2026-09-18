@@ -14,6 +14,7 @@ from app.modules.agents.schemas import (
     AgentRunStepRead,
     AgentToolCallRead,
     InstitutionIntelligenceAgentRunCreate,
+    IntegrationRunExplainerCreate,
     StudentTimelineAgentRunCreate,
 )
 from app.modules.agents.service import (
@@ -25,6 +26,7 @@ from app.modules.agents.service import (
     list_agent_tool_calls,
     run_institution_intelligence_advisor,
     run_integration_run_advisor,
+    run_integration_run_explainer,
     run_student_timeline_advisor,
 )
 
@@ -48,7 +50,7 @@ def integration_run_advisor(payload: AgentRunCreate, principal: PrincipalDep, se
 @router.post("/{agent_key}/runs", response_model=AgentRunRead, status_code=status.HTTP_201_CREATED)
 def advisor_run(
     agent_key: str,
-    payload: AgentRunCreate | StudentTimelineAgentRunCreate | InstitutionIntelligenceAgentRunCreate,
+    payload: AgentRunCreate | StudentTimelineAgentRunCreate | InstitutionIntelligenceAgentRunCreate | IntegrationRunExplainerCreate,
     principal: PrincipalDep,
     session: SessionDep,
 ):
@@ -58,6 +60,13 @@ def advisor_run(
         result = run_student_timeline_advisor(session, principal, student_id=payload.student_id)
     elif agent_key == "institution_intelligence_advisor" and isinstance(payload, InstitutionIntelligenceAgentRunCreate):
         result = run_institution_intelligence_advisor(session, principal)
+    elif agent_key == "integration_run_explainer" and isinstance(payload, IntegrationRunExplainerCreate):
+        result = run_integration_run_explainer(
+            session,
+            principal,
+            integration_run_id=payload.integration_run_id,
+            explanation_focus=payload.explanation_focus,
+        )
     else:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Typed agent input does not match agent")
     session.commit()

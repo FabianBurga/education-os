@@ -10,6 +10,7 @@ from sqlmodel import Session, select
 from app.api.deps import CurrentPrincipal
 from app.modules.agents.context import build_context_envelope
 from app.modules.agents.executor import execute_inspection_tool
+from app.modules.agents.integration_run_explainer import explain_integration_run
 from app.modules.agents.models import (
     AgentDefinition,
     AgentEvidenceRef,
@@ -31,9 +32,10 @@ from app.modules.agents.schemas import (
     AgentToolCallRead,
     InstitutionIntelligenceAdvisorOutput,
     IntegrationRunAdvisorOutput,
+    IntegrationRunExplainerOutput,
     StudentTimelineAdvisorOutput,
 )
-from app.modules.agents.verifier import verify_agent_output
+from app.modules.agents.verifier import verify_agent_output, verify_integration_run_explainer_output
 from app.modules.audit.service import record_audit
 from app.modules.events.service import enqueue_canonical_event
 from app.modules.m21_access import require_existing_student_scope
@@ -42,11 +44,13 @@ _REQUEST_TYPES = {
     "integration_run_advisor": "M24_INTEGRATION_RUN_INSPECT",
     "student_timeline_advisor": "M21_STUDENT_TIMELINE_INSPECT",
     "institution_intelligence_advisor": "M22_INSTITUTION_INTELLIGENCE_INSPECT",
+    "integration_run_explainer": "M24_INTEGRATION_RUN_EXPLAIN",
 }
 _OUTPUT_TYPES = {
     "integration_run_advisor": IntegrationRunAdvisorOutput,
     "student_timeline_advisor": StudentTimelineAdvisorOutput,
     "institution_intelligence_advisor": InstitutionIntelligenceAdvisorOutput,
+    "integration_run_explainer": IntegrationRunExplainerOutput,
 }
 
 
@@ -117,7 +121,12 @@ def _definition_and_policy(
         )
         .order_by(AgentPolicyVersion.version.desc())
     ).first()
-    if policy is None or policy.provider_policy != "DETERMINISTIC_ONLY":
+    expected_provider_policy = (
+        "PROVIDER_OPTIONAL_WITH_DETERMINISTIC_FALLBACK"
+        if agent_key == "integration_run_explainer"
+        else "DETERMINISTIC_ONLY"
+    )
+    if policy is None or policy.provider_policy != expected_provider_policy:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agent policy not found")
     return definition, policy
 
@@ -162,6 +171,8 @@ def _output_from_event(run: AgentRun, event: AgentRunEvent | None) -> AgentAdvis
 def _safe_summary(output: AgentAdvisorOutput) -> dict:
     if isinstance(output, IntegrationRunAdvisorOutput):
         return {"status": output.status, "counts": output.counts.model_dump()}
+    if isinstance(output, IntegrationRunExplainerOutput):
+        return {"mode": output.explanation_mode, "focus": output.explanation_focus}
     if isinstance(output, StudentTimelineAdvisorOutput):
         return {"event_count": output.timeline.event_count, "intervention_count": output.interventions.total}
     if isinstance(output, InstitutionIntelligenceAdvisorOutput):
@@ -175,6 +186,7 @@ def run_advisor(
     *,
     agent_key: str,
     entity_id: UUID | None,
+    explanation_focus: str | None = None,
 ) -> AgentRunRead:
     request_type = _REQUEST_TYPES.get(agent_key)
     if request_type is None:
@@ -199,6 +211,7 @@ def run_advisor(
         "agent_key": agent_key,
         "request_type": request_type,
         "entity_id": str(entity_id) if entity_id is not None else None,
+        "explanation_focus": explanation_focus,
     }
     request_sha = _sha(request_material)
     existing = session.exec(
@@ -271,9 +284,24 @@ def run_advisor(
     )
     _append_event(session, principal, run, "POLICY_ALLOWED", {"autonomy": "L0", "tool_key": tool.key})
     try:
-        output = execute_inspection_tool(
+        inspected = execute_inspection_tool(
             session, principal, agent_key=agent_key, entity_id=entity_id,
         )
+        if agent_key == "integration_run_explainer":
+            if not isinstance(inspected, IntegrationRunAdvisorOutput) or explanation_focus is None:
+                raise ValueError("Explainer requires authorized integration evidence and typed focus")
+            explained = explain_integration_run(
+                session,
+                principal,
+                run=run,
+                definition=definition,
+                policy=policy,
+                base=inspected,
+                explanation_focus=explanation_focus,
+            )
+            output = explained.output
+        else:
+            output = inspected
         output_payload = output.model_dump(mode="json")
         session.add(
             AgentRunStep(
@@ -299,7 +327,17 @@ def run_advisor(
                     provenance_sha256=evidence.provenance_sha256,
                 )
             )
-        verify_agent_output(output, session=session, principal=principal)
+        if agent_key == "integration_run_explainer":
+            verify_integration_run_explainer_output(
+                output,
+                base=inspected,
+                pack=explained.pack,
+                session=session,
+                agent_run=run,
+                provider_call_id=explained.provider_call_id,
+            )
+        else:
+            verify_agent_output(output, session=session, principal=principal)
         session.add(
             AgentToolCall(
                 organization_id=principal.organization_id,
@@ -382,6 +420,22 @@ def run_integration_run_advisor(
 ) -> AgentRunRead:
     return run_advisor(
         session, principal, agent_key="integration_run_advisor", entity_id=integration_run_id,
+    )
+
+
+def run_integration_run_explainer(
+    session: Session,
+    principal: CurrentPrincipal,
+    *,
+    integration_run_id: UUID,
+    explanation_focus: str,
+) -> AgentRunRead:
+    return run_advisor(
+        session,
+        principal,
+        agent_key="integration_run_explainer",
+        entity_id=integration_run_id,
+        explanation_focus=explanation_focus,
     )
 
 

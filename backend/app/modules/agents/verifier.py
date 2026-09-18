@@ -2,10 +2,14 @@ from fastapi import HTTPException, status
 from sqlmodel import Session
 
 from app.api.deps import CurrentPrincipal
+from app.modules.agents.evidence import EvidencePack, validate_provider_citations
+from app.modules.agents.models import AgentProviderCall, AgentRun
+from app.modules.agents.prompt_contract import INTEGRATION_RUN_EXPLAINER_PROMPT
 from app.modules.agents.schemas import (
     AgentAdvisorOutput,
     InstitutionIntelligenceAdvisorOutput,
     IntegrationRunAdvisorOutput,
+    IntegrationRunExplainerOutput,
     StudentTimelineAdvisorOutput,
 )
 from app.modules.m21_access import require_existing_student_scope
@@ -21,6 +25,41 @@ def verify_integration_run_advisor_output(output: IntegrationRunAdvisorOutput) -
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Agent verification failed")
     if output.evidence_refs[0].source_entity_id != output.run_id:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Agent verification failed")
+
+
+def verify_integration_run_explainer_output(
+    output: IntegrationRunExplainerOutput,
+    *,
+    base: IntegrationRunAdvisorOutput,
+    pack: EvidencePack,
+    session: Session,
+    agent_run: AgentRun,
+    provider_call_id: object | None,
+) -> None:
+    verify_integration_run_advisor_output(base)
+    if output.run_id != base.run_id or output.evidence_manifest_sha256 != pack.manifest_sha256:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Agent verification failed")
+    if output.evidence_refs != base.evidence_refs or len(pack.citation_mapping) != len(output.evidence_refs):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Agent verification failed")
+    citations = [citation for finding in output.key_findings for citation in finding.evidence_refs]
+    try:
+        validate_provider_citations(pack, citations)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Agent verification failed") from exc
+    if output.explanation_mode == "FAKE_PROVIDER":
+        if provider_call_id is None:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Agent verification failed")
+        call = session.get(AgentProviderCall, provider_call_id)
+        if (
+            call is None
+            or call.agent_run_id != agent_run.id
+            or call.organization_id != agent_run.organization_id
+            or call.institution_id != agent_run.institution_id
+            or call.evidence_manifest_sha256 != pack.manifest_sha256
+            or call.prompt_contract_sha256 != INTEGRATION_RUN_EXPLAINER_PROMPT.sha256
+            or call.normalized_outcome != "SUCCEEDED"
+        ):
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Agent verification failed")
 
 
 def _verify_evidence(output: AgentAdvisorOutput, source_module: str) -> None:
