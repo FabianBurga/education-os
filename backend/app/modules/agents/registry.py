@@ -32,6 +32,14 @@ CAPABILITIES = {
         key="integration.run.inspect", required_permission="integrations.view",
         maximum_autonomy="L0", side_effect_class="NONE",
     ),
+    "student.timeline.inspect": CapabilityDefinition(
+        key="student.timeline.inspect", required_permission="student_timeline.read",
+        maximum_autonomy="L0", side_effect_class="NONE",
+    ),
+    "intelligence.snapshot.inspect": CapabilityDefinition(
+        key="intelligence.snapshot.inspect", required_permission="intelligence.read",
+        maximum_autonomy="L0", side_effect_class="NONE",
+    ),
 }
 TOOLS = {
     "m24.integration_run.inspect": ToolDefinition(
@@ -39,11 +47,29 @@ TOOLS = {
         required_permission="integrations.view", maximum_autonomy="L0",
         side_effect_class="NONE", input_schema_version="1",
     ),
+    "m21.student_timeline.inspect": ToolDefinition(
+        key="m21.student_timeline.inspect", capability_key="student.timeline.inspect",
+        required_permission="student_timeline.read", maximum_autonomy="L0",
+        side_effect_class="NONE", input_schema_version="1",
+    ),
+    "m22.intelligence_snapshot.inspect": ToolDefinition(
+        key="m22.intelligence_snapshot.inspect", capability_key="intelligence.snapshot.inspect",
+        required_permission="intelligence.read", maximum_autonomy="L0",
+        side_effect_class="NONE", input_schema_version="1",
+    ),
 }
 AGENTS = {
     "integration_run_advisor": AgentDefinitionRegistry(
         key="integration_run_advisor", capability_keys=("integration.run.inspect",),
         tool_keys=("m24.integration_run.inspect",), maximum_autonomy="L0",
+    ),
+    "student_timeline_advisor": AgentDefinitionRegistry(
+        key="student_timeline_advisor", capability_keys=("student.timeline.inspect",),
+        tool_keys=("m21.student_timeline.inspect",), maximum_autonomy="L0",
+    ),
+    "institution_intelligence_advisor": AgentDefinitionRegistry(
+        key="institution_intelligence_advisor", capability_keys=("intelligence.snapshot.inspect",),
+        tool_keys=("m22.intelligence_snapshot.inspect",), maximum_autonomy="L0",
     ),
 }
 

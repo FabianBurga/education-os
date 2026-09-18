@@ -109,11 +109,11 @@ def test_m25_migration_creates_force_rls_append_only_tables_permissions_and_seed
 def test_m25_api_is_bounded_and_has_no_arbitrary_tool_provider_or_execution_surface():
     router = ROUTER.read_text(encoding="utf-8").lower()
     service = SERVICE.read_text(encoding="utf-8").lower()
-    for expected in ("/integration_run_advisor/runs", "/runs/{run_id}/steps", "/runs/{run_id}/evidence", "/runs/{run_id}/tool-calls"):
+    for expected in ("/integration_run_advisor/runs", "/{agent_key}/runs", "/runs/{run_id}/steps", "/runs/{run_id}/evidence", "/runs/{run_id}/tool-calls"):
         assert expected in router
     for forbidden in ("execute_sql", "/shell", "webhook", "credential", "/tools", "callback"):
         assert forbidden not in router
-    assert "known_tool(\"m24.integration_run.inspect\")" in service
+    assert "known_tool(plan[2].tool_key)" in service
     assert "enqueue_canonical_event" in service
 
 

@@ -15,6 +15,7 @@ from app.modules.intelligence.access import (
 )
 from app.modules.intelligence.schemas import (
     CohortIntelligenceRead,
+    InstitutionIntelligenceAgentRead,
     IntelligenceOverviewRead,
     IntelligencePriorityItem,
     IntelligenceTrendPoint,
@@ -359,6 +360,89 @@ def intelligence_overview(
         policy_key=str(row[16]),
         policy_version=int(row[17]),
         control_revision=(int(row[18]) if row[18] is not None else None),
+    )
+
+
+def inspect_current_institution_intelligence(
+    session: Session,
+    principal: CurrentPrincipal,
+) -> InstitutionIntelligenceAgentRead:
+    """Return a minimized current M22 snapshot under permission-only access.
+
+    This is an internal M22 read boundary.  It deliberately avoids the
+    management-role decision surfaces: M25 separately requires agents.use and
+    may reveal no more than this typed, aggregate intelligence view.
+    """
+    require_intelligence_read(session, principal)
+    row = session.exec(
+        text(
+            """
+            SELECT id, snapshot_date, created_at, policy_key, policy_version,
+                   rule_set_version, projection_version
+            FROM institution_intelligence_daily
+            WHERE organization_id = CAST(:organization_id AS uuid)
+              AND institution_id = CAST(:institution_id AS uuid)
+            ORDER BY snapshot_date DESC, created_at DESC, id DESC
+            LIMIT 1
+            """
+        ),
+        params={
+            "organization_id": str(principal.organization_id),
+            "institution_id": str(principal.institution_id),
+        },
+    ).first()
+    if row is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Intelligence snapshot not found",
+        )
+
+    signal_row = session.exec(
+        text(
+            """
+            SELECT
+                COUNT(*),
+                COUNT(*) FILTER (WHERE severity = 'LOW'),
+                COUNT(*) FILTER (WHERE severity = 'MEDIUM'),
+                COUNT(*) FILTER (WHERE severity = 'HIGH')
+            FROM intelligence_signals
+            WHERE organization_id = CAST(:organization_id AS uuid)
+              AND institution_id = CAST(:institution_id AS uuid)
+              AND status = 'OPEN'
+            """
+        ),
+        params={
+            "organization_id": str(principal.organization_id),
+            "institution_id": str(principal.institution_id),
+        },
+    ).one()
+    categories = session.exec(
+        text(
+            """
+            SELECT signal_type
+            FROM intelligence_signals
+            WHERE organization_id = CAST(:organization_id AS uuid)
+              AND institution_id = CAST(:institution_id AS uuid)
+              AND status = 'OPEN'
+            GROUP BY signal_type
+            ORDER BY COUNT(*) DESC, signal_type
+            LIMIT 10
+            """
+        ),
+        params={
+            "organization_id": str(principal.organization_id),
+            "institution_id": str(principal.institution_id),
+        },
+    ).all()
+    return InstitutionIntelligenceAgentRead(
+        snapshot_id=row[0], snapshot_date=row[1], generated_at=row[2],
+        policy_key=str(row[3]), policy_version=int(row[4]),
+        rule_set_version=int(row[5]), projection_version=int(row[6]),
+        open_signal_total=int(signal_row[0] or 0),
+        open_signal_low=int(signal_row[1] or 0),
+        open_signal_medium=int(signal_row[2] or 0),
+        open_signal_high=int(signal_row[3] or 0),
+        top_signal_categories=[str(item[0]) for item in categories],
     )
 
 

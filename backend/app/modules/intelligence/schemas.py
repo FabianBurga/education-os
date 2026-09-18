@@ -163,3 +163,20 @@ class InterventionHealthRead(BaseModel):
     policy_source: PolicySourceValue
     policy_version: int
     control_revision: int | None
+
+
+class InstitutionIntelligenceAgentRead(BaseModel):
+    """Minimized, permission-gated M22 read boundary for M25 L0 advisors."""
+
+    snapshot_id: UUID
+    snapshot_date: date
+    generated_at: datetime
+    policy_key: str
+    policy_version: int
+    rule_set_version: int
+    projection_version: int
+    open_signal_total: int
+    open_signal_low: int
+    open_signal_medium: int
+    open_signal_high: int
+    top_signal_categories: list[str]

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -7,6 +7,15 @@ from pydantic import BaseModel, ConfigDict, Field
 class AgentRunCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     integration_run_id: UUID
+
+
+class StudentTimelineAgentRunCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    student_id: UUID
+
+
+class InstitutionIntelligenceAgentRunCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
 
 
 class AgentIssueRead(BaseModel):
@@ -51,6 +60,69 @@ class IntegrationRunAdvisorOutput(BaseModel):
     evidence_refs: list[AgentEvidenceRead]
 
 
+class StudentTimelineSummaryRead(BaseModel):
+    event_count: int = Field(ge=0)
+    recent_event_types: list[str] = Field(max_length=20)
+    latest_event_at: datetime | None = None
+
+
+class InterventionSummaryRead(BaseModel):
+    total: int = Field(ge=0)
+    open: int = Field(ge=0)
+    in_progress: int = Field(ge=0)
+    closed: int = Field(ge=0)
+
+
+class FollowupSummaryRead(BaseModel):
+    total: int = Field(ge=0)
+    latest_at: datetime | None = None
+
+
+class StudentTimelineAdvisorOutput(BaseModel):
+    agent_key: str = "student_timeline_advisor"
+    student_id: UUID
+    summary: str = Field(max_length=500)
+    timeline: StudentTimelineSummaryRead
+    interventions: InterventionSummaryRead
+    followups: FollowupSummaryRead
+    issues: list[AgentIssueRead]
+    safe_next_action: str = Field(max_length=500)
+    evidence_refs: list[AgentEvidenceRead]
+
+
+class IntelligenceSignalSummaryRead(BaseModel):
+    total: int = Field(ge=0)
+    low: int = Field(ge=0)
+    medium: int = Field(ge=0)
+    high: int = Field(ge=0)
+
+
+class IntelligenceProvenanceRead(BaseModel):
+    policy_key: str
+    policy_version: int = Field(ge=1)
+    generated_at: datetime
+
+
+class InstitutionIntelligenceAdvisorOutput(BaseModel):
+    agent_key: str = "institution_intelligence_advisor"
+    snapshot_id: UUID
+    snapshot_date: date
+    freshness: str
+    summary: str = Field(max_length=500)
+    signals: IntelligenceSignalSummaryRead
+    top_categories: list[str] = Field(max_length=10)
+    provenance: IntelligenceProvenanceRead
+    safe_next_action: str = Field(max_length=500)
+    evidence_refs: list[AgentEvidenceRead]
+
+
+AgentAdvisorOutput = (
+    IntegrationRunAdvisorOutput
+    | StudentTimelineAdvisorOutput
+    | InstitutionIntelligenceAdvisorOutput
+)
+
+
 class AgentDefinitionRead(BaseModel):
     agent_key: str
     maximum_autonomy: str
@@ -66,7 +138,7 @@ class AgentRunRead(BaseModel):
     status: str
     correlation_id: UUID
     created_at: datetime
-    output: IntegrationRunAdvisorOutput | None = None
+    output: AgentAdvisorOutput | None = None
 
 
 class AgentRunStepRead(BaseModel):

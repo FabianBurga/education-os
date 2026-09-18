@@ -184,3 +184,43 @@ def require_student_scope(
         status_code=status.HTTP_404_NOT_FOUND,
         detail="Student not found in authorized M21 scope",
     )
+
+
+def require_existing_student_scope(
+    session: Session,
+    principal: CurrentPrincipal,
+    student_profile_id: UUID,
+    *,
+    permission_key: str,
+    scope_verified: bool = False,
+) -> None:
+    """Establish an authorized, tenant-bound student subject without an existence oracle."""
+    if not scope_verified:
+        require_student_scope(
+            session,
+            principal,
+            student_profile_id,
+            permission_key=permission_key,
+        )
+    row = session.exec(
+        text(
+            """
+            SELECT 1
+            FROM student_profiles
+            WHERE id = CAST(:student_profile_id AS uuid)
+              AND organization_id = CAST(:organization_id AS uuid)
+              AND institution_id = CAST(:institution_id AS uuid)
+            LIMIT 1
+            """
+        ),
+        params={
+            "student_profile_id": str(student_profile_id),
+            "organization_id": str(principal.organization_id),
+            "institution_id": str(principal.institution_id),
+        },
+    ).first()
+    if row is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Student not found in authorized M21 scope",
+        )

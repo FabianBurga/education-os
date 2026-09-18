@@ -15,12 +15,17 @@ class AgentContextEnvelope:
     effective_permissions: frozenset[str]
     agent_key: str
     request_type: str
-    authorized_run_id: UUID
+    authorized_entity_id: UUID | None
     correlation_id: UUID
 
 
 def build_context_envelope(
-    session: Session, principal: CurrentPrincipal, *, agent_key: str, run_id: UUID,
+    session: Session,
+    principal: CurrentPrincipal,
+    *,
+    agent_key: str,
+    request_type: str,
+    entity_id: UUID | None,
 ) -> AgentContextEnvelope:
     rows = session.exec(text("""
         SELECT DISTINCT p.key
@@ -35,6 +40,6 @@ def build_context_envelope(
     return AgentContextEnvelope(
         actor_user_id=principal.user_id, organization_id=principal.organization_id,
         institution_id=principal.institution_id, effective_permissions=frozenset(str(row[0]) for row in rows),
-        agent_key=agent_key, request_type="M24_INTEGRATION_RUN_INSPECT", authorized_run_id=run_id,
+        agent_key=agent_key, request_type=request_type, authorized_entity_id=entity_id,
         correlation_id=uuid4(),
     )

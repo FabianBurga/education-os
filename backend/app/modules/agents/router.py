@@ -1,7 +1,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlmodel import Session
 
 from app.api.deps import CurrentPrincipal, get_current_principal
@@ -13,6 +13,8 @@ from app.modules.agents.schemas import (
     AgentRunRead,
     AgentRunStepRead,
     AgentToolCallRead,
+    InstitutionIntelligenceAgentRunCreate,
+    StudentTimelineAgentRunCreate,
 )
 from app.modules.agents.service import (
     get_agent_run,
@@ -21,7 +23,9 @@ from app.modules.agents.service import (
     list_agent_runs,
     list_agent_steps,
     list_agent_tool_calls,
+    run_institution_intelligence_advisor,
     run_integration_run_advisor,
+    run_student_timeline_advisor,
 )
 
 router = APIRouter(prefix="/agents", tags=["agents"])
@@ -37,6 +41,25 @@ def agents(principal: PrincipalDep, session: SessionDep):
 @router.post("/integration_run_advisor/runs", response_model=AgentRunRead, status_code=status.HTTP_201_CREATED)
 def integration_run_advisor(payload: AgentRunCreate, principal: PrincipalDep, session: SessionDep):
     result = run_integration_run_advisor(session, principal, integration_run_id=payload.integration_run_id)
+    session.commit()
+    return result
+
+
+@router.post("/{agent_key}/runs", response_model=AgentRunRead, status_code=status.HTTP_201_CREATED)
+def advisor_run(
+    agent_key: str,
+    payload: AgentRunCreate | StudentTimelineAgentRunCreate | InstitutionIntelligenceAgentRunCreate,
+    principal: PrincipalDep,
+    session: SessionDep,
+):
+    if agent_key == "integration_run_advisor" and isinstance(payload, AgentRunCreate):
+        result = run_integration_run_advisor(session, principal, integration_run_id=payload.integration_run_id)
+    elif agent_key == "student_timeline_advisor" and isinstance(payload, StudentTimelineAgentRunCreate):
+        result = run_student_timeline_advisor(session, principal, student_id=payload.student_id)
+    elif agent_key == "institution_intelligence_advisor" and isinstance(payload, InstitutionIntelligenceAgentRunCreate):
+        result = run_institution_intelligence_advisor(session, principal)
+    else:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Typed agent input does not match agent")
     session.commit()
     return result
 

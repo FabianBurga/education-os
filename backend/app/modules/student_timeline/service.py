@@ -6,7 +6,7 @@ from sqlalchemy import text
 from sqlmodel import Session
 
 from app.api.deps import CurrentPrincipal
-from app.modules.m21_access import require_student_scope
+from app.modules.m21_access import require_existing_student_scope, require_student_scope
 from app.modules.student_timeline.schemas import (
     StudentTimelineEntryRead,
     StudentTimelinePage,
@@ -68,8 +68,8 @@ def list_student_timeline(
     Row-level security remains the final authorization boundary:
     - privileged staff can see rows allowed by sensitivity permissions;
     - teachers only see GENERAL rows for students inside their teaching scope.
-    This function does not perform existence checks that could leak students
-    outside the caller's RLS-visible scope.
+    An authorized student-subject precondition distinguishes an empty timeline
+    from an invisible/nonexistent student without disclosing cross-tenant state.
     """
     category = _normalized_category(category)
     sensitivity = _normalized_sensitivity(sensitivity)
@@ -80,6 +80,13 @@ def list_student_timeline(
         principal,
         student_profile_id,
         permission_key="student_timeline.read",
+    )
+    require_existing_student_scope(
+        session,
+        principal,
+        student_profile_id,
+        permission_key="student_timeline.read",
+        scope_verified=True,
     )
 
     rows = session.exec(
