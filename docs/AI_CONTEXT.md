@@ -6,9 +6,19 @@ Authoritative committed source: `bd0fbaa719eae4884d9a6c3ab8600939e88bb433` (`fea
 
 Authoritative M25 release tag: `m25-governed-provider-explainer-v0.25.3`.
 
-Current database revision: `0036_m25_run_explainer`.
+Current working branch: `m26-mentor-os`.
+
+Current database revision: `0037_m26_mentor_briefing`.
 
 Active milestone: M26 - Human Experience Layer / Mentor OS.
+
+M26-1 is CLOSED. It adds the persisted L0 `mentor_institution_briefing` v1
+configuration only: `mentor.institution.brief`,
+`m22.intelligence_snapshot.inspect`, `M26_INSTITUTION_BRIEFING`,
+`agents.use` + `intelligence.read`, and
+`PROVIDER_OPTIONAL_WITH_DETERMINISTIC_FALLBACK`. No Mentor runtime, UI, or
+M26 model/provider configuration exists yet. Next task: M26-2 governed Mentor
+runtime.
 
 M25 - Agentic Control Plane is CLOSED and remotely backed up to `origin` (`FabianBurga/education-os`).
 

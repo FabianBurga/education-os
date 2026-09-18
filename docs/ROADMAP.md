@@ -3,7 +3,7 @@
 This is direction, not implementation status.
 
 - M25 - Agentic Control Plane. CLOSED.
-- M26 - Human Experience Layer / Mentor OS. Next active milestone.
+- M26 - Human Experience Layer / Mentor OS. Active milestone.
 - M27 - Institutional Intelligence Agents.
 - M28 - Autonomous Data Operations.
 - M29 - Preventive Intelligence / Sentinel.
@@ -22,3 +22,10 @@ Future milestones do not authorize autonomous mutation, generic tool access, bro
 - M25-3C First provider-backed L0 advisor: PASS / CLOSED.
 - M25-3D Controlled fake-provider pilot: PASS.
 - M25-3E Optional live-provider pilot: OPTIONAL / NOT EXECUTED; external and not required for M25 closure.
+
+## M26 delivery slices
+
+- M26-1 Mentor institution-briefing contract and persisted configuration: CLOSED.
+- M26-2 Governed runtime, Evidence Pack, deterministic fallback, and verifier.
+- M26-3 Rector API/UI presentation.
+- M26-4 Controlled fake-provider pilot and closure.

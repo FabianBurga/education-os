@@ -2,7 +2,22 @@
 
 ## Current handoff point
 
-Education OS is a security-sensitive, multi-tenant Institutional Intelligence & Action Platform. M25 - Agentic Control Plane is CLOSED at `bd0fbaa719eae4884d9a6c3ab8600939e88bb433` (`feat(m25): add governed provider-backed explainer`), tagged `m25-governed-provider-explainer-v0.25.3`, and remotely backed up and verified on `origin` (`FabianBurga/education-os`). The local database is at `0036_m25_run_explainer`. The next active milestone is M26 - Human Experience Layer / Mentor OS.
+Education OS is a security-sensitive, multi-tenant Institutional Intelligence & Action Platform. M25 - Agentic Control Plane is CLOSED at `bd0fbaa719eae4884d9a6c3ab8600939e88bb433` (`feat(m25): add governed provider-backed explainer`), tagged `m25-governed-provider-explainer-v0.25.3`, and remotely backed up and verified on `origin` (`FabianBurga/education-os`). Work continues on `m26-mentor-os`; the local database is at `0037_m26_mentor_briefing`.
+
+## M26-1 closed configuration baseline
+
+M26-1 is CLOSED. It applies only persisted configuration for the future L0
+`mentor_institution_briefing` v1 agent: capability
+`mentor.institution.brief`, tool `m22.intelligence_snapshot.inspect`, request
+type `M26_INSTITUTION_BRIEFING`, and permissions `agents.use` +
+`intelligence.read`. Its policy is
+`PROVIDER_OPTIONAL_WITH_DETERMINISTIC_FALLBACK`, with four logical steps and
+one domain tool call maximum.
+
+The exact seeds exist only for `Universidad de Otavalo` and `Education OS
+Local Isolation Secondary`. M26-1 created no tables, RLS/grant changes, model
+or provider configuration, credentials, runtime, or UI. M26-2 is the next
+task: implement the governed Mentor runtime through the existing M25 path.
 
 ## M25 result
 

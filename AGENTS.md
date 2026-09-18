@@ -12,16 +12,28 @@ behavior take priority over speed.
 
 ## Current authoritative baseline
 Branch:
-m23-governed-copilot
-
-Current source commit:
-d963a55520bf5914d42bb07afe2b3b715874f583
+m26-mentor-os
 
 Current Alembic revision:
-0030_m23_action_proposals
+0037_m26_mentor_briefing
 
 Current phase:
-M23-6 Controlled Pilot + Release
+M26 — Human Experience Layer / Mentor OS
+
+M25:
+CLOSED
+
+M26-1 Mentor institution-briefing configuration:
+CLOSED
+
+Next task:
+M26-2 — Governed Mentor runtime
+
+Current validated M26-1 configuration evidence:
+- M26 config: 6 passed.
+- M25 config: 8 passed.
+- Ruff: PASS.
+- py_compile: PASS.
 
 Latest known full regression:
 571 passed, 1 skipped, 4 warnings
@@ -215,19 +227,10 @@ State must be derived from lifecycle events.
 PostgreSQL trigger enforces valid event transitions.
 
 ## Current task
-The immediate task is to run and close the M23-5 Runtime Formal Gate.
-
-A prior gate script may exist under Downloads, but do not assume the harness is correct.
-Run it, inspect failures, and distinguish carefully between:
-- product defect
-- harness defect
-- historical test evolution issue
-- environment/configuration issue
-- DB/RLS issue
-- migration issue
-- HTTP runtime issue
-
-Fix the smallest valid cause.
+The immediate task is M26-2 — Governed Mentor runtime. It must build on the
+closed M25 control plane and the applied M26-1 configuration without bypassing
+tenant context, policy, the closed tool gateway, Evidence Pack, budget,
+verifier, append-only audit, lifecycle events, or RLS.
 
 ## Required M23-5 Runtime Formal Gate behavior
 The final runtime gate must prove, with no persistent residue:

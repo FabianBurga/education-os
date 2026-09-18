@@ -26,9 +26,20 @@ No OpenAI, Anthropic, or local provider call was made. The historical M23 live-p
 - Full backend: 641 passed, 1 skipped.
 - Ruff, `py_compile`, Alembic source/current, and `git diff --check`: PASS.
 
-## Next
+## Active milestone
 
-M26 - Human Experience Layer / Mentor OS planning/discovery. Live-provider pilot work remains optional M25-3E work and is not authorized by M25 closure.
+M26 - Human Experience Layer / Mentor OS is active on `m26-mentor-os`.
+
+M26-1 - Mentor institution-briefing contract and configuration is CLOSED at
+database revision `0037_m26_mentor_briefing`. It seeds
+`mentor_institution_briefing` v1 for the controlled tenants with L0 autonomy,
+`mentor.institution.brief`, `m22.intelligence_snapshot.inspect`, request type
+`M26_INSTITUTION_BRIEFING`, `agents.use` + `intelligence.read`, and
+`PROVIDER_OPTIONAL_WITH_DETERMINISTIC_FALLBACK`.
+
+No Mentor runtime, UI, or M26 provider/model configuration has been
+implemented. Next task: M26-2 governed Mentor runtime. Live-provider pilot
+work remains optional M25-3E work and is not authorized by M25 closure.
 
 ## Living documentation rule
 
