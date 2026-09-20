@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 from sqlmodel import Session
 
@@ -15,6 +15,7 @@ from app.api.access import (
     require_student_progress,
     require_student_schedule,
 )
+from app.core.demo_legacy import console_response
 from app.db.session import get_session
 from app.modules.student_console.schemas import (
     StudentAttendanceRead,
@@ -76,9 +77,9 @@ ProgressDep = Annotated[
     response_class=HTMLResponse,
     include_in_schema=False,
 )
-def student_dashboard_html():
+def student_dashboard_html(request: Request):
     path = Path(__file__).with_name("student_dashboard.html")
-    return HTMLResponse(path.read_text(encoding="utf-8"))
+    return console_response(path, request)
 
 
 @router.get("/me", response_model=StudentProfileRead)

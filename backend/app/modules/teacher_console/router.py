@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 from sqlmodel import Session
 
@@ -13,6 +13,7 @@ from app.api.access import (
     require_teacher_grades,
     require_teacher_tasks,
 )
+from app.core.demo_legacy import console_response
 from app.db.session import get_session
 from app.modules.attendance.schemas import AttendanceRecordRead
 from app.modules.automation.schemas import AutomationTaskRead
@@ -84,9 +85,9 @@ TasksPrincipalDep = Annotated[
     response_class=HTMLResponse,
     include_in_schema=False,
 )
-def teacher_dashboard_html():
+def teacher_dashboard_html(request: Request):
     path = Path(__file__).with_name("teacher_dashboard.html")
-    return HTMLResponse(path.read_text(encoding="utf-8"))
+    return console_response(path, request)
 
 
 @router.get("/summary", response_model=TeacherSummary)

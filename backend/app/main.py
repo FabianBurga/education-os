@@ -3,8 +3,11 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, status
 from fastapi.responses import FileResponse
 
+from app.api.demo import router as demo_router
 from app.api.v1.router import router as api_v1_router
 from app.core.config import settings
+from app.core.demo import validate_demo_configuration
+from app.core.demo_middleware import DemoBoundaryMiddleware
 from app.observability.configuration import (
     assert_production_runtime_configuration,
 )
@@ -12,6 +15,7 @@ from app.observability.router import router as observability_router
 from app.observability.runtime import RuntimeObservabilityMiddleware
 
 assert_production_runtime_configuration(settings)
+validate_demo_configuration(settings)
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -19,6 +23,7 @@ app = FastAPI(
 )
 
 app.add_middleware(RuntimeObservabilityMiddleware)
+app.add_middleware(DemoBoundaryMiddleware)
 
 
 @app.get("/health")
@@ -28,6 +33,7 @@ def health() -> dict[str, str]:
 
 
 app.include_router(observability_router)
+app.include_router(demo_router)
 app.include_router(api_v1_router, prefix=settings.API_V1_PREFIX)
 
 FRONTEND_DIST = (

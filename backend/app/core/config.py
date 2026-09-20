@@ -23,6 +23,13 @@ class Settings(BaseSettings):
     FRONTEND_REQUIRED_FOR_READINESS: bool = False
     SLOW_REQUEST_MS: int = 1000
 
+    EDUCATION_OS_DEMO_MODE: bool = False
+    EDUCATION_OS_DEMO_ORGANIZATION_ID: str = ""
+    EDUCATION_OS_DEMO_INSTITUTION_ID: str = ""
+    EDUCATION_OS_DEMO_PRINCIPALS: dict[str, str] = {}
+    EDUCATION_OS_DEMO_ACCESS_CODE: str = ""
+    EDUCATION_OS_DEMO_SYNTHETIC_ONLY: bool = False
+
 
 @lru_cache
 def get_settings() -> Settings:

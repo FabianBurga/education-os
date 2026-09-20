@@ -2,10 +2,11 @@ from pathlib import Path
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 from sqlmodel import Session
 
+from app.core.demo_legacy import console_response
 from app.db.session import get_session
 from app.modules.guardian_console.schemas import (
     GuardianAttendanceRead,
@@ -53,9 +54,9 @@ SessionDep = Annotated[Session, Depends(get_session)]
     response_class=HTMLResponse,
     include_in_schema=False,
 )
-def guardian_dashboard_html():
+def guardian_dashboard_html(request: Request):
     path = Path(__file__).with_name("guardian_dashboard.html")
-    return HTMLResponse(path.read_text(encoding="utf-8"))
+    return console_response(path, request)
 
 
 @router.get("/me", response_model=GuardianConsoleMe)

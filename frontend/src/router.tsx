@@ -19,9 +19,16 @@ import { IntegrationWorkspacePage } from "./pages/integration-workspace-page";
 import { MentorBriefingPage, MentorBriefingPanel } from "./pages/mentor-briefing-page";
 import { canUseMentor } from "./m26/mentor";
 import type { UiBootstrap } from "./types/bootstrap";
+import { DemoGateway } from "./demo/gateway";
 
 function RootLayout(){const queryClient=useQueryClient();const[authRevision,setAuthRevision]=useState(0);const token=readAccessToken();const q=useQuery({queryKey:["ui-bootstrap",token,authRevision],queryFn:()=>apiFetch<UiBootstrap>("/api/v1/ui/bootstrap"),enabled:Boolean(token),retry:false});useEffect(()=>{if(q.data)saveCachedBootstrap(q.data);},[q.data]);const cached=readCachedBootstrap();const authFailure=q.error instanceof ApiError&&(q.error.status===401||q.error.status===403);const bootstrap=q.data??(q.isError&&!authFailure?cached:null);function submitToken(next:string){clearCachedBootstrap();saveAccessToken(next);queryClient.clear();setAuthRevision(v=>v+1);}async function signOut(){if(bootstrap)await purgeTeacherOfflinePartition(teacherOfflinePartitionKey(bootstrap));clearAccessToken();queryClient.clear();setAuthRevision(v=>v+1);}const errorMessage=useMemo(()=>{if(!q.error)return undefined;if(q.error instanceof ApiError){if(q.error.status===401||q.error.status===403)return"El token no tiene un contexto válido para Education OS.";return`No fue posible iniciar la sesión: ${q.error.message}`;}return"No fue posible iniciar la sesión.";},[q.error]);if(!token)return<TokenGate initialToken="" errorMessage={undefined} onSubmit={submitToken}/>;if(q.isError&&!bootstrap)return<TokenGate initialToken={token} errorMessage={errorMessage} onSubmit={submitToken}/>;if(!bootstrap)return<main className="flex min-h-screen items-center justify-center"><div className="rounded-2xl border border-slate-200 bg-white px-6 py-5 text-sm font-semibold text-slate-600 shadow-sm">Cargando contexto institucional…</div></main>;return<AppContextProvider value={{bootstrap,signOut}}><AppShell><Outlet/></AppShell></AppContextProvider>}
-const rootRoute=createRootRoute({component:RootLayout});
+function GatewayLayout(){
+  const mode=useQuery({queryKey:["demo-mode"],queryFn:async()=>{const r=await fetch("/api/demo/session",{cache:"no-store"});if(r.status===404)return false;if(!r.ok)throw new Error("Unavailable");return true;},retry:false});
+  if(mode.isPending)return <main className="p-8">Verificando acceso…</main>;
+  if(mode.isError)return <main className="p-8">No fue posible verificar el acceso. Recarga la página.</main>;
+  return mode.data?<DemoGateway/>:<RootLayout/>;
+}
+const rootRoute=createRootRoute({component:GatewayLayout});
 const indexRoute=createRoute({getParentRoute:()=>rootRoute,path:"/",component:HomePage});
 const contextRoute=createRoute({getParentRoute:()=>rootRoute,path:"/context",component:ContextPage});
 const workspaceRoute=createRoute({getParentRoute:()=>rootRoute,path:"/workspace/$moduleId",component:WorkspaceRouteComponent});

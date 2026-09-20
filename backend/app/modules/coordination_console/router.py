@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import HTMLResponse
 from sqlmodel import Session
 
@@ -12,6 +12,7 @@ from app.api.access import (
     require_coordination_signals,
 )
 from app.api.deps import CurrentPrincipal
+from app.core.demo_legacy import console_response
 from app.db.session import get_session
 from app.modules.automation.schemas import (
     AutomationTaskRead,
@@ -70,9 +71,9 @@ SessionDep = Annotated[Session, Depends(get_session)]
     response_class=HTMLResponse,
     include_in_schema=False,
 )
-def coordination_dashboard_html():
+def coordination_dashboard_html(request: Request):
     path = Path(__file__).with_name("coordination_dashboard.html")
-    return HTMLResponse(path.read_text(encoding="utf-8"))
+    return console_response(path, request)
 
 
 @router.get("/summary", response_model=CoordinationSummary)

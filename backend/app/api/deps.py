@@ -1,16 +1,18 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import text
 from sqlmodel import Session
 
+from app.core.config import settings
+from app.core.demo import demo_identity
 from app.core.security import decode_access_token
 from app.db.session import get_session
 from app.db.tenant_context import TenantContext, apply_tenant_context
 
-bearer = HTTPBearer(auto_error=True)
+bearer = HTTPBearer(auto_error=False)
 
 
 @dataclass(frozen=True, slots=True)
@@ -21,9 +23,15 @@ class CurrentPrincipal:
 
 
 def get_current_principal(
-    credentials: HTTPAuthorizationCredentials = Depends(bearer),
+    request: Request,
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
     session: Session = Depends(get_session),
 ) -> CurrentPrincipal:
+    if settings.EDUCATION_OS_DEMO_MODE:
+        user, organization, institution = demo_identity(request, session)
+        return CurrentPrincipal(user, organization, institution)
+    if credentials is None:
+        raise HTTPException(status_code=401, detail="Not authenticated", headers={"WWW-Authenticate": "Bearer"})
     try:
         payload = decode_access_token(credentials.credentials)
         principal = CurrentPrincipal(
