@@ -38,6 +38,28 @@ from app.modules.agents.schemas import (
 _DAY_BUDGET_MICROUSD = 1_000_000
 _MONTH_BUDGET_MICROUSD = 10_000_000
 
+_CATEGORY_LABELS = {
+    "ATTENDANCE_RISK": "Riesgo de asistencia",
+    "REPEATED_LATE": "Atrasos reiterados",
+    "ACADEMIC_RISK": "Riesgo académico",
+    "MISSING_WORK": "Trabajos pendientes",
+}
+
+
+def _category_labels(categories: list[str]) -> str:
+    """Translate bounded M22 category keys without exposing future raw values."""
+    labels = [_CATEGORY_LABELS.get(category, "Otra categoría institucional") for category in categories]
+    return ", ".join(dict.fromkeys(labels)) or "ninguna"
+
+
+def _freshness_label(freshness: str) -> str:
+    if freshness == "CURRENT":
+        return "vigente"
+    if freshness.startswith("STALE_") and freshness.endswith("_DAYS"):
+        days = freshness.removeprefix("STALE_").removesuffix("_DAYS")
+        return f"desactualizada ({days} días de antigüedad)"
+    return "no confirmada"
+
 
 @dataclass(frozen=True, slots=True)
 class MentorBriefingExecution:
@@ -48,20 +70,21 @@ class MentorBriefingExecution:
 
 def _fallback(base: InstitutionIntelligenceAdvisorOutput, focus: str) -> ProviderExplanationOutput:
     signals = base.signals
-    categories = ", ".join(base.top_categories) or "none"
+    categories = _category_labels(base.top_categories)
+    freshness = _freshness_label(base.freshness)
     if focus == "PRIORITIES":
-        summary = f"Current institutional priorities include {signals.high} high and {signals.medium} medium open signals."
-        finding = f"Current categories requiring human review: {categories}."
+        summary = f"Las prioridades institucionales actuales incluyen {signals.high} señales de prioridad alta y {signals.medium} de prioridad media."
+        finding = f"Las categorías actuales que requieren atención incluyen: {categories}."
     elif focus == "FOLLOW_UPS":
-        summary = f"There are {signals.high + signals.medium} high or medium current signals for human review."
-        finding = "Review current high and medium categories through existing human-governed workflows."
+        summary = f"Se identifican {signals.high + signals.medium} señales de prioridad alta o media para revisión humana."
+        finding = "Revise las categorías de prioridad alta y media mediante los procesos institucionales establecidos."
     else:
-        summary = f"Current institutional snapshot has {signals.total} open signals: {signals.high} high, {signals.medium} medium, and {signals.low} low."
-        finding = f"Snapshot freshness is {base.freshness}; current categories are {categories}."
+        summary = f"La institución registra {signals.total} señales abiertas: {signals.high} de prioridad alta, {signals.medium} media y {signals.low} baja."
+        finding = f"La información está {freshness}. Las categorías actuales incluyen: {categories}."
     return ProviderExplanationOutput(
         summary=summary,
         key_findings=[ProviderFinding(text=finding, evidence_refs=["ev_01"])],
-        caveats=["This briefing is aggregate-only. All decisions remain with authorized humans."],
+        caveats=["Este resumen utiliza únicamente información institucional agregada. Las decisiones permanecen bajo responsabilidad de las personas autorizadas."],
         evidence_refs=[],
     )
 

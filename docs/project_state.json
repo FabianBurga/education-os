@@ -1,26 +1,26 @@
 {
   "project": "Education OS",
-  "authoritative_committed_source": "bd0fbaa719eae4884d9a6c3ab8600939e88bb433",
-  "source_base_commit": "bd0fbaa719eae4884d9a6c3ab8600939e88bb433",
+  "authoritative_committed_source": "d059d695aeee14319f8dc02e3e128e12c7e919a1",
+  "source_base_commit": "d059d695aeee14319f8dc02e3e128e12c7e919a1",
   "database_revision": "0037_m26_mentor_briefing",
-  "active_milestone": "M26",
-  "active_slice": "M26-3",
+  "active_milestone": "M27",
+  "active_slice": "M27",
   "previous_slice": "M26-1",
   "branch": "m26-mentor-os",
   "previous_milestone": "M25",
-  "milestone_status": "M26_ACTIVE",
+  "milestone_status": "M26_CLOSED",
   "m25_status": "CLOSED",
   "m26_1_status": "CLOSED",
   "m26_2_status": "CLOSED",
   "mentor_agent": "mentor_institution_briefing",
   "runtime_status": "IMPLEMENTED_CLOSED",
-  "ui_status": "NOT_IMPLEMENTED",
+  "ui_status": "IMPLEMENTED_CLOSED",
   "live_provider_required": false,
   "m25_release_tag": "m25-governed-provider-explainer-v0.25.3",
   "remote_backup": "VERIFIED",
-  "validated_uncommitted_slices": ["M26-2"],
-  "next_slice": "M26-3 Rector API/UI presentation",
-  "closed_milestones": ["M20", "M21", "M22", "M23", "M24", "M25-1", "M25-2", "M25-3A", "M25-3B", "M25-3C", "M25-3D", "M25"],
+  "validated_uncommitted_slices": [],
+  "next_slice": "M27 Institutional Intelligence Agents",
+  "closed_milestones": ["M20", "M21", "M22", "M23", "M24", "M25-1", "M25-2", "M25-3A", "M25-3B", "M25-3C", "M25-3D", "M25", "M26-1", "M26-2", "M26-3", "M26-4", "M26"],
   "provider_network_calls_enabled": false,
   "provider_validation": "FAKE_PROVIDER_ONLY",
   "fake_provider_pilot": {
@@ -30,7 +30,7 @@
     "domain_mutation": false
   },
   "live_provider_status": "NOT_EXECUTED_HOLD_EXTERNAL",
-  "test_summary": "711 passed, 1 skipped, 0 failed, 116 warnings",
+  "test_summary": "718 passed, 1 skipped, 0 failed, 126 warnings",
   "m26_2_validation": {
     "targeted": 75,
     "m26_integration": 61,
@@ -42,8 +42,9 @@
     "test_owned_rows_left": 0,
     "additional_migration_required": false
   },
-  "m26_3_status": "NEXT_ACTIVE",
-  "m26_4_status": "PENDING",
-  "m26_overall_status": "ACTIVE_NOT_CLOSED",
-  "next_step": "M26-3 Rector API/UI presentation"
+  "m26_3_status": "CLOSED_PASS",
+  "m26_4_status": "CLOSED_PASS",
+  "m26_overall_status": "CLOSED_PASS",
+  "m27_status": "NEXT_ACTIVE",
+  "next_step": "M27 Institutional Intelligence Agents"
 }

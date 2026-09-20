@@ -58,10 +58,35 @@ Fake/in-process provider validation was allowed; live provider and external
 network model calls were zero. The historical M23 live-provider HOLD EXTERNAL
 remains unchanged.
 
+## M26 closure
+
+M26 - Human Experience Layer / Mentor OS is CLOSED / PASS on `m26-mentor-os`.
+
+- M26-1 configuration: CLOSED.
+- M26-2 governed Mentor runtime: CLOSED / PASS.
+- M26-3 Rector presentation with Panorama, Prioridades, and Revisión humana: CLOSED / PASS.
+- M26-4 controlled synthetic pilot and manual visual/browser gate: CLOSED / PASS.
+
+The Rector experience remains L0 read/explain only, with human review and
+decision authority. The controlled pilot used synthetic aggregate evidence,
+zero live provider calls, no domain mutation, and no persistent test residue.
+Desktop and tablet presentation were manually verified.
+
+Final validation: 718 backend tests passed, 0 failed, 1 skipped, and 126
+warnings in 53.24 seconds. The skipped test was the opt-in M21 E2E because
+`M21_E2E_DATABASE_URL` was unset. Frontend tests, typecheck, production build,
+Ruff, `py_compile`, Alembic heads/current, and `git diff --check` passed.
+No production pentest, load certification, or live-provider production
+validation is claimed.
+
+Security closure preserved RLS and FORCE RLS, application-role restrictions,
+tenant isolation, unchanged policies/grants/ownership, no PII exposure, and
+zero temporary residue.
+
 ## Active milestone
 
-M26 - Human Experience Layer / Mentor OS remains the active overall milestone;
-M26 itself is not yet closed.
+M27 - Institutional Intelligence Agents is the next active milestone. M26 is
+closed; the Mentor remains a human-controlled L0 read/explain experience.
 
 M26-1 - Mentor institution-briefing contract and configuration is CLOSED at
 database revision `0037_m26_mentor_briefing`. It seeds
@@ -71,8 +96,7 @@ database revision `0037_m26_mentor_briefing`. It seeds
 `PROVIDER_OPTIONAL_WITH_DETERMINISTIC_FALLBACK`.
 
 M26-1 is CLOSED at database revision `0037_m26_mentor_briefing`.
-M26-2 is CLOSED / PASS. M26-3 - Rector API/UI presentation is the next active
-slice. M26-4 - controlled pilot and milestone closure remains pending.
+M26-2, M26-3, and M26-4 are CLOSED / PASS. M26 overall is CLOSED / PASS.
 
 ## Living documentation rule
 

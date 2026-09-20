@@ -18,7 +18,7 @@ Current Alembic revision:
 0037_m26_mentor_briefing
 
 Current phase:
-M26 — Human Experience Layer / Mentor OS
+M27 — Institutional Intelligence Agents
 
 M25:
 CLOSED
@@ -30,7 +30,7 @@ M26-2:
 CLOSED / PASS
 
 Next task:
-M26-3 — Rector API/UI presentation
+M27 — Institutional Intelligence Agents
 
 Current validated M26-1 configuration evidence:
 - M26 config: 6 passed.
@@ -46,8 +46,14 @@ M26-2 closure evidence:
 - RLS/FORCE RLS, application-role restrictions, tenant isolation, and zero residue verified.
 - Live provider calls and external network model calls: 0.
 
-M26 overall remains active. M26-3 is the next slice; M26-4 controlled pilot and
-overall M26 closure remain pending. Do not begin M26-3 in a M26-2 closure task.
+M26-3 Rector API/UI presentation and M26-4 controlled pilot/manual visual gate
+are CLOSED / PASS. M26 overall is CLOSED / PASS. Final backend regression:
+718 passed, 1 skipped, 126 warnings; frontend tests, typecheck, production
+build, Ruff, py_compile, and diff-check passed. The skipped test is the opt-in
+M21 E2E because M21_E2E_DATABASE_URL was unset. No live provider calls,
+external model calls, schema changes, RLS/grant/ownership changes, PII leak,
+cross-tenant leak, or temporary residue. M27 is the next milestone; do not
+begin it inside a retrospective M26 closure task.
 
 Latest known full regression:
 571 passed, 1 skipped, 4 warnings

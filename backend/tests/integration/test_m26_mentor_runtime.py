@@ -4,7 +4,7 @@ import json
 import socket
 import threading
 from contextlib import contextmanager
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from hashlib import sha256
 from types import SimpleNamespace
 from uuid import UUID, uuid4
@@ -102,7 +102,7 @@ def _bootstrap_fixture(session: Session, *, role_key: str = "RECTOR", missing_pe
     snapshot = InstitutionIntelligenceDaily(
         organization_id=_ORGANIZATION_ID,
         institution_id=_INSTITUTION_ID,
-        snapshot_date=date.today(),
+        snapshot_date=datetime.now(UTC).date(),
         in_scope_student_count=3,
         high_priority_count=1,
         medium_priority_count=1,
@@ -390,7 +390,7 @@ class MentorHarness:
             self.fixture.setdefault("extra_snapshot_ids", []).append(snapshot.id)
             self.owner.add(snapshot)
         else:
-            snapshot.snapshot_date = date.today() - timedelta(days=days)
+            snapshot.snapshot_date = datetime.now(UTC).date() - timedelta(days=days)
             self.owner.add(snapshot)
         if severities is not None:
             for index, signal_id in enumerate(self.fixture["signal_ids"]):
@@ -527,7 +527,7 @@ def test_m26_transactional_snapshot_states(mentor_harness, state):
             counts = h.packs[0].items[0].summary["severity"]
             if state in {"zero", "low_only"}:
                 assert counts == {"total": int(state == "low_only"), "low": int(state == "low_only"), "medium": 0, "high": 0}
-            assert "human review" in result["output"]["summary"]
+            assert "revisión humana" in result["output"]["summary"]
         assert not h.provider_requests
 
 
@@ -667,7 +667,7 @@ def test_m26_transactional_cross_tenant_boundaries(mentor_harness):
     with mentor_harness() as h:
         other = h.owner.exec(text("SELECT organization_id,id FROM institutions WHERE id != CAST(:id AS uuid) AND status='ACTIVE' ORDER BY id LIMIT 1"), params={"id": str(_INSTITUTION_ID)}).one()
         foreign_snapshot = InstitutionIntelligenceDaily(
-            organization_id=other[0], institution_id=other[1], snapshot_date=date.today() + timedelta(days=1),
+            organization_id=other[0], institution_id=other[1], snapshot_date=datetime.now(UTC).date() + timedelta(days=1),
             in_scope_student_count=987, high_priority_count=987, medium_priority_count=0,
             active_intervention_count=0, interventions_without_action_count=0, overdue_followup_count=0,
             positive_outcome_count=0, unresolved_outcome_count=0,

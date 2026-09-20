@@ -2,7 +2,7 @@
 
 ## Current handoff point
 
-Education OS is a security-sensitive, multi-tenant Institutional Intelligence & Action Platform. M25 - Agentic Control Plane is CLOSED at `bd0fbaa719eae4884d9a6c3ab8600939e88bb433` (`feat(m25): add governed provider-backed explainer`), tagged `m25-governed-provider-explainer-v0.25.3`, and remotely backed up and verified on `origin` (`FabianBurga/education-os`). M26-1 and M26-2 are CLOSED / PASS on `m26-mentor-os`; M26-3 is the next active slice. The local database is at `0037_m26_mentor_briefing`.
+Education OS is a security-sensitive, multi-tenant Institutional Intelligence & Action Platform. M25 - Agentic Control Plane is CLOSED at `bd0fbaa719eae4884d9a6c3ab8600939e88bb433` (`feat(m25): add governed provider-backed explainer`), tagged `m25-governed-provider-explainer-v0.25.3`, and remotely backed up and verified on `origin` (`FabianBurga/education-os`). M26-1 through M26-4 are CLOSED / PASS on `m26-mentor-os`; M27 is the next active milestone. The local database is at `0037_m26_mentor_briefing`.
 
 ## M26-1 closed configuration baseline
 
@@ -55,6 +55,24 @@ The successful fake-provider audit recorded `SUCCEEDED`, null normalized error, 
 
 Negative controls pass: duplicate or fabricated citations are rejected; malformed output, timeout, rate limit, unavailability, auth error, context overflow, and budget denial use deterministic fallback. Secondary access to a primary run returns safe 404/non-disclosure.
 
+## M26 result
+
+M26 is CLOSED / PASS. The governed `mentor_institution_briefing` runtime now
+serves the Rector experience through Panorama, Prioridades, and Revisión humana.
+It preserves the typed M22 evidence boundary, canonical `m25.evidence.v1`,
+deterministic fallback, optional governed provider path, deterministic
+verification, replay identity, append-only audit, and M18 lifecycle events.
+The UI presents aggregate evidence and freshness, keeps human authority
+explicit, and exposes no student PII or provider internals. The controlled
+synthetic pilot and manual desktop/tablet visual gate passed with zero provider
+or external network calls, zero domain mutation, and zero temporary residue.
+
+Final regression passed 718 backend tests with 0 failures, 1 configured opt-in
+M21 E2E skip, and 126 warnings. Frontend tests, typecheck, production build,
+Ruff, `py_compile`, Alembic heads/current, and `git diff --check` passed. No
+production pentest, load certification, or live-provider production validation
+is claimed.
+
 ## Architecture and boundaries
 
 The shared M25 path is: authenticated request -> principal context -> registries/policy -> deterministic planner -> closed typed gateway -> M21/M22/M24 read boundary -> Evidence Pack -> budget admission -> deterministic router -> fixed adapter -> strict parser -> deterministic verifier -> append-only audit -> M18 lifecycle event.
@@ -77,12 +95,9 @@ Only in-process `fake` is executable. OpenAI, Anthropic, and local are known but
 
 ## Next step
 
-Begin M26-3 Rector API/UI presentation. M26-4 controlled pilot and overall
-milestone closure remain pending. M26-3 must build on the M25 control plane and
-M26-2 runtime without bypassing context, policy, capability, tool gateway,
-Evidence Pack, router, budget, verifier, audit, or RLS boundaries. Do not start
-an optional live-provider pilot, L1+ actions, generic tools, or generic HTTP
-without a separately approved milestone.
+Begin M27 under a separately frozen contract. Preserve M26's L0 read/explain
+scope, M22 boundary, human-control language, and no-live-provider posture until
+the next milestone explicitly changes them.
 
 ## Standard checks
 

@@ -6,12 +6,23 @@ export interface ModuleDefinition {
   shortLabel: string;
   description: string;
   permission: string;
+  requiredPermissions?: string[];
   legacyPath: string;
   capabilityKey?: string;
   audience: string;
 }
 
 export const MODULES: ModuleDefinition[] = [
+  {
+    id: "mentor",
+    label: "Mentor institucional",
+    shortLabel: "Mentor",
+    description: "Panorama, prioridades y áreas para revisión humana a partir de evidencia institucional.",
+    permission: "agents.use",
+    requiredPermissions: ["intelligence.read", "agents.view"],
+    legacyPath: "",
+    audience: "Rectorado y coordinación",
+  },
   {
     id: "integrations",
     label: "Centro de integraciones",
@@ -117,7 +128,8 @@ export function modulesForContext(
   bootstrap: UiBootstrap,
 ): ModuleDefinition[] {
   const permissions = new Set(bootstrap.permissions);
-  return MODULES.filter((module) => permissions.has(module.permission));
+  return MODULES.filter((module) => permissions.has(module.permission) &&
+    (module.requiredPermissions ?? []).every(permission => permissions.has(permission)));
 }
 
 export function moduleCapabilityState(

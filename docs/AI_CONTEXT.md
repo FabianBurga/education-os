@@ -10,7 +10,7 @@ Current working branch: `m26-mentor-os`.
 
 Current database revision: `0037_m26_mentor_briefing`.
 
-Active milestone: M26 - Human Experience Layer / Mentor OS.
+Active milestone: M27 - Institutional Intelligence Agents. M26 - Human Experience Layer / Mentor OS is CLOSED / PASS.
 
 M26-1 is CLOSED and M26-2 governed Mentor runtime is CLOSED / PASS. M26-2
 delivers the L0 `mentor_institution_briefing` v1 runtime with typed
@@ -21,16 +21,19 @@ deterministic verification, append-only audit, M18 lifecycle events, and
 governed replay identity. Replay includes tenant/principal, agent/version,
 focus, snapshot identity, M22 provenance hash, and Mentor prompt-contract hash;
 a changed snapshot creates a new logical execution. No domain mutation or live
-provider dependency exists. M26-3 Rector API/UI presentation is next; M26-4
-controlled pilot and overall M26 closure remain pending. M26 overall is not
-yet closed.
+provider dependency exists. M26-3 Rector API/UI presentation and M26-4
+controlled pilot/manual visual gate are CLOSED / PASS. M26 overall is closed.
+The Rector experience remains L0 read/explain with human review and decision
+authority; it has no domain mutation authority. M27 is next.
 
 M26-2 validation: 75 targeted tests passed, including 61 M26 integration
 tests; directed M25 57, M22 56, M21 282, M23 66, and M24 13 passed; full
 backend 711 passed, 0 failed, 1 skipped, 116 warnings in 42.50 seconds. The
 skipped test was the opt-in M21 E2E because `M21_E2E_DATABASE_URL` was unset.
 Only in-process fake provider validation was used; live and external network
-model calls were zero. Historical M23 live-provider HOLD EXTERNAL remains open.
+model calls were zero. Final M26 backend regression passed 718 tests with 0
+failures, 1 configured opt-in M21 E2E skip, and 126 warnings. Historical M23
+live-provider HOLD EXTERNAL remains open.
 
 M25 - Agentic Control Plane is CLOSED and remotely backed up to `origin` (`FabianBurga/education-os`).
 

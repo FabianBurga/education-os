@@ -7,6 +7,11 @@ import pytest
 from pydantic import ValidationError
 
 from app.modules.agents.evidence import build_mentor_institution_briefing_evidence_pack
+from app.modules.agents.mentor_institution_briefing import (
+    _category_labels,
+    _fallback,
+    _freshness_label,
+)
 from app.modules.agents.planner import plan_advisor
 from app.modules.agents.registry import known_agent, known_capability
 from app.modules.agents.schemas import (
@@ -33,6 +38,22 @@ def _snapshot() -> InstitutionIntelligenceAdvisorOutput:
             provenance_sha256="a" * 64,
         )],
     )
+
+
+def test_mentor_fallback_is_spanish_and_hides_m22_category_keys():
+    output = _fallback(_snapshot(), "OVERVIEW")
+    text = " ".join([output.summary, output.key_findings[0].text, *output.caveats])
+    assert "La institución registra 3 señales abiertas" in text
+    assert "ATTENDANCE_RISK" not in text
+    assert "Riesgo de asistencia" in text or "Otra categoría institucional" in text
+    assert "authorized" not in text
+
+
+def test_mentor_category_presentation_is_bounded_and_safe_for_unknown_values():
+    assert _category_labels(["ATTENDANCE_RISK", "ACADEMIC_RISK", "ATTENDANCE_RISK"]) == "Riesgo de asistencia, Riesgo académico"
+    assert _category_labels(["FUTURE_INTERNAL_ENUM"]) == "Otra categoría institucional"
+    assert _freshness_label("CURRENT") == "vigente"
+    assert _freshness_label("STALE_3_DAYS") == "desactualizada (3 días de antigüedad)"
 
 
 def test_mentor_registry_and_plan_are_closed_l0():

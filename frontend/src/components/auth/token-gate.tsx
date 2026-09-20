@@ -31,8 +31,8 @@ export function TokenGate({
           </div>
           <h1 className="text-2xl font-bold">Education OS</h1>
           <p className="mt-2 max-w-md text-sm leading-6 text-slate-300">
-            M15 unifica la experiencia visual sin cambiar las reglas de
-            seguridad ni los permisos del backend.
+            El entorno unificado respeta las reglas de seguridad y los permisos
+            del backend.
           </p>
         </div>
         <CardContent>
@@ -78,9 +78,9 @@ export function TokenGate({
             </Button>
 
             <p className="text-xs leading-5 text-slate-500">
-              En M15 el token se conserva únicamente en sessionStorage. El
-              inicio de sesión con credenciales se mantiene fuera del alcance
-              de este milestone.
+              El token se conserva únicamente en sessionStorage. El inicio de
+              sesión con credenciales se mantiene fuera del alcance de esta
+              experiencia.
             </p>
           </form>
         </CardContent>

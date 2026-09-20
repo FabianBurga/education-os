@@ -195,9 +195,6 @@ export function AppShell({ children }: { children: ReactNode }) {
               <div className="truncate text-sm font-semibold text-slate-800">
                 {bootstrap.user.display_name}
               </div>
-              <div className="truncate text-xs text-slate-500">
-                {bootstrap.user.login_email}
-              </div>
             </div>
             <Button
               variant="ghost"
@@ -214,7 +211,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </div>
 
       <div className="fixed bottom-4 right-4 hidden md:block">
-        <Badge tone="success">M15 · Entorno unificado listo</Badge>
+        <Badge tone="success">Entorno unificado listo</Badge>
       </div>
     </div>
   );

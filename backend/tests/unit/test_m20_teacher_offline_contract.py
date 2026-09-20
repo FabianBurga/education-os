@@ -142,5 +142,5 @@ def test_manifest_scope():
     main = read("frontend/src/main.tsx")
     assert '"start_url":"/app/workspace/teacher"' in m
     assert '"scope":"/app/"' in m
-    assert "/app/manifest.webmanifest" in i
+    assert 'href="manifest.webmanifest"' in i
     assert '"/app/sw.js"' in main

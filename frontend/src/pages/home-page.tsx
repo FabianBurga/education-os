@@ -16,6 +16,8 @@ import {
 
 import { useAppContext } from "../app-context";
 import { apiFetch } from "../lib/api";
+import { canUseMentor } from "../m26/mentor";
+import { MentorBriefingPanel } from "./mentor-briefing-page";
 import {
   moduleCapabilityState,
   modulesForContext,
@@ -108,6 +110,8 @@ export function HomePage() {
         <Badge tone="success">Entorno unificado listo</Badge>
       </section>
 
+      {canUseMentor(bootstrap.permissions) ? <MentorBriefingPanel /> : null}
+
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {metrics.map((metric) => {
           const Icon = metric.icon;
@@ -199,11 +203,10 @@ export function HomePage() {
       <Card>
         <CardHeader>
           <h2 className="text-base font-bold text-slate-900">
-            Campus visibles por RLS
+            Campus disponibles
           </h2>
           <p className="mt-1 text-xs text-slate-500">
-            Esta tabla consume el recurso protegido /api/v1/campuses y sirve
-            como prueba de aislamiento dentro del nuevo frontend.
+            Consulta los campus disponibles para tu institución.
           </p>
         </CardHeader>
         <CardContent className="overflow-x-auto p-0">
