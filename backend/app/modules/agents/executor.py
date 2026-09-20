@@ -22,6 +22,6 @@ def execute_inspection_tool(
         return inspect_integration_run(session, principal, run_id=entity_id)
     if agent_key == "student_timeline_advisor" and entity_id is not None:
         return inspect_student_timeline(session, principal, student_id=entity_id)
-    if agent_key == "institution_intelligence_advisor" and entity_id is None:
+    if agent_key in {"institution_intelligence_advisor", "mentor_institution_briefing"} and entity_id is None:
         return inspect_institution_intelligence(session, principal)
     raise ValueError("Closed tool gateway rejected input")

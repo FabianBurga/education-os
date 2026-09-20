@@ -26,6 +26,14 @@ class IntegrationRunExplainerCreate(BaseModel):
     explanation_focus: Literal["SUMMARY", "ERRORS", "OUTCOME"]
 
 
+class MentorInstitutionBriefingCreate(BaseModel):
+    """Closed Mentor intent; no user prompt, tenant, provider, or model input."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    briefing_focus: Literal["OVERVIEW", "PRIORITIES", "FOLLOW_UPS"]
+
+
 class AgentIssueRead(BaseModel):
     row_number: int | None
     code: str
@@ -80,6 +88,21 @@ class IntegrationRunExplainerOutput(BaseModel):
     explanation_mode: Literal["DETERMINISTIC_FALLBACK", "FAKE_PROVIDER"]
     provider_failure_code: str | None = None
     evidence_manifest_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    summary: str = Field(min_length=1, max_length=1_200)
+    key_findings: list[ProviderFindingRead] = Field(max_length=8)
+    caveats: list[str] = Field(max_length=8)
+    evidence_refs: list[AgentEvidenceRead]
+
+
+class MentorInstitutionBriefingOutput(BaseModel):
+    agent_key: str = "mentor_institution_briefing"
+    briefing_focus: Literal["OVERVIEW", "PRIORITIES", "FOLLOW_UPS"]
+    explanation_mode: Literal["DETERMINISTIC_FALLBACK", "FAKE_PROVIDER"]
+    provider_failure_code: str | None = None
+    evidence_manifest_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    snapshot_id: UUID
+    snapshot_date: date
+    freshness: str = Field(max_length=40)
     summary: str = Field(min_length=1, max_length=1_200)
     key_findings: list[ProviderFindingRead] = Field(max_length=8)
     caveats: list[str] = Field(max_length=8)
@@ -145,6 +168,7 @@ class InstitutionIntelligenceAdvisorOutput(BaseModel):
 AgentAdvisorOutput = (
     IntegrationRunAdvisorOutput
     | IntegrationRunExplainerOutput
+    | MentorInstitutionBriefingOutput
     | StudentTimelineAdvisorOutput
     | InstitutionIntelligenceAdvisorOutput
 )

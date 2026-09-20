@@ -112,6 +112,7 @@ def execute_fake_provider(
     budget_limits: BudgetLimits,
     adapters: ProviderAdapterRegistry,
     deterministic_fallback: Callable[[], ProviderExplanationOutput],
+    output_validator: Callable[[ProviderExplanationOutput], None] | None = None,
 ) -> ProviderExecutionResult:
     """Execute only the fake adapter with policy/budget/audit boundaries intact."""
     if provider_policy != PROVIDER_OPTIONAL_POLICY:
@@ -141,6 +142,8 @@ def execute_fake_provider(
         adapter = adapters.resolve(decision.provider_key)
         result = adapter.invoke(request)
         output = _validate_output(pack, result.payload)
+        if output_validator is not None:
+            output_validator(output)
         actual_cost = _fake_cost_microusd(result.input_tokens, result.output_tokens)
         if actual_cost > reservation.amount_microusd:
             raise ProviderGatewayError(ProviderFailureCode.BUDGET_EXCEEDED)

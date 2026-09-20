@@ -26,9 +26,42 @@ No OpenAI, Anthropic, or local provider call was made. The historical M23 live-p
 - Full backend: 641 passed, 1 skipped.
 - Ruff, `py_compile`, Alembic source/current, and `git diff --check`: PASS.
 
+## M26-2 closure evidence
+
+M26-2 - Governed Mentor runtime is CLOSED / PASS on `m26-mentor-os`.
+
+Delivered behavior:
+
+- governed `mentor_institution_briefing`, version 1, L0;
+- typed `OVERVIEW`, `PRIORITIES`, and `FOLLOW_UPS` focus inputs;
+- permission-gated `agents.use` + `intelligence.read` capability access;
+- typed M22 institutional snapshot boundary through `m22.intelligence_snapshot.inspect`;
+- canonical aggregate-only `m25.evidence.v1` pack with opaque `ev_01` citation;
+- deterministic fallback and optional in-process fake-provider path;
+- deterministic verifier, prohibited-action claim filter, append-only audit, and M18 lifecycle events;
+- replay identity scoped by tenant/principal, agent/version, focus, snapshot identity,
+  M22 provenance hash, and Mentor prompt-contract hash;
+- changed snapshot identity creates a new governed execution rather than replaying stale evidence;
+- no M21, M22, or M24 domain mutation and no live provider dependency.
+
+Validation evidence: 75 targeted tests passed, including 61 M26 integration tests;
+directed M25 57, M22 56, M21 282, M23 66, and M24 13 tests passed; the full
+backend suite passed 711 tests with 0 failures, 1 skipped, 116 warnings, in
+42.50 seconds. The skipped test was the opt-in M21 E2E because
+`M21_E2E_DATABASE_URL` was unset. Ruff, py_compile, Alembic heads/current, and
+`git diff --check` passed.
+
+Security closure preserved RLS and FORCE RLS, application-role non-superuser
+and non-BYPASSRLS status, owner-only fixture setup/cleanup, unchanged policies,
+grants, and ownership, no cross-tenant evidence leak, and zero test residue.
+Fake/in-process provider validation was allowed; live provider and external
+network model calls were zero. The historical M23 live-provider HOLD EXTERNAL
+remains unchanged.
+
 ## Active milestone
 
-M26 - Human Experience Layer / Mentor OS is active on `m26-mentor-os`.
+M26 - Human Experience Layer / Mentor OS remains the active overall milestone;
+M26 itself is not yet closed.
 
 M26-1 - Mentor institution-briefing contract and configuration is CLOSED at
 database revision `0037_m26_mentor_briefing`. It seeds
@@ -37,9 +70,9 @@ database revision `0037_m26_mentor_briefing`. It seeds
 `M26_INSTITUTION_BRIEFING`, `agents.use` + `intelligence.read`, and
 `PROVIDER_OPTIONAL_WITH_DETERMINISTIC_FALLBACK`.
 
-No Mentor runtime, UI, or M26 provider/model configuration has been
-implemented. Next task: M26-2 governed Mentor runtime. Live-provider pilot
-work remains optional M25-3E work and is not authorized by M25 closure.
+M26-1 is CLOSED at database revision `0037_m26_mentor_briefing`.
+M26-2 is CLOSED / PASS. M26-3 - Rector API/UI presentation is the next active
+slice. M26-4 - controlled pilot and milestone closure remains pending.
 
 ## Living documentation rule
 

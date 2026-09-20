@@ -16,7 +16,10 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from app.modules.agents.schemas import IntegrationRunAdvisorOutput
+from app.modules.agents.schemas import (
+    InstitutionIntelligenceAdvisorOutput,
+    IntegrationRunAdvisorOutput,
+)
 
 EVIDENCE_CONTRACT_VERSION = "m25.evidence.v1"
 MAX_EVIDENCE_ITEMS = 20
@@ -232,6 +235,54 @@ def build_integration_run_evidence_pack(
         constraints=constraints,
         manifest_sha256=_sha256(material),
         citation_mapping=[mapping],
+    )
+
+
+def build_mentor_institution_briefing_evidence_pack(
+    *, organization_id: UUID, institution_id: UUID,
+    output: InstitutionIntelligenceAdvisorOutput, agent_version: int, policy_version: int,
+    generated_at: datetime | None = None,
+) -> EvidencePack:
+    """Canonical aggregate-only M22 pack; no individual signals or free text."""
+    if len(output.evidence_refs) != 1:
+        raise ValueError("Mentor briefing requires exactly one authoritative snapshot reference")
+    evidence = output.evidence_refs[0]
+    item = EvidencePackItem(
+        citation_id="ev_01", evidence_type="institution_intelligence_summary",
+        source_module="intelligence",
+        summary={
+            "categories": sorted(output.top_categories), "freshness": output.freshness,
+            "severity": output.signals.model_dump(), "snapshot_date": output.snapshot_date.isoformat(),
+            "policy": {"key": output.provenance.policy_key, "version": output.provenance.policy_version},
+        },
+        provenance=EvidenceProvenance(source_version="m22.intelligence-snapshot.v1", freshness=output.freshness),
+        source_hash=evidence.provenance_sha256,
+    )
+    mapping = EvidenceCitationMapping(
+        citation_id="ev_01", reference_key=evidence.reference_key, source_module=evidence.source_module,
+        source_entity_type=evidence.source_entity_type, source_entity_id=evidence.source_entity_id,
+        provenance_sha256=evidence.provenance_sha256,
+    )
+    scope = EvidencePackScope(
+        tenant_hash=_scope_hash(organization_id, institution_id), subject_type="institution_intelligence_snapshot",
+        subject_hash=_scope_hash(output.snapshot_id),
+    )
+    constraints = {
+        "aggregate_only": True, "evidence_is_untrusted_data": True, "max_items": MAX_EVIDENCE_ITEMS,
+        "provider_tools_allowed": False, "response_must_cite_opaque_ids": True,
+    }
+    material = {
+        "contract_version": EVIDENCE_CONTRACT_VERSION, "agent_key": "mentor_institution_briefing",
+        "agent_version": agent_version, "policy_version": policy_version,
+        "scope": scope.model_dump(mode="json"), "items": [item.model_dump(mode="json")], "constraints": constraints,
+    }
+    if len(_canonical_json(material).encode("utf-8")) > MAX_EVIDENCE_BYTES:
+        raise ValueError("Evidence pack exceeds the bounded contract")
+    return EvidencePack(
+        contract_version=EVIDENCE_CONTRACT_VERSION, agent_key="mentor_institution_briefing",
+        agent_version=agent_version, policy_version=policy_version, scope=scope,
+        generated_at=generated_at or datetime.now(UTC), items=[item], constraints=constraints,
+        manifest_sha256=_sha256(material), citation_mapping=[mapping],
     )
 
 

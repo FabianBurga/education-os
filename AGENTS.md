@@ -26,14 +26,28 @@ CLOSED
 M26-1 Mentor institution-briefing configuration:
 CLOSED
 
+M26-2:
+CLOSED / PASS
+
 Next task:
-M26-2 — Governed Mentor runtime
+M26-3 — Rector API/UI presentation
 
 Current validated M26-1 configuration evidence:
 - M26 config: 6 passed.
 - M25 config: 8 passed.
 - Ruff: PASS.
 - py_compile: PASS.
+
+M26-2 closure evidence:
+- 75 targeted tests passed, including 61 M26 integration tests.
+- Directed M25: 57, M22: 56, M21: 282, M23: 66, M24: 13 passed.
+- Full backend: 711 passed, 0 failed, 1 skipped, 116 warnings, 42.50 seconds.
+- The skipped test was the opt-in M21 E2E because M21_E2E_DATABASE_URL was unset.
+- RLS/FORCE RLS, application-role restrictions, tenant isolation, and zero residue verified.
+- Live provider calls and external network model calls: 0.
+
+M26 overall remains active. M26-3 is the next slice; M26-4 controlled pilot and
+overall M26 closure remain pending. Do not begin M26-3 in a M26-2 closure task.
 
 Latest known full regression:
 571 passed, 1 skipped, 4 warnings

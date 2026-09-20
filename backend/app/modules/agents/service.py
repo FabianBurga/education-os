@@ -11,6 +11,7 @@ from app.api.deps import CurrentPrincipal
 from app.modules.agents.context import build_context_envelope
 from app.modules.agents.executor import execute_inspection_tool
 from app.modules.agents.integration_run_explainer import explain_integration_run
+from app.modules.agents.mentor_institution_briefing import brief_institution
 from app.modules.agents.models import (
     AgentDefinition,
     AgentEvidenceRef,
@@ -22,6 +23,7 @@ from app.modules.agents.models import (
 )
 from app.modules.agents.planner import plan_advisor
 from app.modules.agents.policy import evaluate_l0_policy, require_permission
+from app.modules.agents.prompt_contract import MENTOR_INSTITUTION_BRIEFING_PROMPT
 from app.modules.agents.registry import AGENTS, known_agent, known_tool
 from app.modules.agents.schemas import (
     AgentAdvisorOutput,
@@ -33,9 +35,14 @@ from app.modules.agents.schemas import (
     InstitutionIntelligenceAdvisorOutput,
     IntegrationRunAdvisorOutput,
     IntegrationRunExplainerOutput,
+    MentorInstitutionBriefingOutput,
     StudentTimelineAdvisorOutput,
 )
-from app.modules.agents.verifier import verify_agent_output, verify_integration_run_explainer_output
+from app.modules.agents.verifier import (
+    verify_agent_output,
+    verify_integration_run_explainer_output,
+    verify_mentor_institution_briefing_output,
+)
 from app.modules.audit.service import record_audit
 from app.modules.events.service import enqueue_canonical_event
 from app.modules.m21_access import require_existing_student_scope
@@ -45,12 +52,14 @@ _REQUEST_TYPES = {
     "student_timeline_advisor": "M21_STUDENT_TIMELINE_INSPECT",
     "institution_intelligence_advisor": "M22_INSTITUTION_INTELLIGENCE_INSPECT",
     "integration_run_explainer": "M24_INTEGRATION_RUN_EXPLAIN",
+    "mentor_institution_briefing": "M26_INSTITUTION_BRIEFING",
 }
 _OUTPUT_TYPES = {
     "integration_run_advisor": IntegrationRunAdvisorOutput,
     "student_timeline_advisor": StudentTimelineAdvisorOutput,
     "institution_intelligence_advisor": InstitutionIntelligenceAdvisorOutput,
     "integration_run_explainer": IntegrationRunExplainerOutput,
+    "mentor_institution_briefing": MentorInstitutionBriefingOutput,
 }
 
 
@@ -123,7 +132,7 @@ def _definition_and_policy(
     ).first()
     expected_provider_policy = (
         "PROVIDER_OPTIONAL_WITH_DETERMINISTIC_FALLBACK"
-        if agent_key == "integration_run_explainer"
+        if agent_key in {"integration_run_explainer", "mentor_institution_briefing"}
         else "DETERMINISTIC_ONLY"
     )
     if policy is None or policy.provider_policy != expected_provider_policy:
@@ -173,6 +182,8 @@ def _safe_summary(output: AgentAdvisorOutput) -> dict:
         return {"status": output.status, "counts": output.counts.model_dump()}
     if isinstance(output, IntegrationRunExplainerOutput):
         return {"mode": output.explanation_mode, "focus": output.explanation_focus}
+    if isinstance(output, MentorInstitutionBriefingOutput):
+        return {"mode": output.explanation_mode, "focus": output.briefing_focus, "snapshot_date": output.snapshot_date.isoformat()}
     if isinstance(output, StudentTimelineAdvisorOutput):
         return {"event_count": output.timeline.event_count, "intervention_count": output.interventions.total}
     if isinstance(output, InstitutionIntelligenceAdvisorOutput):
@@ -207,12 +218,51 @@ def run_advisor(
             entity_id,
             permission_key="student_timeline.read",
         )
+    preinspected: InstitutionIntelligenceAdvisorOutput | None = None
+    snapshot_identity: dict[str, str] | None = None
+    mentor_policy_decision = None
+    if agent_key == "mentor_institution_briefing":
+        # Resolve once through the closed M22 adapter before replay lookup; the
+        # exact same typed result is reused by the executor below.
+        require_permission(session, principal, "agents.use")
+        require_permission(session, principal, "intelligence.read")
+        mentor_plan = plan_advisor(agent_key)
+        if (
+            tuple(step.step_type for step in mentor_plan) != ("PLANNER", "POLICY", "EXECUTOR", "VERIFIER")
+            or mentor_plan[2].tool_key != "m22.intelligence_snapshot.inspect"
+        ):
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Planner produced forbidden steps")
+        mentor_policy_decision = evaluate_l0_policy(
+            session, principal, known_agent(agent_key), known_tool(mentor_plan[2].tool_key),
+            policy_max_autonomy=policy.max_autonomy_level,
+            max_steps=policy.max_steps, max_tool_calls=policy.max_tool_calls,
+        )
+        if not mentor_policy_decision.allowed:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Agent policy denied")
+        candidate = execute_inspection_tool(session, principal, agent_key=agent_key, entity_id=None)
+        if not isinstance(candidate, InstitutionIntelligenceAdvisorOutput):
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Mentor evidence boundary mismatch")
+        preinspected = candidate
+        snapshot_identity = {
+            "snapshot_id": str(candidate.snapshot_id),
+            "provenance_sha256": candidate.evidence_refs[0].provenance_sha256,
+            "prompt_contract_sha256": MENTOR_INSTITUTION_BRIEFING_PROMPT.sha256,
+        }
     request_material = {
         "agent_key": agent_key,
         "request_type": request_type,
         "entity_id": str(entity_id) if entity_id is not None else None,
         "explanation_focus": explanation_focus,
     }
+    if agent_key == "mentor_institution_briefing":
+        request_material.update({
+            "organization_id": str(principal.organization_id),
+            "institution_id": str(principal.institution_id),
+            "actor_user_id": str(principal.user_id),
+            "agent_definition_version": definition.version,
+            "policy_version": policy.version,
+            "snapshot_identity": snapshot_identity,
+        })
     request_sha = _sha(request_material)
     existing = session.exec(
         select(AgentRun).where(
@@ -259,7 +309,7 @@ def run_advisor(
     ):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Planner produced forbidden steps")
     tool = known_tool(plan[2].tool_key)
-    decision = evaluate_l0_policy(
+    decision = mentor_policy_decision or evaluate_l0_policy(
         session,
         principal,
         known_agent(agent_key),
@@ -284,7 +334,7 @@ def run_advisor(
     )
     _append_event(session, principal, run, "POLICY_ALLOWED", {"autonomy": "L0", "tool_key": tool.key})
     try:
-        inspected = execute_inspection_tool(
+        inspected = preinspected or execute_inspection_tool(
             session, principal, agent_key=agent_key, entity_id=entity_id,
         )
         if agent_key == "integration_run_explainer":
@@ -298,6 +348,14 @@ def run_advisor(
                 policy=policy,
                 base=inspected,
                 explanation_focus=explanation_focus,
+            )
+            output = explained.output
+        elif agent_key == "mentor_institution_briefing":
+            if not isinstance(inspected, InstitutionIntelligenceAdvisorOutput) or explanation_focus is None:
+                raise ValueError("Mentor requires authorized M22 evidence and typed focus")
+            explained = brief_institution(
+                session, principal, run=run, definition=definition, policy=policy,
+                base=inspected, briefing_focus=explanation_focus,
             )
             output = explained.output
         else:
@@ -335,6 +393,11 @@ def run_advisor(
                 session=session,
                 agent_run=run,
                 provider_call_id=explained.provider_call_id,
+            )
+        elif agent_key == "mentor_institution_briefing":
+            verify_mentor_institution_briefing_output(
+                output, base=inspected, pack=explained.pack, session=session,
+                agent_run=run, provider_call_id=explained.provider_call_id,
             )
         else:
             verify_agent_output(output, session=session, principal=principal)
@@ -456,6 +519,15 @@ def run_institution_intelligence_advisor(
 ) -> AgentRunRead:
     return run_advisor(
         session, principal, agent_key="institution_intelligence_advisor", entity_id=None,
+    )
+
+
+def run_mentor_institution_briefing(
+    session: Session, principal: CurrentPrincipal, *, briefing_focus: str,
+) -> AgentRunRead:
+    return run_advisor(
+        session, principal, agent_key="mentor_institution_briefing", entity_id=None,
+        explanation_focus=briefing_focus,
     )
 
 

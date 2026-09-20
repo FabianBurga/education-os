@@ -15,6 +15,7 @@ from app.modules.agents.schemas import (
     AgentToolCallRead,
     InstitutionIntelligenceAgentRunCreate,
     IntegrationRunExplainerCreate,
+    MentorInstitutionBriefingCreate,
     StudentTimelineAgentRunCreate,
 )
 from app.modules.agents.service import (
@@ -27,6 +28,7 @@ from app.modules.agents.service import (
     run_institution_intelligence_advisor,
     run_integration_run_advisor,
     run_integration_run_explainer,
+    run_mentor_institution_briefing,
     run_student_timeline_advisor,
 )
 
@@ -50,7 +52,7 @@ def integration_run_advisor(payload: AgentRunCreate, principal: PrincipalDep, se
 @router.post("/{agent_key}/runs", response_model=AgentRunRead, status_code=status.HTTP_201_CREATED)
 def advisor_run(
     agent_key: str,
-    payload: AgentRunCreate | StudentTimelineAgentRunCreate | InstitutionIntelligenceAgentRunCreate | IntegrationRunExplainerCreate,
+    payload: AgentRunCreate | StudentTimelineAgentRunCreate | InstitutionIntelligenceAgentRunCreate | IntegrationRunExplainerCreate | MentorInstitutionBriefingCreate,
     principal: PrincipalDep,
     session: SessionDep,
 ):
@@ -67,6 +69,8 @@ def advisor_run(
             integration_run_id=payload.integration_run_id,
             explanation_focus=payload.explanation_focus,
         )
+    elif agent_key == "mentor_institution_briefing" and isinstance(payload, MentorInstitutionBriefingCreate):
+        result = run_mentor_institution_briefing(session, principal, briefing_focus=payload.briefing_focus)
     else:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Typed agent input does not match agent")
     session.commit()

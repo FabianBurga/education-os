@@ -44,6 +44,10 @@ CAPABILITIES = {
         key="intelligence.snapshot.inspect", required_permission="intelligence.read",
         maximum_autonomy="L0", side_effect_class="NONE",
     ),
+    "mentor.institution.brief": CapabilityDefinition(
+        key="mentor.institution.brief", required_permission="intelligence.read",
+        maximum_autonomy="L0", side_effect_class="NONE",
+    ),
 }
 TOOLS = {
     "m24.integration_run.inspect": ToolDefinition(
@@ -78,6 +82,10 @@ AGENTS = {
     "integration_run_explainer": AgentDefinitionRegistry(
         key="integration_run_explainer", capability_keys=("integration.run.explain",),
         tool_keys=("m24.integration_run.inspect",), maximum_autonomy="L0",
+    ),
+    "mentor_institution_briefing": AgentDefinitionRegistry(
+        key="mentor_institution_briefing", capability_keys=("mentor.institution.brief",),
+        tool_keys=("m22.intelligence_snapshot.inspect",), maximum_autonomy="L0",
     ),
 }
 

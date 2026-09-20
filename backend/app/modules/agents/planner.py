@@ -14,6 +14,7 @@ _AGENT_TO_TOOL = {
     "student_timeline_advisor": "m21.student_timeline.inspect",
     "institution_intelligence_advisor": "m22.intelligence_snapshot.inspect",
     "integration_run_explainer": "m24.integration_run.inspect",
+    "mentor_institution_briefing": "m22.intelligence_snapshot.inspect",
 }
 
 
