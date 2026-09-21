@@ -254,7 +254,7 @@ def provision() -> dict[str, object]:
             if _existing(session):
                 raise RuntimeError("Education OS Demo already exists; run cleanup first")
             now = datetime.now(UTC)
-            today = date.today()
+            today = datetime.now(UTC).date()
             org, inst, campus, period, level, grade, subject, section = (uuid4() for _ in range(8))
             _insert(
                 session,
