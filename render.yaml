@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: education-os-investor-demo
+    runtime: docker
+    branch: demo/investor-m26
+    dockerfilePath: ./Dockerfile
+    autoDeploy: false
+    healthCheckPath: /health/ready
+    plan: free
+    envVars:
+      - key: APP_ENV
+        value: staging
+      - key: APP_NAME
+        value: Education OS
+      - key: API_V1_PREFIX
+        value: /api/v1
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "480"
+      - key: FRONTEND_REQUIRED_FOR_READINESS
+        value: "true"
+      - key: SLOW_REQUEST_MS
+        value: "1000"
+      - key: EDUCATION_OS_DEMO_MODE
+        value: "true"
+      - key: EDUCATION_OS_DEMO_SYNTHETIC_ONLY
+        value: "true"
+      - key: SECRET_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: RELEASE_ID
+        sync: false
+      - key: PUBLIC_BASE_URL
+        sync: false
+      - key: EDUCATION_OS_DEMO_ORGANIZATION_ID
+        sync: false
+      - key: EDUCATION_OS_DEMO_INSTITUTION_ID
+        sync: false
+      - key: EDUCATION_OS_DEMO_PRINCIPALS
+        sync: false
+      - key: EDUCATION_OS_DEMO_ACCESS_CODE
+        sync: false
