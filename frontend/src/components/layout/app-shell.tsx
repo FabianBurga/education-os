@@ -25,6 +25,10 @@ import {
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 
+function institutionTypeLabel(value: string) {
+  return { PRIVATE: "Privado", PUBLIC: "Público", FISCOMISIONAL: "Fiscomisional", MUNICIPAL: "Municipal" }[value] ?? value;
+}
+
 const icons: Record<string, typeof Home> = {
   integrations: Cable,
   administration: Shield,
@@ -54,7 +58,7 @@ function ModuleLink({ module }: { module: ModuleDefinition }) {
       <Icon className="h-4 w-4 shrink-0" />
       <span className="min-w-0 flex-1 truncate">{module.shortLabel}</span>
       {capability === "disabled" ? (
-        <span className="h-2 w-2 rounded-full bg-amber-400" title="Capability deshabilitada" />
+        <span className="h-2 w-2 rounded-full bg-amber-400" title="Vista no disponible" />
       ) : null}
     </Link>
   );
@@ -121,7 +125,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="min-w-0">
               <div className="font-bold text-slate-900">Education OS</div>
               <div className="truncate text-xs text-slate-500">
-                Unified Frontend
+                Plataforma educativa
               </div>
             </div>
           </div>
@@ -134,7 +138,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               {bootstrap.tenant.institution_name}
             </div>
             <div className="mt-1 text-xs text-slate-500">
-              {bootstrap.tenant.institution_type}
+              {institutionTypeLabel(bootstrap.tenant.institution_type)}
             </div>
           </div>
 
@@ -166,7 +170,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 }}
               >
                 <ClipboardList className="h-4 w-4" />
-                Sugerencias M21
+                Sugerencias de seguimiento
               </Link>
             ) : null}
 
@@ -202,7 +206,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               onClick={signOut}
             >
               <LogOut className="h-4 w-4" />
-              Cerrar sesión local
+              Cerrar sesión
             </Button>
           </div>
         </aside>
@@ -211,7 +215,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </div>
 
       <div className="fixed bottom-4 right-4 hidden md:block">
-        <Badge tone="success">Entorno unificado listo</Badge>
+        <Badge tone="success">Plataforma lista</Badge>
       </div>
     </div>
   );

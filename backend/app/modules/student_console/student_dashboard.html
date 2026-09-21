@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Education OS · Student Console</title>
+<title>Education OS · Portal del estudiante</title>
 <style>
 :root{
   --bg:#f4f6f9;--card:#fff;--ink:#172033;--muted:#6d7685;--line:#e4e8ee;
@@ -37,7 +37,7 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px 10px
 </head>
 <body>
 <header><div class="head">
-<div><h1>Student Console</h1><div class="sub">Education OS · mi información académica</div></div>
+<div><h1>Portal del estudiante</h1><div class="sub">Education OS · mi información académica</div></div>
 <div class="auth">
 <input id="student-token" type="password" placeholder="Bearer token STUDENT">
 <button id="student-connect" class="primary" onclick="connectStudent()">Conectar</button>
@@ -112,6 +112,7 @@ async function studentApi(path){
 function connectStudent(){sessionStorage.setItem('education_os_student_token',studentTokenEl.value.trim());loadStudentAll()}
 function studentTab(id,b){document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));document.querySelectorAll('#student-nav button').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');b.classList.add('active')}
 function e(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function displayValue(value){return ({HIGH:"Alta",MEDIUM:"Media",LOW:"Baja",ATTENDANCE_RISK:"Riesgo de asistencia",ACADEMIC_RISK:"Riesgo académico",MISSING_WORK:"Trabajo pendiente",GRADED:"Calificado",MISSING:"Pendiente",PENDING:"Pendiente",EXCUSED:"Justificado",LEAD:"Docente principal","STANDARD - REPRESENTATIVE":"Representante autorizado",STANDARD:"Representante autorizado",OPEN:"Abierta",ESCALATED:"Escalada",ACKNOWLEDGED:"Reconocida",COMPLETED:"Completada",IN_PROGRESS:"En curso"}[String(value)]??String(value));}
 function metric(l,v,d=''){return `<div class="metric"><div class="label">${e(l)}</div><div class="value">${e(v)}</div><div class="sub">${e(d)}</div></div>`}
 function setStudentStatus(t){document.getElementById('student-status').textContent=t}
 const dayName={1:'Lunes',2:'Martes',3:'Miércoles',4:'Jueves',5:'Viernes',6:'Sábado',7:'Domingo'};
@@ -127,7 +128,7 @@ async function loadStudentAll(){
   studentState={profile,summary,classes,schedule,attendance,grades,pending,progress,notices};
   renderStudentSummary();renderStudentProfile();renderStudentClasses();renderStudentSchedule();
   renderStudentAttendance();renderStudentGrades();renderStudentPending();renderStudentProgress();renderStudentNotices();
-  setStudentStatus('Student Console actualizado.');
+  setStudentStatus('Portal del estudiante actualizado.');
  }catch(err){setStudentStatus('Error: '+err.message)}
 }
 function renderStudentSummary(){
@@ -166,11 +167,11 @@ function renderStudentAttendance(){
 }
 function renderStudentGrades(){
  const xs=studentState.grades||[];
- document.getElementById('student-grades-body').innerHTML=xs.length?`<table id="student-grades-table"><thead><tr><th>Asignatura</th><th>Evaluación</th><th>Estado</th><th>Nota</th><th>%</th><th>Retroalimentación</th></tr></thead><tbody>${xs.map(x=>`<tr><td>${e(x.subject_name)}</td><td>${e(x.assessment_title)}<div class="sub">${e(x.grading_period_name)} · ${e(x.category_name)}</div></td><td><span class="pill ${e(x.status)}">${e(x.status)}</span></td><td>${x.score==null?'—':e(x.score+' / '+x.max_score)}</td><td>${x.percentage==null?'—':e(x.percentage+'%')}</td><td>${e(x.feedback||'—')}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">No hay calificaciones registradas.</div>';
+ document.getElementById('student-grades-body').innerHTML=xs.length?`<table id="student-grades-table"><thead><tr><th>Asignatura</th><th>Evaluación</th><th>Estado</th><th>Nota</th><th>%</th><th>Retroalimentación</th></tr></thead><tbody>${xs.map(x=>`<tr><td>${e(x.subject_name)}</td><td>${e(x.assessment_title)}<div class="sub">${e(x.grading_period_name)} · ${e(x.category_name)}</div></td><td><span class="pill ${e(x.status)}">${displayValue(x.status)}</span></td><td>${x.score==null?'—':e(x.score+' / '+x.max_score)}</td><td>${x.percentage==null?'—':e(x.percentage+'%')}</td><td>${e(x.feedback||'—')}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">No hay calificaciones registradas.</div>';
 }
 function renderStudentPending(){
  const xs=studentState.pending||[];
- document.getElementById('student-pending-body').innerHTML=xs.length?`<table id="student-pending-table"><thead><tr><th>Asignatura</th><th>Actividad</th><th>Fecha</th><th>Estado</th></tr></thead><tbody>${xs.map(x=>`<tr><td>${e(x.subject_name)}</td><td>${e(x.assessment_title)}</td><td>${e(x.due_on||'—')}</td><td><span class="pill ${x.overdue?'MISSING':''}">${x.overdue?'Vencido':e(x.status)}</span></td></tr>`).join('')}</tbody></table>`:'<div class="empty">No hay pendientes.</div>';
+ document.getElementById('student-pending-body').innerHTML=xs.length?`<table id="student-pending-table"><thead><tr><th>Asignatura</th><th>Actividad</th><th>Fecha</th><th>Estado</th></tr></thead><tbody>${xs.map(x=>`<tr><td>${e(x.subject_name)}</td><td>${e(x.assessment_title)}</td><td>${e(x.due_on||'—')}</td><td><span class="pill ${x.overdue?'MISSING':''}">${x.overdue?'Vencido':displayValue(x.status)}</span></td></tr>`).join('')}</tbody></table>`:'<div class="empty">No hay pendientes.</div>';
 }
 function renderStudentProgress(){
  const xs=studentState.progress||[];

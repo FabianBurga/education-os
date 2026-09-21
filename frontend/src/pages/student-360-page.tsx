@@ -201,7 +201,7 @@ export function Student360Page({
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <div className="flex flex-wrap gap-2">
-            <Badge tone="success">M21 · Student 360</Badge>
+            <Badge tone="success">Seguimiento del estudiante</Badge>
             <Badge tone="neutral">
               Historia longitudinal
             </Badge>

@@ -293,7 +293,7 @@ export function TeacherPwaPage() {
             Modo docente sin conexión deshabilitado
           </h1>
           <p className="mt-2 text-sm text-slate-500">
-            La capability teacher.offline_pwa está deshabilitada.
+            Esta vista no está disponible para tu perfil.
           </p>
         </CardContent>
       </Card>

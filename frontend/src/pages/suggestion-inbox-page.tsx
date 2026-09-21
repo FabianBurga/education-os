@@ -268,7 +268,7 @@ export function SuggestionInboxPage() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <div className="flex flex-wrap gap-2">
-            <Badge tone="success">M21 · Revisión humana</Badge>
+            <Badge tone="success">Revisión humana</Badge>
             <Badge tone="neutral">
               Motor determinístico
             </Badge>

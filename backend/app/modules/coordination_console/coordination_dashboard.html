@@ -48,7 +48,7 @@ code{font-size:11px}
 <header>
 <div class="head">
   <div>
-    <h1>Rector / Coordination Console</h1>
+    <h1>Coordinación académica</h1>
     <div class="sub">Education OS · señales explicables, seguimiento humano y cierre verificable</div>
   </div>
   <div class="auth">
@@ -167,8 +167,9 @@ function setStatus(t){document.getElementById('status').textContent=t}
 function pct(v){return v===null||v===undefined?'—':Number(v).toFixed(1)+'%'}
 function dt(v){if(!v)return'—';return new Date(v).toLocaleString()}
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
-function pill(sev){return `<span class="pill ${esc(sev)}">${esc(sev)}</span>`}
-function taskState(s){return `<span class="state ${esc(s)}">${esc(s)}</span>`}
+function displayValue(value){return ({HIGH:"Alta",MEDIUM:"Media",LOW:"Baja",ATTENDANCE_RISK:"Riesgo de asistencia",ACADEMIC_RISK:"Riesgo académico",MISSING_WORK:"Trabajo pendiente",GRADED:"Calificado",MISSING:"Pendiente",LEAD:"Docente principal","STANDARD - REPRESENTATIVE":"Representante autorizado",STANDARD:"Representante autorizado",OPEN:"Abierto",ESCALATED:"Escalado",ACKNOWLEDGED:"Reconocido",COMPLETED:"Completado",IN_PROGRESS:"En curso"}[String(value)]??String(value));}
+function pill(sev){return `<span class="pill ${esc(sev)}">${displayValue(sev)}</span>`}
+function taskState(s){return `<span class="state ${esc(s)}">${displayValue(s)}</span>`}
 function metric(label,value,detail=''){return `<div class="metric"><div class="label">${label}</div><div class="value">${value}</div><div class="sub">${detail}</div></div>`}
 
 async function loadAll(){
@@ -182,7 +183,7 @@ async function loadAll(){
     ]);
     state={summary,attention,cases,sections,attendance,academic};
     renderAll();
-    setStatus('Rector / Coordination Console actualizado.');
+    setStatus('Información actualizada.');
   }catch(e){setStatus('No se pudo cargar: '+e.message)}
 }
 
@@ -201,7 +202,7 @@ function renderAll(){
     <table><tbody>
       <tr><th>Secciones activas</th><td>${s.active_sections??0}</td></tr>
       <tr><th>Señales abiertas</th><td>${s.open_signals??0}</td></tr>
-      <tr><th>Señales HIGH</th><td>${s.high_signals??0}</td></tr>
+      <tr><th>Señales de prioridad alta</th><td>${s.high_signals??0}</td></tr>
       <tr><th>Casos abiertos</th><td>${s.open_cases??0}</td></tr>
       <tr><th>Tareas activas</th><td>${s.open_tasks??0}</td></tr>
       <tr><th>Tareas escaladas</th><td>${s.escalated_tasks??0}</td></tr>
@@ -218,7 +219,7 @@ function renderAttention(){
       <td>${pill(x.severity)}</td>
       <td><strong>${esc(x.student_name)}</strong><div class="sub">${esc(x.student_code||'sin código')}</div></td>
       <td>${esc(x.grade_name||'—')} · ${esc(x.section_name||'sin sección')}<div class="sub">${dt(x.last_seen_at)}</div></td>
-      <td><strong>${esc(x.signal_type)}</strong><div class="sub">${esc(x.summary)}</div><div class="sub">valor ${Number(x.metric_value).toFixed(1)} · umbral ${Number(x.threshold_value).toFixed(1)}</div></td>
+      <td><strong>${displayValue(x.signal_type)}</strong><div class="sub">${esc(x.summary)}</div><div class="sub">valor ${Number(x.metric_value).toFixed(1)} · umbral ${Number(x.threshold_value).toFixed(1)}</div></td>
       <td>${x.case_id?`Caso ${taskState(x.case_status||'—')}<div class="sub">${x.task_title?esc(x.task_title):'sin tarea'} ${x.task_status?taskState(x.task_status):''}</div>`:'<span class="sub">Sin caso automatizado</span>'}</td>
       <td><div class="actions"><button onclick="resolveSignal('${x.signal_id}')">Resolver señal</button>${x.task_id&&['OPEN','ESCALATED'].includes(x.task_status)?`<button onclick="ackTask('${x.task_id}')">Reconocer</button>`:''}${x.task_id&&x.task_status!=='COMPLETED'?`<button onclick="completeTask('${x.task_id}')">Completar</button>`:''}</div></td>
     </tr>`).join('')}</tbody></table>`:'<div class="empty">No hay señales abiertas.</div>';
@@ -229,7 +230,7 @@ function renderCases(){
   document.getElementById('casesBody').innerHTML=cases.length?cases.map(c=>`
     <div class="case">
       <div class="case-head">
-        <div><div class="case-title">${pill(c.severity)} ${esc(c.student_name)} · ${esc(c.signal_type)}</div>
+        <div><div class="case-title">${pill(c.severity)} ${esc(c.student_name)} · ${displayValue(c.signal_type)}</div>
           <div class="sub">${esc(c.grade_name||'—')} · ${esc(c.section_name||'sin sección')} · abierto ${dt(c.opened_at)}</div>
           <div class="sub">${esc(c.signal_summary)}</div>
         </div>
@@ -237,7 +238,7 @@ function renderCases(){
       </div>
       ${c.tasks.length?c.tasks.map(t=>`<div class="task">
         <div><strong>${esc(t.title)}</strong> ${taskState(t.status)}</div>
-        <div class="sub">Responsable: ${esc(t.assigned_role_code)} · vence ${dt(t.due_at)} · escala ${dt(t.escalate_at)}</div>
+        <div class="sub">Responsable: ${displayValue(t.assigned_role_code)} · vence ${dt(t.due_at)} · escala ${dt(t.escalate_at)}</div>
         ${t.description?`<div class="sub">${esc(t.description)}</div>`:''}
         ${t.completion_note?`<div class="sub"><strong>Resultado:</strong> ${esc(t.completion_note)}</div>`:''}
         <div class="actions" style="margin-top:7px">

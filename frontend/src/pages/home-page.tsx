@@ -51,14 +51,6 @@ export function HomePage() {
           </span>
         ),
       }),
-      columnHelper.accessor("id", {
-        header: "Identificador",
-        cell: (info) => (
-          <span className="font-mono text-xs text-slate-500">
-            {info.getValue()}
-          </span>
-        ),
-      }),
     ],
     [],
   );
@@ -102,12 +94,9 @@ export function HomePage() {
           <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-950">
             {bootstrap.tenant.institution_name}
           </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-            Un único entorno visual para entrar a los módulos permitidos por
-            tu identidad, tus roles y las reglas del backend.
-          </p>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Accede a la información disponible para tu comunidad educativa.</p>
         </div>
-        <Badge tone="success">Entorno unificado listo</Badge>
+        <Badge tone="success">Plataforma lista</Badge>
       </section>
 
       {canUseMentor(bootstrap.permissions) ? <MentorBriefingPanel /> : null}
@@ -170,7 +159,7 @@ export function HomePage() {
                       </div>
                     </div>
                     {capability === "disabled" ? (
-                      <Badge tone="warning">Capability off</Badge>
+                      <Badge tone="warning">Vista no disponible</Badge>
                     ) : (
                       <Badge tone="neutral">Disponible</Badge>
                     )}

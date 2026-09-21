@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Education OS · Guardian Console</title>
+<title>Education OS · Portal de familias</title>
 <style>
 :root{
   --bg:#f4f6f8;--card:#fff;--ink:#172033;--muted:#6f7887;--line:#e1e6ec;
@@ -43,7 +43,7 @@ th{font-size:10px;text-transform:uppercase;color:var(--muted);background:#fafbfc
 </head>
 <body>
 <header><div class="head">
-<div><h1>Guardian Console</h1><div id="guardian-identity" class="sub">Education OS · familia y representantes</div></div>
+<div><h1>Portal de familias</h1><div id="guardian-identity" class="sub">Education OS · familia y representantes</div></div>
 <div class="auth">
 <input id="guardian-token" type="password" placeholder="Bearer token GUARDIAN">
 <button id="guardian-connect" class="primary" onclick="connectGuardian()">Conectar</button>
@@ -98,6 +98,7 @@ const guardianDays={1:'Lunes',2:'Martes',3:'Miércoles',4:'Jueves',5:'Viernes',6
 function gh(){return guardianToken.value.trim()?{'Authorization':'Bearer '+guardianToken.value.trim(),'Content-Type':'application/json'}:{'Content-Type':'application/json'}}
 async function gapi(path,opts={}){const r=await fetch('/api/v1/guardian'+path,{...opts,headers:{...gh(),...(opts.headers||{})}});const txt=await r.text();let body=null;try{body=txt?JSON.parse(txt):null}catch{body=txt}if(!r.ok)throw new Error(`${r.status} ${body?.detail||txt}`);return body}
 function ge(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function displayValue(value){return ({HIGH:"Alta",MEDIUM:"Media",LOW:"Baja",ATTENDANCE_RISK:"Riesgo de asistencia",ACADEMIC_RISK:"Riesgo académico",MISSING_WORK:"Trabajo pendiente",GRADED:"Calificado",MISSING:"Pendiente",PENDING:"Pendiente",EXCUSED:"Justificado",LEAD:"Docente principal","STANDARD - REPRESENTATIVE":"Representante autorizado",STANDARD:"Representante autorizado",OPEN:"Abierta",ESCALATED:"Escalada",ACKNOWLEDGED:"Reconocida",COMPLETED:"Completada",IN_PROGRESS:"En curso"}[String(value)]??String(value));}
 function gs(t){document.getElementById('guardian-status').textContent=t}
 function gmetric(l,v,d=''){return `<div class="card metric"><div class="label">${ge(l)}</div><div class="value">${ge(v)}</div><div class="sub">${ge(d)}</div></div>`}
 function guardianTab(id,b){document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));document.querySelectorAll('#guardian-nav button').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');b.classList.add('active')}
@@ -105,7 +106,7 @@ function connectGuardian(){sessionStorage.setItem('education_os_guardian_token',
 
 async function loadGuardianAll(){
  if(!guardianToken.value.trim()){gs('Ingresa un token GUARDIAN.');return}
- gs('Actualizando Guardian Console...');
+ gs('Actualizando Portal de familias...');
  try{
   const [me,students,notices]=await Promise.all([gapi('/me'),gapi('/students'),gapi('/notices')]);
   guardianState.me=me;guardianState.students=students;guardianState.notices=notices;
@@ -118,12 +119,12 @@ async function loadGuardianAll(){
    guardianState.selected=null;document.getElementById('guardian-metrics').innerHTML='';
    document.getElementById('guardian-selected-title').textContent='Sin estudiantes autorizados';
   }
-  gs('Guardian Console actualizado.');
+  gs('Portal de familias actualizado.');
  }catch(err){gs('Error: '+err.message)}
 }
 function renderGuardianStudents(){
  const xs=guardianState.students||[];
- document.getElementById('guardian-students-list').innerHTML=xs.length?xs.map(x=>`<div class="student-card ${guardianState.selected?.student_profile_id===x.student_profile_id?'active':''}" data-student-id="${ge(x.student_profile_id)}" onclick="selectGuardianStudent('${ge(x.student_profile_id)}')"><div class="name">${ge(x.student_name)}</div><div class="meta">${ge(x.grade_name||'Sin grado')} · ${ge(x.section_name||'Sin sección')}</div><div class="meta">${ge(x.access_level)}${x.relationship_type?' · '+ge(x.relationship_type):''}</div></div>`).join(''):'<div class="empty">No hay estudiantes autorizados.</div>';
+ document.getElementById('guardian-students-list').innerHTML=xs.length?xs.map(x=>`<div class="student-card ${guardianState.selected?.student_profile_id===x.student_profile_id?'active':''}" data-student-id="${ge(x.student_profile_id)}" onclick="selectGuardianStudent('${ge(x.student_profile_id)}')"><div class="name">${ge(x.student_name)}</div><div class="meta">${ge(x.grade_name||'Sin grado')} · ${ge(x.section_name||'Sin sección')}</div><div class="meta">${displayValue(x.access_level)}${x.relationship_type?' · '+displayValue(x.relationship_type):''}</div></div>`).join(''):'<div class="empty">No hay estudiantes autorizados.</div>';
 }
 async function selectGuardianStudent(id){
  const selected=guardianState.students.find(x=>x.student_profile_id===id);if(!selected)return;
@@ -134,7 +135,7 @@ async function selectGuardianStudent(id){
    gapi(`/students/${id}/attendance`),gapi(`/students/${id}/grades`),gapi(`/students/${id}/pending`),gapi(`/students/${id}/progress`)
   ]);
   Object.assign(guardianState,{summary,classes,schedule,attendance,grades,pending,progress});
-  renderGuardianStudent();gs('Guardian Console actualizado.');
+  renderGuardianStudent();gs('Portal de familias actualizado.');
  }catch(err){gs('Error: '+err.message)}
 }
 function renderGuardianStudent(){
@@ -153,8 +154,8 @@ function renderGuardianStudent(){
 function renderGuardianClasses(){const xs=guardianState.classes||[];document.getElementById('guardian-classes-body').innerHTML=xs.length?`<table id="guardian-classes-table"><thead><tr><th>Asignatura</th><th>Área</th><th>Sección</th><th>Docente</th></tr></thead><tbody>${xs.map(x=>`<tr><td><strong>${ge(x.subject_name)}</strong><div class="sub">${ge(x.subject_code)}</div></td><td>${ge(x.subject_area||'—')}</td><td>${ge(x.section_name)}</td><td>${ge((x.teachers||[]).join(', ')||'—')}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">Sin clases activas.</div>'}
 function renderGuardianSchedule(){const xs=guardianState.schedule||[];document.getElementById('guardian-schedule-body').innerHTML=xs.length?`<table id="guardian-schedule-table"><thead><tr><th>Día</th><th>Hora</th><th>Asignatura</th><th>Aula</th></tr></thead><tbody>${xs.map(x=>`<tr><td>${ge(guardianDays[x.weekday]||x.weekday)}</td><td>${ge(x.starts_at)}–${ge(x.ends_at)}</td><td>${ge(x.subject_name)}</td><td>${ge(x.room_label||'—')}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">No hay horario registrado.</div>'}
 function renderGuardianAttendance(){const xs=guardianState.attendance||[];document.getElementById('guardian-attendance-body').innerHTML=xs.length?`<table id="guardian-attendance-table"><thead><tr><th>Fecha</th><th>Asignatura</th><th>Estado</th><th>Tardanza</th></tr></thead><tbody>${xs.map(x=>`<tr><td>${ge(x.session_date)}</td><td>${ge(x.subject_name)}</td><td><span class="pill ${ge(x.semantic)}">${ge(x.attendance_label)}</span></td><td>${x.minutes_late?ge(x.minutes_late+' min'):'—'}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">Sin registros de asistencia.</div>'}
-function renderGuardianGrades(){const xs=guardianState.grades||[];document.getElementById('guardian-grades-body').innerHTML=xs.length?`<table id="guardian-grades-table"><thead><tr><th>Asignatura</th><th>Evaluación</th><th>Estado</th><th>Nota</th><th>%</th></tr></thead><tbody>${xs.map(x=>`<tr><td>${ge(x.subject_name)}</td><td>${ge(x.assessment_title)}<div class="sub">${ge(x.grading_period_name)} · ${ge(x.category_name)}</div></td><td><span class="pill ${ge(x.status)}">${ge(x.status)}</span></td><td>${x.score==null?'—':ge(x.score+' / '+x.max_score)}</td><td>${x.percentage==null?'—':ge(x.percentage+'%')}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">Sin calificaciones registradas.</div>'}
-function renderGuardianPending(){const xs=guardianState.pending||[];document.getElementById('guardian-pending-body').innerHTML=xs.length?`<table id="guardian-pending-table"><thead><tr><th>Asignatura</th><th>Actividad</th><th>Fecha</th><th>Estado</th></tr></thead><tbody>${xs.map(x=>`<tr><td>${ge(x.subject_name)}</td><td>${ge(x.assessment_title)}</td><td>${ge(x.due_on||'—')}</td><td><span class="pill ${x.overdue?'MISSING':''}">${x.overdue?'Vencido':ge(x.status)}</span></td></tr>`).join('')}</tbody></table>`:'<div class="empty">No hay pendientes.</div>'}
+function renderGuardianGrades(){const xs=guardianState.grades||[];document.getElementById('guardian-grades-body').innerHTML=xs.length?`<table id="guardian-grades-table"><thead><tr><th>Asignatura</th><th>Evaluación</th><th>Estado</th><th>Nota</th><th>%</th></tr></thead><tbody>${xs.map(x=>`<tr><td>${ge(x.subject_name)}</td><td>${ge(x.assessment_title)}<div class="sub">${ge(x.grading_period_name)} · ${ge(x.category_name)}</div></td><td><span class="pill ${ge(x.status)}">${displayValue(x.status)}</span></td><td>${x.score==null?'—':ge(x.score+' / '+x.max_score)}</td><td>${x.percentage==null?'—':ge(x.percentage+'%')}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">Sin calificaciones registradas.</div>'}
+function renderGuardianPending(){const xs=guardianState.pending||[];document.getElementById('guardian-pending-body').innerHTML=xs.length?`<table id="guardian-pending-table"><thead><tr><th>Asignatura</th><th>Actividad</th><th>Fecha</th><th>Estado</th></tr></thead><tbody>${xs.map(x=>`<tr><td>${ge(x.subject_name)}</td><td>${ge(x.assessment_title)}</td><td>${ge(x.due_on||'—')}</td><td><span class="pill ${x.overdue?'MISSING':''}">${x.overdue?'Vencido':displayValue(x.status)}</span></td></tr>`).join('')}</tbody></table>`:'<div class="empty">No hay pendientes.</div>'}
 function renderGuardianProgress(){const xs=guardianState.progress||[];document.getElementById('guardian-progress-body').innerHTML=xs.length?xs.map(x=>{const avg=x.academic_average_percent;return `<div class="progress-row"><strong>${ge(x.subject_name)}</strong><div class="sub">Promedio ${avg==null?'—':ge(avg+'%')} · ${ge(x.graded_items)} calificadas · ${ge(x.missing_items)} faltantes · ${ge(x.absent_records)} ausencias</div><div class="progressbar"><span style="width:${avg==null?0:Math.max(0,Math.min(100,avg))}%"></span></div></div>`}).join(''):'<div class="empty">Sin datos suficientes de progreso.</div>'}
 function renderGuardianNotices(){const xs=guardianState.notices||[];document.getElementById('guardian-notices-body').innerHTML=xs.length?xs.map(n=>`<div class="notice-item" data-notice-id="${ge(n.notice_id)}"><div class="notice-title">${ge(n.title)}</div><div class="notice-meta">${ge(n.notice_type)} · ${ge(n.scope)} · ${ge(n.published_at||'')}</div><div>${ge(n.body)}</div>${n.requires_acknowledgement&&!n.acknowledged_at?`<button class="guardian-ack" data-ack-notice="${ge(n.notice_id)}" onclick="guardianAck('${ge(n.notice_id)}')">Confirmar lectura</button>`:(n.acknowledged_at?'<div class="notice-meta">Confirmado</div>':'')}</div>`).join(''):'<div class="empty">Sin avisos publicados.</div>'}
 async function guardianAck(id){try{await gapi(`/notices/${id}/acknowledge`,{method:'POST'});guardianState.notices=await gapi('/notices');renderGuardianNotices();gs('Aviso confirmado.')}catch(err){gs('Error: '+err.message)}}

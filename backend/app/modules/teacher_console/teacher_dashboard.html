@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Education OS · Teacher Console</title>
+<title>Education OS · Portal docente</title>
 <style>
 :root{
   --bg:#f4f6f9;--card:#fff;--ink:#162033;--muted:#697386;--line:#e3e7ee;
@@ -36,7 +36,7 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px 10px
 </head>
 <body>
 <header><div class="head">
-<div><h1>Teacher Console</h1><div class="sub">Education OS · clases asignadas, asistencia, calificaciones y seguimiento</div></div>
+<div><h1>Portal docente</h1><div class="sub">Education OS · clases asignadas, asistencia, calificaciones y seguimiento</div></div>
 <div class="auth">
 <input id="token" type="password" placeholder="Bearer token TEACHER">
 <button class="primary" onclick="connect()">Conectar</button>
@@ -140,6 +140,7 @@ async function api(path,opts={}){
 function connect(){sessionStorage.setItem('education_os_teacher_token',tokenEl.value.trim());loadAll()}
 function tab(id,b){document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');b.classList.add('active')}
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function displayValue(value){return ({HIGH:"Alta",MEDIUM:"Media",LOW:"Baja",ATTENDANCE_RISK:"Riesgo de asistencia",ACADEMIC_RISK:"Riesgo académico",MISSING_WORK:"Trabajo pendiente",GRADED:"Calificado",MISSING:"Pendiente",PENDING:"Pendiente",EXCUSED:"Justificado",LEAD:"Docente principal","STANDARD - REPRESENTATIVE":"Representante autorizado",STANDARD:"Representante autorizado",OPEN:"Abierta",ESCALATED:"Escalada",ACKNOWLEDGED:"Reconocida",COMPLETED:"Completada",IN_PROGRESS:"En curso"}[String(value)]??String(value));}
 function setStatus(t){document.getElementById('status').textContent=t}
 function metric(l,v,d=''){return `<div class="metric"><div class="label">${l}</div><div class="value">${v}</div><div class="sub">${d}</div></div>`}
 function opt(v,t){return `<option value="${esc(v)}">${esc(t)}</option>`}
@@ -152,7 +153,7 @@ async function loadAll(){
   const [summary,classes,alerts,codes,tasks]=await Promise.all([api('/summary'),api('/classes'),api('/alerts'),api('/attendance/codes'),api('/tasks')]);
   state={...state,summary,classes,alerts,codes,tasks};
   renderSummary();renderAlerts();renderClasses();renderClassSelectors();renderTasks();
-  setStatus('Teacher Console actualizado.');
+  setStatus('Portal docente actualizado.');
  }catch(e){setStatus('Error: '+e.message)}
 }
 function renderSummary(){
@@ -169,11 +170,11 @@ function renderSummary(){
 }
 function renderAlerts(){
  const xs=state.alerts||[];
- document.getElementById('alertsBody').innerHTML=xs.length?`<table><thead><tr><th>Severidad</th><th>Estudiante</th><th>Señal</th></tr></thead><tbody>${xs.map(x=>`<tr><td><span class="pill ${esc(x.severity)}">${esc(x.severity)}</span></td><td>${esc(x.student_name)}<div class="sub">${esc(x.section_name||'')}</div></td><td>${esc(x.signal_type)}<div class="sub">${esc(x.summary)}</div></td></tr>`).join('')}</tbody></table>`:'<div class="empty">Sin alertas abiertas en tus secciones.</div>';
+ document.getElementById('alertsBody').innerHTML=xs.length?`<table><thead><tr><th>Severidad</th><th>Estudiante</th><th>Señal</th></tr></thead><tbody>${xs.map(x=>`<tr><td><span class="pill ${esc(x.severity)}">${displayValue(x.severity)}</span></td><td>${esc(x.student_name)}<div class="sub">${esc(x.section_name||'')}</div></td><td>${displayValue(x.signal_type)}<div class="sub">${esc(x.summary)}</div></td></tr>`).join('')}</tbody></table>`:'<div class="empty">Sin alertas abiertas en tus secciones.</div>';
 }
 function renderClasses(){
  const xs=state.classes||[];
- document.getElementById('classesBody').innerHTML=xs.length?`<table><thead><tr><th>Grado</th><th>Sección</th><th>Asignatura</th><th>Período</th><th>Estudiantes</th><th>Rol</th></tr></thead><tbody>${xs.map(x=>`<tr><td>${esc(x.grade_name)}</td><td>${esc(x.section_name)}</td><td><strong>${esc(x.subject_name)}</strong><div class="sub">${esc(x.subject_code)}</div></td><td>${esc(x.academic_period_name)}</td><td>${x.student_count}</td><td>${esc(x.assignment_role)}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">No tienes clases asignadas.</div>';
+ document.getElementById('classesBody').innerHTML=xs.length?`<table><thead><tr><th>Grado</th><th>Sección</th><th>Asignatura</th><th>Período</th><th>Estudiantes</th><th>Rol</th></tr></thead><tbody>${xs.map(x=>`<tr><td>${esc(x.grade_name)}</td><td>${esc(x.section_name)}</td><td><strong>${esc(x.subject_name)}</strong><div class="sub">${esc(x.subject_code)}</div></td><td>${esc(x.academic_period_name)}</td><td>${x.student_count}</td><td>${displayValue(x.assignment_role)}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">No tienes clases asignadas.</div>';
 }
 function renderClassSelectors(){
  const html=(state.classes||[]).map(x=>opt(x.course_offering_id,`${x.grade_name} · ${x.section_name} · ${x.subject_name}`)).join('');
@@ -253,7 +254,7 @@ function renderGradeRows(rows){
  document.getElementById('gradeRows').innerHTML=rows.length?rows.map(r=>`<div class="grade-row">
  <div><strong>${esc(r.student_name)}</strong><div class="sub">${esc(r.student_code||'')}</div></div>
  <input id="score-${r.student_section_assignment_id}" type="number" min="0" step="0.1" value="${r.score??''}">
- <select id="gs-${r.student_section_assignment_id}">${['PENDING','GRADED','MISSING','EXCUSED'].map(s=>`<option ${s===r.status?'selected':''}>${s}</option>`).join('')}</select>
+ <select id="gs-${r.student_section_assignment_id}">${['PENDING','GRADED','MISSING','EXCUSED'].map(s=>`<option ${s===r.status?'selected':''}>${displayValue(s)}</option>`).join('')}</select>
  <input id="gf-${r.student_section_assignment_id}" value="${esc(r.feedback||'')}" placeholder="Retroalimentación">
  <button onclick="saveGrade('${r.student_section_assignment_id}')">Guardar</button></div>`).join(''):'<div class="empty">Sin estudiantes.</div>';
 }
@@ -265,7 +266,7 @@ async function saveGrade(aid){
 
 function renderTasks(){
  const xs=state.tasks||[];
- document.getElementById('tasksBody').innerHTML=xs.length?`<table><thead><tr><th>Estado</th><th>Estudiante</th><th>Tarea</th><th>Vence</th><th>Acción</th></tr></thead><tbody>${xs.map(x=>`<tr><td><span class="pill ${esc(x.status)}">${esc(x.status)}</span></td><td>${esc(x.student_name)}<div class="sub">${esc(x.section_name||'')}</div></td><td><strong>${esc(x.title)}</strong><div class="sub">${esc(x.description||'')}</div></td><td>${dt(x.due_at)}</td><td>${['OPEN','ESCALATED'].includes(x.status)?`<button onclick="ackTask('${x.id}')">Reconocer</button>`:''} ${x.status!=='COMPLETED'?`<button onclick="completeTask('${x.id}')">Completar</button>`:''}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">No hay tareas TEACHER en tus secciones.</div>';
+ document.getElementById('tasksBody').innerHTML=xs.length?`<table><thead><tr><th>Estado</th><th>Estudiante</th><th>Tarea</th><th>Vence</th><th>Acción</th></tr></thead><tbody>${xs.map(x=>`<tr><td><span class="pill ${esc(x.status)}">${displayValue(x.status)}</span></td><td>${esc(x.student_name)}<div class="sub">${esc(x.section_name||'')}</div></td><td><strong>${esc(x.title)}</strong><div class="sub">${esc(x.description||'')}</div></td><td>${dt(x.due_at)}</td><td>${['OPEN','ESCALATED'].includes(x.status)?`<button onclick="ackTask('${x.id}')">Reconocer</button>`:''} ${x.status!=='COMPLETED'?`<button onclick="completeTask('${x.id}')">Completar</button>`:''}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">No hay tareas TEACHER en tus secciones.</div>';
 }
 async function loadTasks(){try{state.tasks=await api('/tasks');renderTasks()}catch(e){setStatus('Error: '+e.message)}}
 async function ackTask(id){try{await api(`/tasks/${id}/acknowledge`,{method:'POST'});setStatus('Tarea reconocida.');await loadAll()}catch(e){setStatus('Error: '+e.message)}}
