@@ -45,6 +45,8 @@ PERMISSIONS = {
     "RECTOR": READ,
     "COORDINATION": READ
     | {
+        "coord.signals.manage",
+        "coord.cases.manage",
         "intervention.create",
         "intervention.update",
         "intervention.assign",
