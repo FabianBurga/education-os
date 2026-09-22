@@ -22,7 +22,7 @@ COPY backend/alembic/ backend/alembic/
 COPY backend/alembic.ini backend/
 COPY --from=frontend-build /build/frontend/dist frontend/dist
 COPY deployment/start-web.sh /usr/local/bin/start-web
-
+RUN chmod 0755 /usr/local/bin/start-web
 RUN useradd --create-home --uid 10001 app \
     && chown -R app:app /opt/education-os
 
