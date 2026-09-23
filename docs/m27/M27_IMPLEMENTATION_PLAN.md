@@ -59,7 +59,15 @@ Each slice runs contract tests, targeted RLS/tenant/permission/replay tests,
 directed M18/M19/M21/M22/M25/M26 regression, migration checks when applicable,
 then full gates proportional to impact, diff-check, clean-tree, provenance,
 and residue checks. M27-2 implementation is limited to the case/source
-foundation described above; M27-3 does not begin in this session.
+foundation described above; M27-3 is implemented and M27-4 does not begin in
+this session.
+
+M27-3 implements three append-only ledgers: human reviews, bounded decisions,
+and ownership history. Commands are service-first and reuse effective
+permission checks, principal-derived tenant context, audit, and the M18
+transactional outbox. Decision recording sets only a future execution intent;
+it does not invoke M21 or any provider. M27-4 remains the next boundary for
+obligations and SLA.
 
 The M27-1 product decisions are resolved conservatively: source categories
 remain authoritative with optional versioned normalized mappings; one primary

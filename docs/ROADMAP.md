@@ -5,8 +5,8 @@ This is direction, not implementation status.
 - M25 - Agentic Control Plane. CLOSED.
 - M26 - Human Experience Layer / Mentor OS. CLOSED / PASS.
 - M27 - Institutional Decision & Accountability OS. M27-1 contract freeze;
-  M27-2 projection foundation implemented locally; subsequent runtime slices
-  require review of the freeze and foundation.
+  M27-2 projection foundation and M27-3 human review/decision/ownership ledger
+  implemented locally; M27-4 requires review of these foundations.
 - M28 - Autonomous Data Operations.
 - M29 - Preventive Intelligence / Sentinel.
 - M30 - Family Experience.

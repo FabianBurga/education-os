@@ -86,10 +86,11 @@ zero temporary residue.
 ## Active milestone
 
 M27 - Institutional Decision & Accountability OS is the active milestone.
-M27-2 - Accountability Projection Foundation is implemented locally at
-`0038_m27_accountability`. It contains only deterministic case identity,
-tenant-bound case projection, append-only source lineage, RLS/FORCE RLS, and
-replay/idempotency support. M27-1 is frozen; M27-3 waits for review of this
+M27-2 - Accountability Projection Foundation is closed locally at
+`0038_m27_accountability`. M27-3 - Human Review, Decision & Ownership Ledger
+is implemented locally at `0039_m27_review_decision`. It records append-only
+human reviews, bounded decisions, ownership history, provenance, audit, and
+M18 outbox events without executing M21 actions. M27-4 waits for review of this
 slice. M26 is closed and the Mentor remains a human-controlled L0 read/explain
 experience.
 
