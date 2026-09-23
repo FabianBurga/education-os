@@ -93,11 +93,23 @@ Only in-process `fake` is executable. OpenAI, Anthropic, and local are known but
 - `backend/alembic/versions/0035_m25_governed_provider_execution.py` and `0036_m25_run_explainer.py`: applied M25-3 schema/config.
 - `backend/tests/unit/test_m25_*.py`: focused M25 contracts.
 
+## M27-1 contract freeze
+
+M27 is named **Institutional Decision & Accountability OS**. The historical
+working name “Institutional Intelligence Agents” remains only in historical
+evidence and is not the active milestone name. M27-1 freezes the design set in
+`docs/m27/`: case/episode identity, human review and bounded decision,
+obligations/SLA, reproducible metrics, M18 event model, security, provenance,
+and optimized implementation slices. M21 remains authoritative for
+interventions/actions/follow-ups/outcomes; M22 for signals/intelligence/
+snapshots; M18 for chronology; M19 for governance; and M25/M26 for governed
+evidence and human control. No runtime or persistence is introduced by M27-1.
+
 ## Next step
 
-Begin M27 under a separately frozen contract. Preserve M26's L0 read/explain
-scope, M22 boundary, human-control language, and no-live-provider posture until
-the next milestone explicitly changes them.
+Review the M27-1 freeze, then begin M27-2 only after acceptance. Preserve
+M26's L0 read/explain scope, M22 boundary, human-control language, and
+no-live-provider posture until a later approved slice changes them.
 
 ## Standard checks
 

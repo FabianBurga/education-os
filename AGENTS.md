@@ -18,7 +18,7 @@ Current Alembic revision:
 0037_m26_mentor_briefing
 
 Current phase:
-M27 — Institutional Intelligence Agents
+M27 — Institutional Decision & Accountability OS
 
 M25:
 CLOSED
@@ -30,7 +30,7 @@ M26-2:
 CLOSED / PASS
 
 Next task:
-M27 — Institutional Intelligence Agents
+M27-1 — Contract & Metrics Freeze
 
 Current validated M26-1 configuration evidence:
 - M26 config: 6 passed.
@@ -247,7 +247,7 @@ State must be derived from lifecycle events.
 PostgreSQL trigger enforces valid event transitions.
 
 ## Current task
-The immediate task is M26-2 — Governed Mentor runtime. It must build on the
+The immediate task is M27-1 — Contract & Metrics Freeze. It must build on the
 closed M25 control plane and the applied M26-1 configuration without bypassing
 tenant context, policy, the closed tool gateway, Evidence Pack, budget,
 verifier, append-only audit, lifecycle events, or RLS.

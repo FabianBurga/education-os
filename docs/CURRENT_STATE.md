@@ -85,8 +85,10 @@ zero temporary residue.
 
 ## Active milestone
 
-M27 - Institutional Intelligence Agents is the next active milestone. M26 is
-closed; the Mentor remains a human-controlled L0 read/explain experience.
+M27 - Institutional Decision & Accountability OS is the active milestone.
+M27-1 - Contract & Metrics Freeze is the active slice. M26 is closed; the
+Mentor remains a human-controlled L0 read/explain experience. M27-2 waits for
+review of this freeze.
 
 M26-1 - Mentor institution-briefing contract and configuration is CLOSED at
 database revision `0037_m26_mentor_briefing`. It seeds

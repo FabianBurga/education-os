@@ -4,8 +4,8 @@
   "source_base_commit": "d059d695aeee14319f8dc02e3e128e12c7e919a1",
   "database_revision": "0037_m26_mentor_briefing",
   "active_milestone": "M27",
-  "active_slice": "M27",
-  "previous_slice": "M26-1",
+  "active_slice": "M27-1",
+  "previous_slice": "M26",
   "branch": "m26-mentor-os",
   "previous_milestone": "M25",
   "milestone_status": "M26_CLOSED",
@@ -19,7 +19,7 @@
   "m25_release_tag": "m25-governed-provider-explainer-v0.25.3",
   "remote_backup": "VERIFIED",
   "validated_uncommitted_slices": [],
-  "next_slice": "M27 Institutional Intelligence Agents",
+  "next_slice": "M27-2 Accountability Projection Foundation (after M27-1 review)",
   "closed_milestones": ["M20", "M21", "M22", "M23", "M24", "M25-1", "M25-2", "M25-3A", "M25-3B", "M25-3C", "M25-3D", "M25", "M26-1", "M26-2", "M26-3", "M26-4", "M26"],
   "provider_network_calls_enabled": false,
   "provider_validation": "FAKE_PROVIDER_ONLY",
@@ -46,5 +46,5 @@
   "m26_4_status": "CLOSED_PASS",
   "m26_overall_status": "CLOSED_PASS",
   "m27_status": "NEXT_ACTIVE",
-  "next_step": "M27 Institutional Intelligence Agents"
+  "next_step": "Review M27-1 Contract & Metrics Freeze before M27-2"
 }

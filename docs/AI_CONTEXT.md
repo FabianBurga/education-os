@@ -10,7 +10,7 @@ Current working branch: `m26-mentor-os`.
 
 Current database revision: `0037_m26_mentor_briefing`.
 
-Active milestone: M27 - Institutional Intelligence Agents. M26 - Human Experience Layer / Mentor OS is CLOSED / PASS.
+Active milestone: M27 - Institutional Decision & Accountability OS. M26 - Human Experience Layer / Mentor OS is CLOSED / PASS.
 
 M26-1 is CLOSED and M26-2 governed Mentor runtime is CLOSED / PASS. M26-2
 delivers the L0 `mentor_institution_briefing` v1 runtime with typed
@@ -24,7 +24,8 @@ a changed snapshot creates a new logical execution. No domain mutation or live
 provider dependency exists. M26-3 Rector API/UI presentation and M26-4
 controlled pilot/manual visual gate are CLOSED / PASS. M26 overall is closed.
 The Rector experience remains L0 read/explain with human review and decision
-authority; it has no domain mutation authority. M27 is next.
+authority; it has no domain mutation authority. M27-1 is the active contract
+and metrics freeze; M27-2 waits for review of that freeze.
 
 M26-2 validation: 75 targeted tests passed, including 61 M26 integration
 tests; directed M25 57, M22 56, M21 282, M23 66, and M24 13 passed; full
