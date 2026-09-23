@@ -8,7 +8,7 @@ Authoritative M25 release tag: `m25-governed-provider-explainer-v0.25.3`.
 
 Current working branch: `m26-mentor-os`.
 
-Current database revision: `0037_m26_mentor_briefing`.
+Current database revision: `0038_m27_accountability`.
 
 Active milestone: M27 - Institutional Decision & Accountability OS. M26 - Human Experience Layer / Mentor OS is CLOSED / PASS.
 
@@ -24,8 +24,9 @@ a changed snapshot creates a new logical execution. No domain mutation or live
 provider dependency exists. M26-3 Rector API/UI presentation and M26-4
 controlled pilot/manual visual gate are CLOSED / PASS. M26 overall is closed.
 The Rector experience remains L0 read/explain with human review and decision
-authority; it has no domain mutation authority. M27-1 is the active contract
-and metrics freeze; M27-2 waits for review of that freeze.
+authority; it has no domain mutation authority. M27-1 is frozen and M27-2
+implements the tenant-scoped accountability case/source projection foundation.
+M27-3 waits for review of this slice.
 
 M26-2 validation: 75 targeted tests passed, including 61 M26 integration
 tests; directed M25 57, M22 56, M21 282, M23 66, and M24 13 passed; full

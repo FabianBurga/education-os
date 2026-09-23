@@ -15,7 +15,7 @@ Branch:
 m26-mentor-os
 
 Current Alembic revision:
-0037_m26_mentor_briefing
+0038_m27_accountability
 
 Current phase:
 M27 — Institutional Decision & Accountability OS
@@ -30,7 +30,7 @@ M26-2:
 CLOSED / PASS
 
 Next task:
-M27-1 — Contract & Metrics Freeze
+M27-3 — Human Review + Decision Ledger (after M27-2 review)
 
 Current validated M26-1 configuration evidence:
 - M26 config: 6 passed.
@@ -247,7 +247,7 @@ State must be derived from lifecycle events.
 PostgreSQL trigger enforces valid event transitions.
 
 ## Current task
-The immediate task is M27-1 — Contract & Metrics Freeze. It must build on the
+The immediate task is M27-2 — Accountability Projection Foundation. It builds on the
 closed M25 control plane and the applied M26-1 configuration without bypassing
 tenant context, policy, the closed tool gateway, Evidence Pack, budget,
 verifier, append-only audit, lifecycle events, or RLS.

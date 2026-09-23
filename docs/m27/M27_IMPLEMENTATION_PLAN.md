@@ -40,11 +40,12 @@ defaults.
 
 ## Persistence strategy
 
-Avoid one table per screen or metric. The likely minimum later model is a
-bounded M27 case/episode projection plus append-only review, decision, and
-obligation ledgers, linked to M18 event identity and source lineage. Queue and
-metric models are rebuildable projections, not authoritative stores. Exact
-schema is intentionally deferred to M27-2 after review.
+Avoid one table per screen or metric. M27-2 implements the minimum foundation:
+`accountability_cases` owns deterministic case identity and current rebuildable
+projection state; `accountability_case_sources` is append-only source lineage.
+They link to M18 event identity and M21/M22 source references without copying
+domain payloads. Review, decision, and obligation ledgers remain deferred.
+Queue and metric models are rebuildable projections, not authoritative stores.
 
 New persistence is needed only for M27-owned case identity/relations,
 accountability ownership, human review, bounded decisions, obligations, and
@@ -57,9 +58,13 @@ M25/M26 Evidence Packs and runs.
 Each slice runs contract tests, targeted RLS/tenant/permission/replay tests,
 directed M18/M19/M21/M22/M25/M26 regression, migration checks when applicable,
 then full gates proportional to impact, diff-check, clean-tree, provenance,
-and residue checks. M27-2 does not begin in this session.
+and residue checks. M27-2 implementation is limited to the case/source
+foundation described above; M27-3 does not begin in this session.
 
-Before M27-2, product approval is required for category taxonomy, shared-case
-ownership, default SLA targets, privacy small-cell thresholds, and whether
-`REQUEST_INFORMATION` creates an obligation or remains decision-only. These are
-the only open product decisions for the freeze.
+The M27-1 product decisions are resolved conservatively: source categories
+remain authoritative with optional versioned normalized mappings; one primary
+owner plus collaborators is required for accountable cases; missing M19 SLA is
+`NOT_EVALUABLE`; missing small-cell policy is fail-closed; and
+`REQUEST_INFORMATION` creates or links a human-owned information obligation
+without creating an intervention. These decisions are prerequisites for later
+review/decision/obligation slices, not blockers for this foundation.

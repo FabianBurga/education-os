@@ -2,7 +2,7 @@
 
 ## Current handoff point
 
-Education OS is a security-sensitive, multi-tenant Institutional Intelligence & Action Platform. M25 - Agentic Control Plane is CLOSED at `bd0fbaa719eae4884d9a6c3ab8600939e88bb433` (`feat(m25): add governed provider-backed explainer`), tagged `m25-governed-provider-explainer-v0.25.3`, and remotely backed up and verified on `origin` (`FabianBurga/education-os`). M26-1 through M26-4 are CLOSED / PASS on `m26-mentor-os`; M27 is the next active milestone. The local database is at `0037_m26_mentor_briefing`.
+Education OS is a security-sensitive, multi-tenant Institutional Intelligence & Action Platform. M25 - Agentic Control Plane is CLOSED at `bd0fbaa719eae4884d9a6c3ab8600939e88bb433` (`feat(m25): add governed provider-backed explainer`), tagged `m25-governed-provider-explainer-v0.25.3`, and remotely backed up and verified on `origin` (`FabianBurga/education-os`). M26-1 through M26-4 are CLOSED / PASS on `m26-mentor-os`; M27 is the active milestone. The local database is at `0038_m27_accountability`.
 
 ## M26-1 closed configuration baseline
 
@@ -105,9 +105,16 @@ interventions/actions/follow-ups/outcomes; M22 for signals/intelligence/
 snapshots; M18 for chronology; M19 for governance; and M25/M26 for governed
 evidence and human control. No runtime or persistence is introduced by M27-1.
 
+M27-2 implements the minimum projection foundation in migration
+`0038_m27_accountability` using `accountability_cases` and
+`accountability_case_sources`. It preserves source references and provenance,
+uses deterministic versioned identity, supports replay-safe source ingestion,
+and enforces tenant/RLS boundaries. Reviews, decisions, obligations, SLA
+engine, queue UI, and metrics remain deferred.
+
 ## Next step
 
-Review the M27-1 freeze, then begin M27-2 only after acceptance. Preserve
+Review the M27-2 foundation, then begin M27-3 only after acceptance. Preserve
 M26's L0 read/explain scope, M22 boundary, human-control language, and
 no-live-provider posture until a later approved slice changes them.
 
