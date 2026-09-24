@@ -247,7 +247,7 @@ State must be derived from lifecycle events.
 PostgreSQL trigger enforces valid event transitions.
 
 ## Current task
-The immediate task is M27-3 — Human Review, Decision & Ownership Ledger. It builds on the
+The immediate next boundary is M27-6 — Accountability Metrics & Outcome Intelligence. M27-5 builds on the
 closed M25 control plane and the applied M26-1 configuration without bypassing
 tenant context, policy, the closed tool gateway, Evidence Pack, budget,
 verifier, append-only audit, lifecycle events, or RLS.

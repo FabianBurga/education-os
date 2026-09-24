@@ -85,3 +85,11 @@ owner plus collaborators is required for accountable cases; missing M19 SLA is
 `REQUEST_INFORMATION` creates or links a human-owned information obligation
 without creating an intervention. These decisions are prerequisites for later
 review/decision/obligation slices, not blockers for this foundation.
+## M27-5 - Institutional Accountability Queue
+
+M27-5 is a read-only query boundary over the existing M27 case, ownership,
+review, decision, and obligation projections plus authoritative M18/M21/M22
+references. It uses no new table and emits no event on read. The contract is
+documented in [M27_QUEUE.md](M27_QUEUE.md). Ordering is deterministic and
+bounded; there is no opaque score or model ranking. M27-6 owns institutional
+metrics and outcome intelligence.

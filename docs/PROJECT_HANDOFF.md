@@ -2,7 +2,7 @@
 
 ## Current handoff point
 
-Education OS is a security-sensitive, multi-tenant Institutional Intelligence & Action Platform. M25 - Agentic Control Plane is CLOSED at `bd0fbaa719eae4884d9a6c3ab8600939e88bb433` (`feat(m25): add governed provider-backed explainer`), tagged `m25-governed-provider-explainer-v0.25.3`, and remotely backed up and verified on `origin` (`FabianBurga/education-os`). M26-1 through M26-4 are CLOSED / PASS on `m26-mentor-os`; M27 is the active milestone. The local database is at `0040_m27_obligations_sla`.
+Education OS is a security-sensitive, multi-tenant Institutional Intelligence & Action Platform. M25 - Agentic Control Plane is CLOSED at `bd0fbaa719eae4884d9a6c3ab8600939e88bb433` (`feat(m25): add governed provider-backed explainer`), tagged `m25-governed-provider-explainer-v0.25.3`, and remotely backed up and verified on `origin` (`FabianBurga/education-os`). M26-1 through M26-4 are CLOSED / PASS on `m26-mentor-os`; M27 is the active milestone. The local database is at `0041_m27_policy_eval`.
 
 ## M26-1 closed configuration baseline
 
@@ -120,7 +120,9 @@ or provider actions.
 
 ## Next step
 
-Review the M27-3 foundation, then begin M27-4 only after acceptance. Preserve
+M27-4 and M27-5 are CLOSED / PASS locally. M27-5 is a read-only queue over
+existing M27/M21/M22/M18 state; it adds no queue authority or persistence. The
+next boundary is M27-6 metrics/outcome intelligence. Preserve
 M26's L0 read/explain scope, M22 boundary, human-control language, and
 no-live-provider posture until a later approved slice changes them.
 

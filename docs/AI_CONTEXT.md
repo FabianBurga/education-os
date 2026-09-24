@@ -8,7 +8,7 @@ Authoritative M25 release tag: `m25-governed-provider-explainer-v0.25.3`.
 
 Current working branch: `m27-decision-accountability-os`.
 
-Current database revision: `0039_m27_review_decision`.
+Current database revision: `0041_m27_policy_eval`.
 
 Active milestone: M27 - Institutional Decision & Accountability OS. M26 - Human Experience Layer / Mentor OS is CLOSED / PASS.
 
@@ -28,7 +28,8 @@ authority; it has no domain mutation authority. M27-1 is frozen, M27-3
 implements human review, bounded decision recording, and append-only ownership
 history, and M27-4 implements tenant-bound obligations with M19 policy-backed
 SLA, derived compliance, bounded evidence completion/waiver, and M18 events.
-No M21 action executes; M27-5 waits for review of this slice.
+No M21 action executes. M27-5 implements the read-only institutional
+accountability queue and detail boundary without new persistence or read events.
 
 M26-2 validation: 75 targeted tests passed, including 61 M26 integration
 tests; directed M25 57, M22 56, M21 282, M23 66, and M24 13 passed; full
