@@ -24,6 +24,7 @@ from app.modules.events.service import enqueue_canonical_event
 OBLIGATION_TYPES = frozenset({"INFORMATION_REQUIRED", "REVIEW_REQUIRED", "FOLLOW_UP_REQUIRED"})
 LIFECYCLE_STATES = frozenset({"OPEN", "IN_PROGRESS", "COMPLETED", "WAIVED", "EXPIRED", "CANCELLED"})
 EVIDENCE_TYPES = frozenset({"M21_FOLLOW_UP", "M21_ACTION", "M27_HUMAN_REVIEW", "M27_INFORMATION"})
+NEXT_REQUIRED_STEPS = frozenset({"HUMAN_REVIEW_REQUIRED", "PROVIDE_INFORMATION", "COMPLETE_FOLLOW_UP"})
 SLA_POLICY_KEY = "accountability.sla"
 _MAX_SLA_SECONDS = 31_536_000
 
@@ -121,10 +122,11 @@ def resolve_obligation_sla(
         text(
             """
             SELECT enabled, policy_json, policy_version
-            FROM institution_policy_controls
-            WHERE organization_id = CAST(:organization_id AS uuid)
-              AND institution_id = CAST(:institution_id AS uuid)
-              AND policy_key = :policy_key
+            FROM education_os_m27_read_effective_policy(
+                CAST(:organization_id AS uuid),
+                CAST(:institution_id AS uuid),
+                :policy_key
+            )
             """
         ),
         params={
@@ -280,7 +282,7 @@ def create_accountability_obligation(
         origin_type=origin_type,
         origin_id=origin_id,
         obligation_type=obligation_type,
-        next_required_step="HUMAN_REVIEW_REQUIRED" if obligation_type == "INFORMATION_REQUIRED" else "HUMAN_REVIEW_REQUIRED",
+        next_required_step="HUMAN_REVIEW_REQUIRED",
         identity_key_sha256=_identity_hash(
             institution_id=principal.institution_id,
             case_id=case_id,

@@ -62,6 +62,15 @@ and residue checks. M27-2 implementation is limited to the case/source
 foundation described above; M27-3 is closed locally and M27-4 is implemented
 at `0040_m27_obligations_sla`.
 
+M27-4 preserves the frozen lifecycle vocabulary. `EXPIRED` is reserved for a
+future explicit policy-defined terminal event and is never assigned merely
+because `now > due_at`; overdue/non-compliance remains derived. `CANCELLED` is
+also reserved and has no implicit transition in M27-4. `REVIEW_REQUIRED` is an
+obligation type, while `HUMAN_REVIEW_REQUIRED` is a next-required-step value.
+M19 policy evaluation uses the forward-only tenant-scoped internal evaluation
+boundary at `0041_m27_policy_evaluation_boundary`; policy administration and
+visibility remain separate Control Plane concerns.
+
 M27-3 implements three append-only ledgers: human reviews, bounded decisions,
 and ownership history. Commands are service-first and reuse effective
 permission checks, principal-derived tenant context, audit, and the M18

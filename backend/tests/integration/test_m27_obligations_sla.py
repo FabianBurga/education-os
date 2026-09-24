@@ -44,7 +44,7 @@ def test_m27_information_obligation_lifecycle_sla_security_and_no_m21_mutation()
                     JOIN role_permissions rp ON rp.role_id = mr.role_id
                     JOIN permissions p ON p.id = rp.permission_id
                     WHERE m.status = 'ACTIVE' AND p.key = 'accountability.decide'
-                      AND EXISTS (
+                      AND NOT EXISTS (
                           SELECT 1
                           FROM role_permissions rp_view
                           JOIN permissions p_view ON p_view.id = rp_view.permission_id

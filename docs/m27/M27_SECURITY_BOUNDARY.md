@@ -59,6 +59,10 @@ append-only in M18; projections reveal calculation/projection version and
 freshness. M19 versions SLA targets/grace, recurrence/reopen window, lost-case
 definition, freshness tolerance, metric calculators, priority/queue ordering,
 capability rollout, evidence minima, privacy suppression, and waivers.
+M27 policy enforcement uses a tenant-bound internal evaluation function gated
+by the operation permission; it does not require the principal to administer
+or inspect Control Plane policy documents. Missing, disabled, invalid, or
+unsupported policy still fails closed as `NOT_EVALUABLE`.
 
 ## Rejected threat paths
 
