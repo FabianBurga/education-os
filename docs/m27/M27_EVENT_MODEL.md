@@ -18,6 +18,8 @@ PII.
 | `accountability.decision.recorded` | records bounded institutional disposition and provenance |
 | `accountability.obligation.created` | records a new M27 responsibility |
 | `accountability.obligation.completed` | records evidence that the responsibility was fulfilled |
+| `accountability.obligation.waived` | records an authorized, reasoned exception without deleting the obligation |
+| `accountability.obligation.owner.transferred` | records an explicit obligation-owner transfer; it is not M21 follow-up assignment |
 | `accountability.case.resolved` | records closure of the M27 episode |
 | `accountability.case.reopened` | records a resolved case becoming active within the reopen window |
 

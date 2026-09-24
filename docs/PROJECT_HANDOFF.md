@@ -2,7 +2,7 @@
 
 ## Current handoff point
 
-Education OS is a security-sensitive, multi-tenant Institutional Intelligence & Action Platform. M25 - Agentic Control Plane is CLOSED at `bd0fbaa719eae4884d9a6c3ab8600939e88bb433` (`feat(m25): add governed provider-backed explainer`), tagged `m25-governed-provider-explainer-v0.25.3`, and remotely backed up and verified on `origin` (`FabianBurga/education-os`). M26-1 through M26-4 are CLOSED / PASS on `m26-mentor-os`; M27 is the active milestone. The local database is at `0039_m27_review_decision`.
+Education OS is a security-sensitive, multi-tenant Institutional Intelligence & Action Platform. M25 - Agentic Control Plane is CLOSED at `bd0fbaa719eae4884d9a6c3ab8600939e88bb433` (`feat(m25): add governed provider-backed explainer`), tagged `m25-governed-provider-explainer-v0.25.3`, and remotely backed up and verified on `origin` (`FabianBurga/education-os`). M26-1 through M26-4 are CLOSED / PASS on `m26-mentor-os`; M27 is the active milestone. The local database is at `0040_m27_obligations_sla`.
 
 ## M26-1 closed configuration baseline
 

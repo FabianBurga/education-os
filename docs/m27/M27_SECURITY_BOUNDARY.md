@@ -17,9 +17,11 @@ and metrics.
 | STUDENT | own scope only if a future policy explicitly grants it |
 | GUARDIAN | permitted ward scope only if explicitly granted |
 
-Candidate M19 capabilities are `accountability.view`, `.review`, `.decide`,
-`.manage`, and `.audit.read`; review and decision remain distinct. They must be
-registered/versioned by the Control Plane and never inferred from role labels.
+M27 permissions include `accountability.view`, `.review`, `.decide`, `.manage`,
+and bounded obligation capabilities for create, complete, waive, and ownership
+transfer. Review, decision, obligation completion, and waiver remain distinct.
+They are checked from effective permission context and never inferred from role
+labels. M19 remains authoritative for policy documents and versions.
 
 ## Tenant, RLS, and disclosure
 
@@ -27,6 +29,9 @@ Future persistence must preserve FORCE RLS, composite tenant links,
 application-role restrictions, and bounded grants. Out-of-scope or cross-tenant
 objects use existing non-disclosure/404 conventions. Counts apply the same
 scope filter as rows. Cross-institution aggregation requires explicit policy.
+M27-4 obligation rows are FORCE RLS tenant-bound; current state may update only
+through the bounded service permissions, while lifecycle history remains in
+M18 events and audit.
 
 Institution views expose aggregate evidence, category, freshness, SLA state,
 and opaque provenance; they suppress unnecessary student/guardian PII, small

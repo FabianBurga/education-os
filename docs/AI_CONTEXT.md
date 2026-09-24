@@ -6,7 +6,7 @@ Authoritative committed source: `bd0fbaa719eae4884d9a6c3ab8600939e88bb433` (`fea
 
 Authoritative M25 release tag: `m25-governed-provider-explainer-v0.25.3`.
 
-Current working branch: `m26-mentor-os`.
+Current working branch: `m27-decision-accountability-os`.
 
 Current database revision: `0039_m27_review_decision`.
 
@@ -24,9 +24,11 @@ a changed snapshot creates a new logical execution. No domain mutation or live
 provider dependency exists. M26-3 Rector API/UI presentation and M26-4
 controlled pilot/manual visual gate are CLOSED / PASS. M26 overall is closed.
 The Rector experience remains L0 read/explain with human review and decision
-authority; it has no domain mutation authority. M27-1 is frozen and M27-3
+authority; it has no domain mutation authority. M27-1 is frozen, M27-3
 implements human review, bounded decision recording, and append-only ownership
-history without executing M21 actions. M27-4 waits for review of this slice.
+history, and M27-4 implements tenant-bound obligations with M19 policy-backed
+SLA, derived compliance, bounded evidence completion/waiver, and M18 events.
+No M21 action executes; M27-5 waits for review of this slice.
 
 M26-2 validation: 75 targeted tests passed, including 61 M26 integration
 tests; directed M25 57, M22 56, M21 282, M23 66, and M24 13 passed; full

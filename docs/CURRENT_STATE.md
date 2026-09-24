@@ -88,11 +88,12 @@ zero temporary residue.
 M27 - Institutional Decision & Accountability OS is the active milestone.
 M27-2 - Accountability Projection Foundation is closed locally at
 `0038_m27_accountability`. M27-3 - Human Review, Decision & Ownership Ledger
-is implemented locally at `0039_m27_review_decision`. It records append-only
-human reviews, bounded decisions, ownership history, provenance, audit, and
-M18 outbox events without executing M21 actions. M27-4 waits for review of this
-slice. M26 is closed and the Mentor remains a human-controlled L0 read/explain
-experience.
+is closed locally at `0039_m27_review_decision`. M27-4 - Follow-up Obligations
+& SLA is implemented locally at `0040_m27_obligations_sla`: one tenant-bound
+obligation projection, M19 policy-backed SLA resolution, bounded evidence
+completion/waiver, derived compliance, provenance, and M18 events. It does
+not execute M21 actions. M27-5 waits for review of this slice. M26 is closed
+and the Mentor remains a human-controlled L0 read/explain experience.
 
 M26-1 - Mentor institution-briefing contract and configuration is CLOSED at
 database revision `0037_m26_mentor_briefing`. It seeds

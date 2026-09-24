@@ -169,7 +169,7 @@ def _ownership(
     )
     session.add(event)
     session.flush()
-    canonical = enqueue_canonical_event(
+    enqueue_canonical_event(
         session,
         institution_id=principal.institution_id,
         event_type=f"accountability.owner.{event_type.lower()}",
@@ -181,7 +181,6 @@ def _ownership(
         metadata={"provenance_sha256": provenance_sha256},
     )
     session.flush()
-    event.canonical_event_id = canonical.id
     case.primary_owner_user_id = new_owner_user_id
     case.owner_state = "ASSIGNED" if new_owner_user_id is not None else "UNASSIGNED"
     case.projection_version += 1
@@ -220,10 +219,8 @@ def record_case_review(session: Session, principal: CurrentPrincipal, case_id: U
     review = AccountabilityReview(organization_id=principal.organization_id, institution_id=principal.institution_id, case_id=case_id, reviewer_user_id=principal.user_id, effective_permission_context_json=context, reviewed_at=reviewed_at or datetime.now(UTC), disposition=disposition, evidence_refs_json=evidence_refs, evidence_fingerprint_sha256=evidence_fingerprint_sha256, policy_key=policy_key, policy_version=policy_version, note_reference=note_reference, next_required_step=next_required_step, idempotency_key=idempotency_key, provenance_sha256=provenance_sha256)
     session.add(review)
     session.flush()
-    canonical = enqueue_canonical_event(session, institution_id=principal.institution_id, event_type="accountability.review.completed", event_version=1, aggregate_type="accountability_case", aggregate_id=case_id, actor_user_id=principal.user_id, payload={"case_id": str(case_id), "review_id": str(review.id), "disposition": disposition, "evidence_fingerprint_sha256": evidence_fingerprint_sha256}, metadata={"provenance_sha256": provenance_sha256})
+    enqueue_canonical_event(session, institution_id=principal.institution_id, event_type="accountability.review.completed", event_version=1, aggregate_type="accountability_case", aggregate_id=case_id, actor_user_id=principal.user_id, payload={"case_id": str(case_id), "review_id": str(review.id), "disposition": disposition, "evidence_fingerprint_sha256": evidence_fingerprint_sha256}, metadata={"provenance_sha256": provenance_sha256})
     session.flush()
-    review.canonical_event_id = canonical.id
-    session.add(review)
     record_audit(session, institution_id=principal.institution_id, actor_user_id=principal.user_id, action="accountability.review.completed", entity_type="AccountabilityCase", entity_id=case_id, metadata={"review_id": str(review.id), "disposition": disposition, "provenance_sha256": provenance_sha256})
     return LedgerResult(review, True)
 
@@ -248,9 +245,13 @@ def record_case_decision(session: Session, principal: CurrentPrincipal, case_id:
     decision = AccountabilityDecision(organization_id=principal.organization_id, institution_id=principal.institution_id, case_id=case_id, decision_actor_user_id=principal.user_id, review_id=review_id, effective_permission_context_json=context, recorded_at=recorded_at or datetime.now(UTC), decision_type=decision_type, evidence_refs_json=evidence_refs, evidence_fingerprint_sha256=evidence_fingerprint_sha256, policy_key=policy_key, policy_version=policy_version, reason_reference=reason_reference, execution_required=decision_type in EXECUTION_REQUIRED_DECISIONS, idempotency_key=idempotency_key, provenance_sha256=provenance_sha256)
     session.add(decision)
     session.flush()
-    canonical = enqueue_canonical_event(session, institution_id=principal.institution_id, event_type="accountability.decision.recorded", event_version=1, aggregate_type="accountability_case", aggregate_id=case_id, actor_user_id=principal.user_id, payload={"case_id": str(case_id), "decision_id": str(decision.id), "review_id": str(review_id), "decision_type": decision_type, "execution_required": decision.execution_required, "evidence_fingerprint_sha256": evidence_fingerprint_sha256}, metadata={"provenance_sha256": provenance_sha256})
+    enqueue_canonical_event(session, institution_id=principal.institution_id, event_type="accountability.decision.recorded", event_version=1, aggregate_type="accountability_case", aggregate_id=case_id, actor_user_id=principal.user_id, payload={"case_id": str(case_id), "decision_id": str(decision.id), "review_id": str(review_id), "decision_type": decision_type, "execution_required": decision.execution_required, "evidence_fingerprint_sha256": evidence_fingerprint_sha256}, metadata={"provenance_sha256": provenance_sha256})
     session.flush()
-    decision.canonical_event_id = canonical.id
-    session.add(decision)
     record_audit(session, institution_id=principal.institution_id, actor_user_id=principal.user_id, action="accountability.decision.recorded", entity_type="AccountabilityCase", entity_id=case_id, metadata={"decision_id": str(decision.id), "decision_type": decision_type, "provenance_sha256": provenance_sha256})
+    if decision_type == "REQUEST_INFORMATION":
+        from app.modules.accountability.obligation_service import (
+            materialize_obligation_from_decision,
+        )
+
+        materialize_obligation_from_decision(session, principal, decision.id, provenance_sha256=provenance_sha256)
     return LedgerResult(decision, True)

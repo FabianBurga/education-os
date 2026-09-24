@@ -24,6 +24,12 @@ freshness contract is absent. Aggregate metrics reuse an applicable repository
 privacy contract; otherwise M19 fail-closed policy yields `SUPPRESSED` or
 `NOT_EVALUABLE`.
 
+M27-4 makes Follow-up Compliance reproducibly derivable for M27 obligations:
+the obligation lifecycle is authoritative for current state, M18 events and
+bounded M21/M27 evidence provide lineage, `due_at` is used only when a valid
+M19 policy rule resolved, `WAIVED` maps to `EXEMPT`, and an absent/invalid SLA
+remains `NOT_EVALUABLE` rather than entering an on-time denominator.
+
 ## Lost Case mathematical contract
 
 For policy `p` and window `W`,
