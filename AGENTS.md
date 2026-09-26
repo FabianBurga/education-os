@@ -12,13 +12,24 @@ behavior take priority over speed.
 
 ## Current authoritative baseline
 Branch:
-m26-mentor-os
+m27-decision-accountability-os
 
 Current Alembic revision:
-0039_m27_review_decision
+0042_m27_true_recurrence
 
 Current phase:
 M27 — Institutional Decision & Accountability OS
+
+M27 canonical closure:
+M27 — Institutional Decision & Accountability OS: CLOSED / PASS
+Release candidate: 692a8c2b6f79b1c773d001a2e4e1117f8f356d1c
+Technical validation: PASS
+Synthetic operational validation: PASS
+Value evidence: PASS_WITH_HUMAN_LIMITATIONS
+Ready for controlled human pilot: YES
+Field validated: NO
+Production certified: NO
+Next milestone: M28 - Operational Adoption Core
 
 M25:
 CLOSED
@@ -246,7 +257,14 @@ State must be derived from lifecycle events.
 
 PostgreSQL trigger enforces valid event transitions.
 
-## Current task
+## Current canonical status
+M27 — Institutional Decision & Accountability OS is CLOSED / PASS at
+`692a8c2b6f79b1c773d001a2e4e1117f8f356d1c`, with migration
+`0042_m27_true_recurrence`. Technical and synthetic operational validation
+passed; value evidence is `PASS_WITH_HUMAN_LIMITATIONS`. The next milestone is
+M28 - Operational Adoption Core. Do not begin M28 in this closeout.
+
+## Current task (historical planning notes)
 The immediate next boundary is M27-6 — Accountability Metrics & Outcome Intelligence. M27-5 builds on the
 closed M25 control plane and the applied M26-1 configuration without bypassing
 tenant context, policy, the closed tool gateway, Evidence Pack, budget,

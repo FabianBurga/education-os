@@ -2,15 +2,15 @@
 
 Project: Education OS, an Institutional Intelligence & Action Platform.
 
-Authoritative committed source: `bd0fbaa719eae4884d9a6c3ab8600939e88bb433` (`feat(m25): add governed provider-backed explainer`).
+Authoritative committed source: `692a8c2b6f79b1c773d001a2e4e1117f8f356d1c` (`test(m27): add controlled operational pilot`).
 
 Authoritative M25 release tag: `m25-governed-provider-explainer-v0.25.3`.
 
 Current working branch: `m27-decision-accountability-os`.
 
-Current database revision: `0041_m27_policy_eval`.
+Current database revision: `0042_m27_true_recurrence`.
 
-Active milestone: M27 - Institutional Decision & Accountability OS. M26 - Human Experience Layer / Mentor OS is CLOSED / PASS.
+Active milestone: M27 - Institutional Decision & Accountability OS is CLOSED / PASS. M26 - Human Experience Layer / Mentor OS is CLOSED / PASS. Next milestone: M28 - Operational Adoption Core.
 
 M26-1 is CLOSED and M26-2 governed Mentor runtime is CLOSED / PASS. M26-2
 delivers the L0 `mentor_institution_briefing` v1 runtime with typed

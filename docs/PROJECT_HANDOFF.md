@@ -2,7 +2,7 @@
 
 ## Current handoff point
 
-Education OS is a security-sensitive, multi-tenant Institutional Intelligence & Action Platform. M25 - Agentic Control Plane is CLOSED at `bd0fbaa719eae4884d9a6c3ab8600939e88bb433` (`feat(m25): add governed provider-backed explainer`), tagged `m25-governed-provider-explainer-v0.25.3`, and remotely backed up and verified on `origin` (`FabianBurga/education-os`). M26-1 through M26-4 are CLOSED / PASS on `m26-mentor-os`; M27 is the active milestone. The local database is at `0041_m27_policy_eval`.
+Education OS is a security-sensitive, multi-tenant Institutional Intelligence & Action Platform. M27 - Institutional Decision & Accountability OS is CLOSED / PASS at `692a8c2b6f79b1c773d001a2e4e1117f8f356d1c`; its migration head/current is `0042_m27_true_recurrence`. Technical and synthetic operational validation passed; value evidence is `PASS_WITH_HUMAN_LIMITATIONS`. M27 is ready for a controlled human pilot, is not field validated, and is not production certified. The next milestone is M28 - Operational Adoption Core.
 
 ## M26-1 closed configuration baseline
 
@@ -118,11 +118,20 @@ permission context, provenance, audit, and canonical M18 outbox events. It
 does not execute interventions, actions, follow-ups, outcomes, notifications,
 or provider actions.
 
+## M27 final closure
+
+M27-1 through M27-8 are closed. The canonical release candidate is
+`692a8c2b6f79b1c773d001a2e4e1117f8f356d1c`; the controlled pilot is synthetic
+only, with no real student PII or external providers. The full backend gate was
+743 passed, 0 failed, 1 skipped; frontend tests, typecheck, and production build
+passed. The single skip is the intentionally opt-in M21 E2E without
+`M21_E2E_DATABASE_URL`. Administrative Time Saved remains
+`NOT_COMPUTABLE / BASELINE_REQUIRED`; Time to Priority Identification requires
+human observation. Do not claim field outcomes or production certification.
+
 ## Next step
 
-M27-4 and M27-5 are CLOSED / PASS locally. M27-5 is a read-only queue over
-existing M27/M21/M22/M18 state; it adds no queue authority or persistence. The
-next boundary is M27-6 metrics/outcome intelligence. Preserve
+The next engineering boundary is M28 - Operational Adoption Core. Preserve
 M26's L0 read/explain scope, M22 boundary, human-control language, and
 no-live-provider posture until a later approved slice changes them.
 

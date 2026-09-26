@@ -83,18 +83,35 @@ Security closure preserved RLS and FORCE RLS, application-role restrictions,
 tenant isolation, unchanged policies/grants/ownership, no PII exposure, and
 zero temporary residue.
 
+## Canonical M27 closure
+
+M27 - Institutional Decision & Accountability OS is CLOSED / PASS at
+`692a8c2b6f79b1c773d001a2e4e1117f8f356d1c` on branch
+`m27-decision-accountability-os`. Migration head/current is
+`0042_m27_true_recurrence`. Technical validation and synthetic operational
+validation are PASS; value evidence is PASS_WITH_HUMAN_LIMITATIONS. The system
+is ready for a controlled human pilot, but is not field validated or production
+certified. Next engineering milestone: M28 - Operational Adoption Core.
+
+M27-1 through M27-8 are complete. Full backend evidence is 743 passed, 0
+failed, 1 skipped; the skip is the intentionally absent `M21_E2E_DATABASE_URL`
+opt-in E2E. Frontend evidence is 61 tests passed, typecheck PASS, and
+production build PASS. The synthetic pilot has 20 PASS scenarios, tenant leak
+rate 0, and autonomous high-impact mutation rate 0. Administrative Time Saved
+is `NOT_COMPUTABLE / BASELINE_REQUIRED`; Time to Priority Identification requires
+human observation.
+
 ## Active milestone
 
-M27 - Institutional Decision & Accountability OS is the active milestone.
+M27 - Institutional Decision & Accountability OS is CLOSED / PASS, not active.
 M27-2 - Accountability Projection Foundation is closed locally at
 `0038_m27_accountability`. M27-3 - Human Review, Decision & Ownership Ledger
 is closed locally at `0039_m27_review_decision`. M27-4 - Follow-up Obligations
 & SLA is CLOSED / PASS locally at `0040_m27_obligations_sla`, with the
-forward-only policy-evaluation boundary at `0041_m27_policy_eval`: one tenant-bound
-obligation projection, M19 policy-backed SLA resolution, bounded evidence
-completion/waiver, derived compliance, provenance, and M18 events. It does
-not execute M21 actions. M27-5 - Institutional Accountability Queue is CLOSED /
-PASS locally as a read-only query/API boundary with no new persistence. M26 is closed
+forward-only policy-evaluation boundary at `0041_m27_policy_eval` and the
+forward-only recurrence constraint at `0042_m27_true_recurrence`. M27-6 metrics,
+M27-7 Rector/Coordinator experience, and M27-8 controlled synthetic operational
+pilot are CLOSED / PASS. M27 remains non-causal, does not execute M21 actions,
 and the Mentor remains a human-controlled L0 read/explain experience.
 
 M26-1 - Mentor institution-briefing contract and configuration is CLOSED at

@@ -4,11 +4,11 @@ This is direction, not implementation status.
 
 - M25 - Agentic Control Plane. CLOSED.
 - M26 - Human Experience Layer / Mentor OS. CLOSED / PASS.
-- M27 - Institutional Decision & Accountability OS. M27-1 contract freeze;
-  M27-2 projection foundation, M27-3 human review/decision/ownership ledger,
-  M27-4 obligations/SLA, and M27-5 institutional accountability queue are
-  implemented locally; M27-6 requires review of these foundations.
-- M28 - Autonomous Data Operations.
+- M27 - Institutional Decision & Accountability OS. CLOSED / PASS. M27-1
+  through M27-8 are complete; technical and synthetic operational validation
+  passed, with value evidence limited by required human observation. The next
+  milestone is M28 - Operational Adoption Core.
+- M28 - Operational Adoption Core.
 - M29 - Preventive Intelligence / Sentinel.
 - M30 - Family Experience.
 - M31 - Autonomous Operations.
