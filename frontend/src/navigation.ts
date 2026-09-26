@@ -14,6 +14,15 @@ export interface ModuleDefinition {
 
 export const MODULES: ModuleDefinition[] = [
   {
+    id: "accountability",
+    label: "Accountability institucional",
+    shortLabel: "Accountability",
+    description: "Cola de atención, revisión humana, decisiones, obligaciones y métricas institucionales.",
+    permission: "accountability.view",
+    legacyPath: "",
+    audience: "Rectorado y coordinación",
+  },
+  {
     id: "mentor",
     label: "Mentor institucional",
     shortLabel: "Mentor",

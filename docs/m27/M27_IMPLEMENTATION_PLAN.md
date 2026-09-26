@@ -30,6 +30,11 @@ M25/M26 governed evidence and human-control paths.
    fixtures and fake/in-process providers only; prove isolation, replay,
    provenance, reproducibility, no autonomous action, and zero residue.
 
+M27-7 is closed by the shared `/app/accountability` Rector/Coordinator
+experience and thin command routes over the existing M27-3/M27-4 services.
+The next boundary remains M27-8; no operational pilot authority is introduced
+by the frontend.
+
 M27-1 resolves the former open decisions conservatively: source categories
 remain authoritative with optional normalized mappings; one primary owner plus
 collaborators is required for accountable cases; missing M19 SLA is
