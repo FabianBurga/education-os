@@ -98,3 +98,13 @@ references. It uses no new table and emits no event on read. The contract is
 documented in [M27_QUEUE.md](M27_QUEUE.md). Ordering is deterministic and
 bounded; there is no opaque score or model ranking. M27-6 owns institutional
 metrics and outcome intelligence.
+
+## M27-8 - Controlled Operational Pilot
+
+M27-8 is closed as a rollback-contained synthetic operational pilot. The
+`backend/tools/m27_pilot_run.py` harness provisions deterministic actors and
+cases, exercises real M27/M21/M22 service boundaries, verifies security,
+privacy, idempotency, provenance and no autonomous intervention creation, and
+writes `artifacts/m27_pilot_result.json`. Administrative time saved remains
+`NOT_COMPUTABLE/BASELINE_REQUIRED`; human priority-identification timing and
+institutional value remain future observation/field-pilot work.

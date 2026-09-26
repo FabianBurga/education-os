@@ -1,0 +1,742 @@
+{
+  "completed_at": "2026-09-26T20:28:45.329141+00:00",
+  "dataset_identity": "M27-8-SYNTHETIC-TRANSACTION-ROLLBACK",
+  "metric_results": {
+    "ADMINISTRATIVE_TIME_SAVED": {
+      "denominator": null,
+      "exclusions": {},
+      "explanation": {
+        "business_question": "Did a validated workflow reduce human time?",
+        "definition": "approved task baseline to measured completion",
+        "denominator_definition": "approved baseline sample",
+        "exclusions": [
+          "invalid provenance",
+          "test data",
+          "out-of-scope data",
+          "incomplete policy window"
+        ],
+        "metric_version": "m27-6.v1",
+        "numerator_definition": "not measured from logs",
+        "status_reason": "BASELINE_REQUIRED"
+      },
+      "filters": {},
+      "freshness": "UNKNOWN",
+      "generated_at": "2026-09-26T20:28:45.315778Z",
+      "metric_id": "ADMINISTRATIVE_TIME_SAVED",
+      "metric_version": "m27-6.v1",
+      "not_evaluable_count": 0,
+      "numerator": null,
+      "policy_version": null,
+      "population": {
+        "cohort_id": null,
+        "dimensions": {},
+        "institution_id": "ef6d3b6d-1dc9-5ecc-9cc8-ec21a48dd099",
+        "scope": "institution"
+      },
+      "projection_version": 1,
+      "provenance": {
+        "calculator": "ADMINISTRATIVE_TIME_SAVED:m27-6.v1",
+        "exclusions": [
+          "invalid provenance",
+          "test data",
+          "out-of-scope data",
+          "incomplete policy window"
+        ],
+        "lineage_digest": "3a60694f9b402539084bff5489fd0259a7f6cbf1cab79c6118ad70527c401790",
+        "source_event_kinds": [],
+        "source_read_models": [
+          "accountability_cases",
+          "accountability_case_sources",
+          "accountability_reviews",
+          "accountability_decisions",
+          "accountability_obligations",
+          "interventions"
+        ]
+      },
+      "reason": "BASELINE_REQUIRED",
+      "status": "NOT_COMPUTABLE",
+      "suppression_state": "NONE",
+      "unit": "seconds",
+      "value": null,
+      "window_end": "2026-01-18T12:00:00Z",
+      "window_start": "2026-01-12T12:00:00Z"
+    },
+    "DECISION_ACCOUNTABILITY_RATE": {
+      "denominator": 9,
+      "exclusions": {},
+      "explanation": {
+        "business_question": "Were required decisions recorded on time?",
+        "definition": "decision-required case to M27 decision",
+        "denominator_definition": "decision-required cases",
+        "exclusions": [
+          "invalid provenance",
+          "test data",
+          "out-of-scope data",
+          "incomplete policy window"
+        ],
+        "metric_version": "m27-6.v1",
+        "numerator_definition": "eligible cases with valid decision",
+        "status_reason": null
+      },
+      "filters": {},
+      "freshness": "CURRENT",
+      "generated_at": "2026-09-26T20:28:45.309940Z",
+      "metric_id": "DECISION_ACCOUNTABILITY_RATE",
+      "metric_version": "m27-6.v1",
+      "not_evaluable_count": 0,
+      "numerator": 3.0,
+      "policy_version": 1,
+      "population": {
+        "cohort_id": null,
+        "dimensions": {},
+        "institution_id": "ef6d3b6d-1dc9-5ecc-9cc8-ec21a48dd099",
+        "scope": "institution"
+      },
+      "projection_version": 1,
+      "provenance": {
+        "calculator": "DECISION_ACCOUNTABILITY_RATE:m27-6.v1",
+        "exclusions": [
+          "invalid provenance",
+          "test data",
+          "out-of-scope data",
+          "incomplete policy window"
+        ],
+        "lineage_digest": "d1043489d8224cefb55a987e664eb003b2ea5e8cda852d0abd828bc46d782764",
+        "source_event_kinds": [],
+        "source_read_models": [
+          "accountability_cases",
+          "accountability_case_sources",
+          "accountability_reviews",
+          "accountability_decisions",
+          "accountability_obligations",
+          "interventions"
+        ]
+      },
+      "reason": null,
+      "status": "COMPUTED",
+      "suppression_state": "NONE",
+      "unit": "ratio",
+      "value": 0.3333333333333333,
+      "window_end": "2026-01-18T12:00:00Z",
+      "window_start": "2026-01-12T12:00:00Z"
+    },
+    "FOLLOW_UP_COMPLIANCE": {
+      "denominator": 2,
+      "exclusions": {},
+      "explanation": {
+        "business_question": "Were obligations completed on time?",
+        "definition": "obligation due state and evidence",
+        "denominator_definition": "obligations due or terminal",
+        "exclusions": [
+          "invalid provenance",
+          "test data",
+          "out-of-scope data",
+          "incomplete policy window"
+        ],
+        "metric_version": "m27-6.v1",
+        "numerator_definition": "on-time completions",
+        "status_reason": null
+      },
+      "filters": {},
+      "freshness": "CURRENT",
+      "generated_at": "2026-09-26T20:28:45.288004Z",
+      "metric_id": "FOLLOW_UP_COMPLIANCE",
+      "metric_version": "m27-6.v1",
+      "not_evaluable_count": 0,
+      "numerator": 0.0,
+      "policy_version": 1,
+      "population": {
+        "cohort_id": null,
+        "dimensions": {},
+        "institution_id": "ef6d3b6d-1dc9-5ecc-9cc8-ec21a48dd099",
+        "scope": "institution"
+      },
+      "projection_version": 1,
+      "provenance": {
+        "calculator": "FOLLOW_UP_COMPLIANCE:m27-6.v1",
+        "exclusions": [
+          "invalid provenance",
+          "test data",
+          "out-of-scope data",
+          "incomplete policy window"
+        ],
+        "lineage_digest": "ff58727da8e43524b4c57270e1516ba99ae0645131f0e9522cc0b29601ca3cc6",
+        "source_event_kinds": [],
+        "source_read_models": [
+          "accountability_cases",
+          "accountability_case_sources",
+          "accountability_reviews",
+          "accountability_decisions",
+          "accountability_obligations",
+          "interventions"
+        ]
+      },
+      "reason": null,
+      "status": "COMPUTED",
+      "suppression_state": "NONE",
+      "unit": "ratio",
+      "value": 0.0,
+      "window_end": "2026-01-18T12:00:00Z",
+      "window_start": "2026-01-12T12:00:00Z"
+    },
+    "LOST_CASE_RATE": {
+      "denominator": null,
+      "exclusions": {},
+      "explanation": {
+        "business_question": "What proportion became unaccounted for?",
+        "definition": "opened case to observation cutoff",
+        "denominator_definition": "eligible cases with closed observation window",
+        "exclusions": [
+          "invalid provenance",
+          "test data",
+          "out-of-scope data",
+          "incomplete policy window"
+        ],
+        "metric_version": "m27-6.v1",
+        "numerator_definition": "lost eligible cases",
+        "status_reason": "SMALL_CELL_THRESHOLD"
+      },
+      "filters": {},
+      "freshness": "UNKNOWN",
+      "generated_at": "2026-09-26T20:28:45.292876Z",
+      "metric_id": "LOST_CASE_RATE",
+      "metric_version": "m27-6.v1",
+      "not_evaluable_count": 0,
+      "numerator": null,
+      "policy_version": 1,
+      "population": {
+        "cohort_id": null,
+        "dimensions": {},
+        "institution_id": "ef6d3b6d-1dc9-5ecc-9cc8-ec21a48dd099",
+        "scope": "institution"
+      },
+      "projection_version": 1,
+      "provenance": {
+        "calculator": "LOST_CASE_RATE:m27-6.v1",
+        "exclusions": [
+          "invalid provenance",
+          "test data",
+          "out-of-scope data",
+          "incomplete policy window"
+        ],
+        "lineage_digest": "97607569a3ae38938f809ba8da1616df624810ca306122e382e937420ae8627f",
+        "source_event_kinds": [],
+        "source_read_models": [
+          "accountability_cases",
+          "accountability_case_sources",
+          "accountability_reviews",
+          "accountability_decisions",
+          "accountability_obligations",
+          "interventions"
+        ]
+      },
+      "reason": "SMALL_CELL_THRESHOLD",
+      "status": "SUPPRESSED",
+      "suppression_state": "SMALL_CELL",
+      "unit": "ratio",
+      "value": null,
+      "window_end": "2026-01-18T12:00:00Z",
+      "window_start": "2026-01-12T12:00:00Z"
+    },
+    "NEXT_ACTION_COMPLIANCE": {
+      "denominator": 2,
+      "exclusions": {},
+      "explanation": {
+        "business_question": "Were required next steps completed or waived by due date?",
+        "definition": "obligation creation to evidence",
+        "denominator_definition": "obligations due",
+        "exclusions": [
+          "invalid provenance",
+          "test data",
+          "out-of-scope data",
+          "incomplete policy window"
+        ],
+        "metric_version": "m27-6.v1",
+        "numerator_definition": "on-time completion or authorized waiver",
+        "status_reason": null
+      },
+      "filters": {},
+      "freshness": "CURRENT",
+      "generated_at": "2026-09-26T20:28:45.314451Z",
+      "metric_id": "NEXT_ACTION_COMPLIANCE",
+      "metric_version": "m27-6.v1",
+      "not_evaluable_count": 0,
+      "numerator": 1.0,
+      "policy_version": 1,
+      "population": {
+        "cohort_id": null,
+        "dimensions": {},
+        "institution_id": "ef6d3b6d-1dc9-5ecc-9cc8-ec21a48dd099",
+        "scope": "institution"
+      },
+      "projection_version": 1,
+      "provenance": {
+        "calculator": "NEXT_ACTION_COMPLIANCE:m27-6.v1",
+        "exclusions": [
+          "invalid provenance",
+          "test data",
+          "out-of-scope data",
+          "incomplete policy window"
+        ],
+        "lineage_digest": "06e0f371cfd14d290d92839713732553a045dd0731bb37f9d90e3de40e2137d4",
+        "source_event_kinds": [],
+        "source_read_models": [
+          "accountability_cases",
+          "accountability_case_sources",
+          "accountability_reviews",
+          "accountability_decisions",
+          "accountability_obligations",
+          "interventions"
+        ]
+      },
+      "reason": null,
+      "status": "COMPUTED",
+      "suppression_state": "NONE",
+      "unit": "ratio",
+      "value": 0.5,
+      "window_end": "2026-01-18T12:00:00Z",
+      "window_start": "2026-01-12T12:00:00Z"
+    },
+    "OUTCOME_SUMMARY": {
+      "freshness": "CURRENT",
+      "missing_outcome_count": 0,
+      "observations": {},
+      "policy_version": 1,
+      "population": {
+        "cohort_id": null,
+        "dimensions": {},
+        "institution_id": "ef6d3b6d-1dc9-5ecc-9cc8-ec21a48dd099",
+        "scope": "institution"
+      },
+      "provenance": {
+        "calculator": "INTERVENTION_OUTCOME:m27-6.v1",
+        "exclusions": [],
+        "lineage_digest": "8fdab87278e53092c14063e753c9fcea8fd21509eaf1778e4cd7b9b1a666e518",
+        "source_event_kinds": [],
+        "source_read_models": [
+          "interventions"
+        ]
+      },
+      "reason": "SMALL_CELL_THRESHOLD",
+      "status": "SUPPRESSED",
+      "total_interventions": 0,
+      "window_end": "2026-01-18T12:00:00Z",
+      "window_start": "2026-01-12T12:00:00Z"
+    },
+    "RECURRENCE_RATE": {
+      "denominator": 9,
+      "exclusions": {},
+      "explanation": {
+        "business_question": "How often did resolved cases recur?",
+        "definition": "resolved case to true new episode",
+        "denominator_definition": "resolved cases with full policy window",
+        "exclusions": [
+          "invalid provenance",
+          "test data",
+          "out-of-scope data",
+          "incomplete policy window"
+        ],
+        "metric_version": "m27-6.v1",
+        "numerator_definition": "TRUE_RECURRENCE cases",
+        "status_reason": null
+      },
+      "filters": {},
+      "freshness": "CURRENT",
+      "generated_at": "2026-09-26T20:28:45.297996Z",
+      "metric_id": "RECURRENCE_RATE",
+      "metric_version": "m27-6.v1",
+      "not_evaluable_count": 0,
+      "numerator": 1.0,
+      "policy_version": 1,
+      "population": {
+        "cohort_id": null,
+        "dimensions": {},
+        "institution_id": "ef6d3b6d-1dc9-5ecc-9cc8-ec21a48dd099",
+        "scope": "institution"
+      },
+      "projection_version": 1,
+      "provenance": {
+        "calculator": "RECURRENCE_RATE:m27-6.v1",
+        "exclusions": [
+          "invalid provenance",
+          "test data",
+          "out-of-scope data",
+          "incomplete policy window"
+        ],
+        "lineage_digest": "204e829297179d9b725c7580ce24ed3e1d2f102f8bde0d62b4b2c7c72107e834",
+        "source_event_kinds": [],
+        "source_read_models": [
+          "accountability_cases",
+          "accountability_case_sources",
+          "accountability_reviews",
+          "accountability_decisions",
+          "accountability_obligations",
+          "interventions"
+        ]
+      },
+      "reason": null,
+      "status": "COMPUTED",
+      "suppression_state": "NONE",
+      "unit": "ratio",
+      "value": 0.1111111111111111,
+      "window_end": "2026-01-18T12:00:00Z",
+      "window_start": "2026-01-12T12:00:00Z"
+    },
+    "REVIEW_ACCOUNTABILITY_RATE": {
+      "denominator": 9,
+      "exclusions": {},
+      "explanation": {
+        "business_question": "Were required reviews completed on time?",
+        "definition": "review-required case to valid human review",
+        "denominator_definition": "review-required cases",
+        "exclusions": [
+          "invalid provenance",
+          "test data",
+          "out-of-scope data",
+          "incomplete policy window"
+        ],
+        "metric_version": "m27-6.v1",
+        "numerator_definition": "eligible cases with valid review",
+        "status_reason": null
+      },
+      "filters": {},
+      "freshness": "CURRENT",
+      "generated_at": "2026-09-26T20:28:45.305384Z",
+      "metric_id": "REVIEW_ACCOUNTABILITY_RATE",
+      "metric_version": "m27-6.v1",
+      "not_evaluable_count": 0,
+      "numerator": 4.0,
+      "policy_version": 1,
+      "population": {
+        "cohort_id": null,
+        "dimensions": {},
+        "institution_id": "ef6d3b6d-1dc9-5ecc-9cc8-ec21a48dd099",
+        "scope": "institution"
+      },
+      "projection_version": 1,
+      "provenance": {
+        "calculator": "REVIEW_ACCOUNTABILITY_RATE:m27-6.v1",
+        "exclusions": [
+          "invalid provenance",
+          "test data",
+          "out-of-scope data",
+          "incomplete policy window"
+        ],
+        "lineage_digest": "1d75e2d477d91b08500438636f5b6f636cbef602fef877d817fa4011c8c80456",
+        "source_event_kinds": [],
+        "source_read_models": [
+          "accountability_cases",
+          "accountability_case_sources",
+          "accountability_reviews",
+          "accountability_decisions",
+          "accountability_obligations",
+          "interventions"
+        ]
+      },
+      "reason": null,
+      "status": "COMPUTED",
+      "suppression_state": "NONE",
+      "unit": "ratio",
+      "value": 0.4444444444444444,
+      "window_end": "2026-01-18T12:00:00Z",
+      "window_start": "2026-01-12T12:00:00Z"
+    },
+    "SMALL_CELL_INTERVENTION_OUTCOME": {
+      "denominator": null,
+      "exclusions": {},
+      "explanation": {
+        "business_question": "What was observed after intervention?",
+        "definition": "M21 intervention to outcome window end",
+        "denominator_definition": "eligible interventions",
+        "exclusions": [
+          "invalid provenance",
+          "test data",
+          "out-of-scope data",
+          "incomplete policy window"
+        ],
+        "metric_version": "m27-6.v1",
+        "numerator_definition": "interventions with observed outcome",
+        "status_reason": "SMALL_CELL_THRESHOLD"
+      },
+      "filters": {},
+      "freshness": "UNKNOWN",
+      "generated_at": "2026-09-26T20:28:45.320194Z",
+      "metric_id": "INTERVENTION_OUTCOME",
+      "metric_version": "m27-6.v1",
+      "not_evaluable_count": 0,
+      "numerator": null,
+      "policy_version": 1,
+      "population": {
+        "cohort_id": null,
+        "dimensions": {},
+        "institution_id": "ef6d3b6d-1dc9-5ecc-9cc8-ec21a48dd099",
+        "scope": "institution"
+      },
+      "projection_version": 1,
+      "provenance": {
+        "calculator": "INTERVENTION_OUTCOME:m27-6.v1",
+        "exclusions": [
+          "invalid provenance",
+          "test data",
+          "out-of-scope data",
+          "incomplete policy window"
+        ],
+        "lineage_digest": "d939a679a9e88ee653af28ec4c2c4c4db997f3fb7ec83f046d1dede4d70aec8b",
+        "source_event_kinds": [],
+        "source_read_models": [
+          "accountability_cases",
+          "accountability_case_sources",
+          "accountability_reviews",
+          "accountability_decisions",
+          "accountability_obligations",
+          "interventions"
+        ]
+      },
+      "reason": "SMALL_CELL_THRESHOLD",
+      "status": "SUPPRESSED",
+      "suppression_state": "SMALL_CELL",
+      "unit": "observations",
+      "value": null,
+      "window_end": "2026-01-15T12:00:01Z",
+      "window_start": "2026-01-15T12:00:00Z"
+    },
+    "TIME_TO_INTERVENTION": {
+      "denominator": null,
+      "exclusions": {},
+      "explanation": {
+        "business_question": "How quickly did accepted intent reach M21?",
+        "definition": "CREATE_INTERVENTION decision to M21 accepted creation",
+        "denominator_definition": "eligible create decisions",
+        "exclusions": [
+          "invalid provenance",
+          "test data",
+          "out-of-scope data",
+          "incomplete policy window"
+        ],
+        "metric_version": "m27-6.v1",
+        "numerator_definition": "accepted creations",
+        "status_reason": "SMALL_CELL_THRESHOLD"
+      },
+      "filters": {},
+      "freshness": "UNKNOWN",
+      "generated_at": "2026-09-26T20:28:45.283711Z",
+      "metric_id": "TIME_TO_INTERVENTION",
+      "metric_version": "m27-6.v1",
+      "not_evaluable_count": 0,
+      "numerator": null,
+      "policy_version": 1,
+      "population": {
+        "cohort_id": null,
+        "dimensions": {},
+        "institution_id": "ef6d3b6d-1dc9-5ecc-9cc8-ec21a48dd099",
+        "scope": "institution"
+      },
+      "projection_version": 1,
+      "provenance": {
+        "calculator": "TIME_TO_INTERVENTION:m27-6.v1",
+        "exclusions": [
+          "invalid provenance",
+          "test data",
+          "out-of-scope data",
+          "incomplete policy window"
+        ],
+        "lineage_digest": "ddf627994b70e8d391f6f68952c03aacafb524a45ebcea1c8a9ab8261af3609f",
+        "source_event_kinds": [],
+        "source_read_models": [
+          "accountability_cases",
+          "accountability_case_sources",
+          "accountability_reviews",
+          "accountability_decisions",
+          "accountability_obligations",
+          "interventions"
+        ]
+      },
+      "reason": "SMALL_CELL_THRESHOLD",
+      "status": "SUPPRESSED",
+      "suppression_state": "SMALL_CELL",
+      "unit": "seconds",
+      "value": null,
+      "window_end": "2026-01-18T12:00:00Z",
+      "window_start": "2026-01-12T12:00:00Z"
+    },
+    "TIME_TO_REVIEW": {
+      "denominator": null,
+      "exclusions": {},
+      "explanation": {
+        "business_question": "How quickly was required review completed?",
+        "definition": "case opened to first valid human review",
+        "denominator_definition": "review-required cases",
+        "exclusions": [
+          "invalid provenance",
+          "test data",
+          "out-of-scope data",
+          "incomplete policy window"
+        ],
+        "metric_version": "m27-6.v1",
+        "numerator_definition": "valid review intervals",
+        "status_reason": "SMALL_CELL_THRESHOLD"
+      },
+      "filters": {},
+      "freshness": "UNKNOWN",
+      "generated_at": "2026-09-26T20:28:45.278935Z",
+      "metric_id": "TIME_TO_REVIEW",
+      "metric_version": "m27-6.v1",
+      "not_evaluable_count": 0,
+      "numerator": null,
+      "policy_version": 1,
+      "population": {
+        "cohort_id": null,
+        "dimensions": {},
+        "institution_id": "ef6d3b6d-1dc9-5ecc-9cc8-ec21a48dd099",
+        "scope": "institution"
+      },
+      "projection_version": 1,
+      "provenance": {
+        "calculator": "TIME_TO_REVIEW:m27-6.v1",
+        "exclusions": [
+          "invalid provenance",
+          "test data",
+          "out-of-scope data",
+          "incomplete policy window"
+        ],
+        "lineage_digest": "63fbe860cc325c0bd19baf8facc618433e0b4572a758918323d96c60ca695343",
+        "source_event_kinds": [],
+        "source_read_models": [
+          "accountability_cases",
+          "accountability_case_sources",
+          "accountability_reviews",
+          "accountability_decisions",
+          "accountability_obligations",
+          "interventions"
+        ]
+      },
+      "reason": "SMALL_CELL_THRESHOLD",
+      "status": "SUPPRESSED",
+      "suppression_state": "SMALL_CELL",
+      "unit": "seconds",
+      "value": null,
+      "window_end": "2026-01-18T12:00:00Z",
+      "window_start": "2026-01-12T12:00:00Z"
+    }
+  },
+  "operational_gate": "PASS",
+  "overall_decision": "PASS",
+  "pilot_version": "m27-8.v1",
+  "privacy": {
+    "pii": "NONE",
+    "reverse_inference": "NO_COMPLEMENT_OR_TREND_RETURNED",
+    "small_cell": "SUPPRESSED_NO_COUNTS_OR_RATIO"
+  },
+  "provenance": {
+    "case_id": "9813b8d9-d836-5375-ba71-55e101143338",
+    "decision_id": "f4c7d296-bf46-40bb-a14e-47235e233ae3",
+    "metric_lineage_digest": "63fbe860cc325c0bd19baf8facc618433e0b4572a758918323d96c60ca695343",
+    "obligation_id": "33bccd73-610f-4c70-8653-c87e98a3616d",
+    "policy_version": 1,
+    "projection_version": 2,
+    "source": "be75721a-b5d5-55c8-9a10-da5a9ae7a54f"
+  },
+  "scenarios": {
+    "P01": {
+      "evidence": "queue",
+      "status": "PASS"
+    },
+    "P02": {
+      "evidence": "unassigned",
+      "status": "PASS"
+    },
+    "P03": {
+      "evidence": "ownership",
+      "status": "PASS"
+    },
+    "P04": {
+      "evidence": "review",
+      "status": "PASS"
+    },
+    "P05": {
+      "evidence": "request-information",
+      "status": "PASS"
+    },
+    "P06": {
+      "evidence": "obligation",
+      "status": "PASS"
+    },
+    "P07": {
+      "evidence": "completion",
+      "status": "PASS"
+    },
+    "P08": {
+      "evidence": "human-decision",
+      "status": "PASS"
+    },
+    "P09": {
+      "evidence": "decision-not-action",
+      "status": "PASS"
+    },
+    "P10": {
+      "evidence": "m21-outcome",
+      "status": "PASS"
+    },
+    "P11": {
+      "evidence": "follow-up",
+      "status": "PASS"
+    },
+    "P12": {
+      "evidence": "overdue",
+      "status": "PASS"
+    },
+    "P13": {
+      "evidence": "waiver",
+      "status": "PASS"
+    },
+    "P14": {
+      "evidence": "lost-v-open",
+      "status": "PASS"
+    },
+    "P15": {
+      "evidence": "recurrence",
+      "status": "PASS"
+    },
+    "P16": {
+      "evidence": "small-cell",
+      "status": "PASS"
+    },
+    "P17": {
+      "evidence": "outcome-summary",
+      "status": "PASS"
+    },
+    "P18": {
+      "evidence": "mentor-boundary-not-invoked",
+      "status": "PASS"
+    },
+    "P19": {
+      "evidence": "provenance",
+      "status": "PASS"
+    },
+    "P20": {
+      "evidence": "cross-tenant-fail-closed",
+      "status": "PASS"
+    }
+  },
+  "schema_revision": "0042_m27_true_recurrence",
+  "security": {
+    "foreign_cursor": "FAIL_CLOSED_400",
+    "system_admin": "FAIL_CLOSED_403",
+    "teacher_scope": "FAIL_CLOSED_403",
+    "unauthorized_decision": "FAIL_CLOSED_403",
+    "unauthorized_waiver": "FAIL_CLOSED_403"
+  },
+  "source_commit": "7d30e935a94f9a4b84710e6aeabdacba659d3826",
+  "started_at": "2026-09-26T20:28:44.630763+00:00",
+  "technical_gate": "PASS",
+  "value_evidence": {
+    "accountability_gap_detection": 1.0,
+    "administrative_time_saved": "NOT_COMPUTABLE:BASELINE_REQUIRED",
+    "autonomous_high_impact_mutation_rate": 0.0,
+    "case_trace_completeness": 1.0,
+    "false_attention_rate": "NOT_EVALUATED_AS_HUMAN_COGNITION",
+    "tenant_leak_rate": 0.0,
+    "time_to_priority_identification": "REQUIRES_HUMAN_OBSERVATION"
+  },
+  "value_evidence_gate": "PASS_WITH_HUMAN_LIMITATIONS"
+}

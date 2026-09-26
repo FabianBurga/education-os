@@ -136,6 +136,8 @@ def _reasons(row: Any, now: datetime) -> tuple[str, ...]:
 
 
 def _next_step(row: Any) -> str:
+    if getattr(row, "obligation_next_required_step", None) == "HUMAN_REVIEW_REQUIRED":
+        return "HUMAN_REVIEW"
     if row.owner_user_id is None:
         return "ASSIGN_OWNER"
     if row.open_obligation_type == "INFORMATION_REQUIRED":
@@ -302,6 +304,7 @@ def _queue_rows(
                 obligation.sla_policy_key,
                 obligation.sla_policy_version,
                 obligation.provenance_sha256 AS obligation_provenance_sha256,
+                obligation.next_required_step AS obligation_next_required_step,
                 m22.id AS m22_snapshot_id,
                 m22.overall_priority AS m22_priority,
                 m22.evaluated_at AS source_freshness,
@@ -329,12 +332,15 @@ def _queue_rows(
             LEFT JOIN LATERAL (
                 SELECT o.id, o.obligation_type, o.due_at, o.sla_status,
                        o.lifecycle, o.completed_at, o.projection_version,
-                       o.sla_policy_key, o.sla_policy_version, o.provenance_sha256
+                       o.sla_policy_key, o.sla_policy_version, o.provenance_sha256,
+                       o.next_required_step
                 FROM accountability_obligations o
                 WHERE o.case_id = c.id
                   AND o.organization_id = c.organization_id
                   AND o.institution_id = c.institution_id
-                  AND o.lifecycle IN ('OPEN','IN_PROGRESS')
+                  AND (o.lifecycle IN ('OPEN','IN_PROGRESS') OR
+                       (o.lifecycle = 'COMPLETED' AND o.obligation_type = 'INFORMATION_REQUIRED'
+                        AND o.next_required_step = 'HUMAN_REVIEW_REQUIRED'))
                 ORDER BY
                     CASE WHEN o.due_at IS NOT NULL AND o.due_at < :now THEN 0 ELSE 1 END,
                     o.due_at NULLS LAST,
@@ -357,7 +363,10 @@ def _queue_rows(
               AND c.lifecycle IN ('OPEN','REOPENED')
         ), derived AS (
             SELECT *,
-                (latest_review_id IS NULL) AS review_required,
+                (latest_review_id IS NULL OR
+                 (obligation_lifecycle = 'COMPLETED'
+                  AND open_obligation_type = 'INFORMATION_REQUIRED'
+                  AND obligation_next_required_step = 'HUMAN_REVIEW_REQUIRED')) AS review_required,
                 (latest_review_id IS NOT NULL AND (latest_decision_id IS NULL OR latest_decision_at < latest_reviewed_at)) AS decision_required,
                 CASE
                     WHEN obligation_lifecycle = 'WAIVED' THEN 'EXEMPT'
@@ -371,6 +380,7 @@ def _queue_rows(
                     WHEN obligation_lifecycle IN ('OPEN','IN_PROGRESS') AND due_at IS NOT NULL AND due_at < :now THEN 0
                     WHEN obligation_lifecycle IN ('OPEN','IN_PROGRESS') AND due_at IS NOT NULL THEN 1
                     WHEN owner_user_id IS NULL THEN 2
+                    WHEN obligation_lifecycle = 'COMPLETED' AND open_obligation_type = 'INFORMATION_REQUIRED' AND obligation_next_required_step = 'HUMAN_REVIEW_REQUIRED' THEN 3
                     WHEN latest_review_id IS NULL THEN 3
                     WHEN latest_decision_id IS NULL OR latest_decision_at < latest_reviewed_at THEN 4
                     WHEN m22_priority = 'HIGH' THEN 5
