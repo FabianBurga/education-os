@@ -2,15 +2,21 @@
 
 Project: Education OS, an Institutional Intelligence & Action Platform.
 
-Authoritative committed source: `692a8c2b6f79b1c773d001a2e4e1117f8f356d1c` (`test(m27): add controlled operational pilot`).
+Authoritative published M27 base: `8af4557ee77d04adb2cb20d5994684268aacd194`,
+annotated tag `m27-decision-accountability-os-v0.27.0`.
 
 Authoritative M25 release tag: `m25-governed-provider-explainer-v0.25.3`.
 
-Current working branch: `m27-decision-accountability-os`.
+Current working branch: `m28-operational-adoption-core`.
 
 Current database revision: `0042_m27_true_recurrence`.
 
-Active milestone: M27 - Institutional Decision & Accountability OS is CLOSED / PASS. M26 - Human Experience Layer / Mentor OS is CLOSED / PASS. Next milestone: M28 - Operational Adoption Core.
+M27 - Institutional Decision & Accountability OS is CLOSED / PASS and published.
+M28 - Operational Adoption Core is in M28-0 planning/bootstrap only. Read
+[M28 scope](m28/M28_SCOPE.md), inventory, domain/security/event contracts and
+implementation plan before handing M28-1 to Luna. M28 product implementation
+has not started. M27 value evidence remains PASS_WITH_HUMAN_LIMITATIONS;
+controlled human pilot ready YES, field validated NO, production certified NO.
 
 M26-1 is CLOSED and M26-2 governed Mentor runtime is CLOSED / PASS. M26-2
 delivers the L0 `mentor_institution_briefing` v1 runtime with typed

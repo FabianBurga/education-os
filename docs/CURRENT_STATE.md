@@ -1,5 +1,15 @@
 # Current State
 
+## Current planning/bootstrap
+
+M27 is CLOSED / PASS and published as `m27-decision-accountability-os-v0.27.0`
+at `8af4557ee77d04adb2cb20d5994684268aacd194`. M28-0 — Canonical Bootstrap &
+Scope Freeze is planning only on `m28-operational-adoption-core`, created from
+that exact tag. No M28 production code or migration is implemented. Source head
+remains `0042_m27_true_recurrence`; this planning stage does not recertify DB
+runtime state. Contracts and the Luna handoff are in [docs/m28](m28/M28_SCOPE.md).
+Next action: ASTRA review, then a separate M28-1 handoff. No publication in M28-0.
+
 ## Formally closed
 
 M25 - Agentic Control Plane is CLOSED at `bd0fbaa719eae4884d9a6c3ab8600939e88bb433`, `feat(m25): add governed provider-backed explainer`. It is tagged `m25-governed-provider-explainer-v0.25.3` and remotely backed up and verified on `origin` (`FabianBurga/education-os`). The database revision is `0036_m25_run_explainer`.
@@ -86,7 +96,7 @@ zero temporary residue.
 ## Canonical M27 closure
 
 M27 - Institutional Decision & Accountability OS is CLOSED / PASS at
-`692a8c2b6f79b1c773d001a2e4e1117f8f356d1c` on branch
+`8af4557ee77d04adb2cb20d5994684268aacd194` (published closeout) on branch
 `m27-decision-accountability-os`. Migration head/current is
 `0042_m27_true_recurrence`. Technical validation and synthetic operational
 validation are PASS; value evidence is PASS_WITH_HUMAN_LIMITATIONS. The system
@@ -101,7 +111,7 @@ rate 0, and autonomous high-impact mutation rate 0. Administrative Time Saved
 is `NOT_COMPUTABLE / BASELINE_REQUIRED`; Time to Priority Identification requires
 human observation.
 
-## Active milestone
+## Historical M27 implementation summary
 
 M27 - Institutional Decision & Accountability OS is CLOSED / PASS, not active.
 M27-2 - Accountability Projection Foundation is closed locally at

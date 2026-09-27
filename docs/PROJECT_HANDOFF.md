@@ -2,6 +2,14 @@
 
 ## Current handoff point
 
+M28-0 planning/bootstrap now uses local branch `m28-operational-adoption-core`,
+created from published tag `m27-decision-accountability-os-v0.27.0` at
+`8af4557ee77d04adb2cb20d5994684268aacd194`. M28 runtime implementation is
+NOT STARTED. Review [M28 scope and boundaries](m28/M28_SCOPE.md) and
+[slice handoff](m28/M28_IMPLEMENTATION_PLAN.md) before Luna implements M28-1.
+The M27 implementation/pilot evidence below remains historical evidence;
+its 692a8c2 implementation SHA is not the published closeout/tag SHA.
+
 Education OS is a security-sensitive, multi-tenant Institutional Intelligence & Action Platform. M27 - Institutional Decision & Accountability OS is CLOSED / PASS at `692a8c2b6f79b1c773d001a2e4e1117f8f356d1c`; its migration head/current is `0042_m27_true_recurrence`. Technical and synthetic operational validation passed; value evidence is `PASS_WITH_HUMAN_LIMITATIONS`. M27 is ready for a controlled human pilot, is not field validated, and is not production certified. The next milestone is M28 - Operational Adoption Core.
 
 ## M26-1 closed configuration baseline
@@ -120,8 +128,8 @@ or provider actions.
 
 ## M27 final closure
 
-M27-1 through M27-8 are closed. The canonical release candidate is
-`692a8c2b6f79b1c773d001a2e4e1117f8f356d1c`; the controlled pilot is synthetic
+M27-1 through M27-8 are closed. The published canonical release is
+`8af4557ee77d04adb2cb20d5994684268aacd194`; the controlled pilot is synthetic
 only, with no real student PII or external providers. The full backend gate was
 743 passed, 0 failed, 1 skipped; frontend tests, typecheck, and production build
 passed. The single skip is the intentionally opt-in M21 E2E without
@@ -131,7 +139,8 @@ human observation. Do not claim field outcomes or production certification.
 
 ## Next step
 
-The next engineering boundary is M28 - Operational Adoption Core. Preserve
+M28 - Operational Adoption Core is in M28-0 planning/bootstrap. Implementation
+requires the separate reviewed slice handoff. Preserve
 M26's L0 read/explain scope, M22 boundary, human-control language, and
 no-live-provider posture until a later approved slice changes them.
 

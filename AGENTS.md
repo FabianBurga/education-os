@@ -12,17 +12,24 @@ behavior take priority over speed.
 
 ## Current authoritative baseline
 Branch:
-m27-decision-accountability-os
+m28-operational-adoption-core
 
 Current Alembic revision:
 0042_m27_true_recurrence
 
 Current phase:
-M27 — Institutional Decision & Accountability OS
+M28-0 — Canonical Bootstrap & Scope Freeze (planning only)
+
+M28 canonical base:
+Published annotated tag m27-decision-accountability-os-v0.27.0
+8af4557ee77d04adb2cb20d5994684268aacd194
+M28 planning contracts: docs/m28/M28_SCOPE.md and linked boundary/plan files.
+M28 implementation: NOT STARTED; stop after M28-0 for ASTRA review.
+No push/tag/release is authorized by the M28-0 task.
 
 M27 canonical closure:
 M27 — Institutional Decision & Accountability OS: CLOSED / PASS
-Release candidate: 692a8c2b6f79b1c773d001a2e4e1117f8f356d1c
+Published release: 8af4557ee77d04adb2cb20d5994684268aacd194
 Technical validation: PASS
 Synthetic operational validation: PASS
 Value evidence: PASS_WITH_HUMAN_LIMITATIONS
@@ -41,7 +48,7 @@ M26-2:
 CLOSED / PASS
 
 Next task:
-M27-4 — Follow-up Obligations + SLA (after M27-3 review)
+Review M28-0 scope freeze before handing M28-1 to Luna.
 
 Current validated M26-1 configuration evidence:
 - M26 config: 6 passed.
@@ -66,8 +73,8 @@ external model calls, schema changes, RLS/grant/ownership changes, PII leak,
 cross-tenant leak, or temporary residue. M27 is the next milestone; do not
 begin it inside a retrospective M26 closure task.
 
-Latest known full regression:
-571 passed, 1 skipped, 4 warnings
+Latest published M27 regression (reused evidence, not a new M28 gate):
+743 passed, 1 skipped, 0 failed, exit code 0; frontend 61 passed.
 
 Latest M23-5 install evidence:
 C:\Users\USER\Downloads\M23_5_ACTION_PROPOSALS_REPORT_V4.json
@@ -258,11 +265,12 @@ State must be derived from lifecycle events.
 PostgreSQL trigger enforces valid event transitions.
 
 ## Current canonical status
-M27 — Institutional Decision & Accountability OS is CLOSED / PASS at
-`692a8c2b6f79b1c773d001a2e4e1117f8f356d1c`, with migration
+M27 — Institutional Decision & Accountability OS is CLOSED / PASS and published at
+`8af4557ee77d04adb2cb20d5994684268aacd194`, with migration
 `0042_m27_true_recurrence`. Technical and synthetic operational validation
 passed; value evidence is `PASS_WITH_HUMAN_LIMITATIONS`. The next milestone is
-M28 - Operational Adoption Core. Do not begin M28 in this closeout.
+M28 - Operational Adoption Core. M28-0 planning/bootstrap is active; runtime
+implementation remains NOT STARTED. Older planning sections below are historical.
 
 ## Current task (historical planning notes)
 The immediate next boundary is M27-6 — Accountability Metrics & Outcome Intelligence. M27-5 builds on the

@@ -8,7 +8,9 @@ This is direction, not implementation status.
   through M27-8 are complete; technical and synthetic operational validation
   passed, with value evidence limited by required human observation. The next
   milestone is M28 - Operational Adoption Core.
-- M28 - Operational Adoption Core.
+- M28 - Operational Adoption Core. M28-0 planning/bootstrap active on the
+  published M27 tag; scope and small vertical slices frozen in
+  [M28 implementation plan](m28/M28_IMPLEMENTATION_PLAN.md). Runtime NOT STARTED.
 - M29 - Preventive Intelligence / Sentinel.
 - M30 - Family Experience.
 - M31 - Autonomous Operations.
