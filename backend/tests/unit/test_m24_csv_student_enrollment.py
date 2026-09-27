@@ -61,6 +61,11 @@ def test_m24_csv_contract_fails_closed_for_schema_encoding_and_bounds():
     assert _code(header + rows) == "CSV_TOO_MANY_ROWS"
     overlong = b"S-001," + b"A" * 321 + b",Lovelace,2026," + str(uuid4()).encode() + b"\n"
     assert _code(header + overlong) == "CSV_ROW_INVALID"
+    active_without_date = (
+        "external_student_id,given_names,family_names,academic_period_code,campus_id,enrollment_status\n"
+        f"S-ACTIVE,Ada,Lovelace,2026,{uuid4()},ACTIVE\n"
+    ).encode()
+    assert _code(active_without_date) == "CSV_ROW_INVALID"
 
 
 def test_m24_csv_external_identity_is_tenant_qualified_and_immutable():

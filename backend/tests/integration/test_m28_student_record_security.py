@@ -1,9 +1,11 @@
 """Application-role HTTP proofs for the M28-1 student record boundary."""
 
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
 from sqlmodel import Session
@@ -75,13 +77,26 @@ def _person_student(owner: Session, *, institution_id: UUID = INSTITUTION_ID, or
     return person.id, student.id
 
 
-def _cleanup(owner: Session, actors: list[dict[str, UUID]], students: list[tuple[UUID, UUID]], extra_people: list[UUID]) -> None:
+def _cleanup(owner: Session, actors: list[dict[str, UUID]], students: list[tuple[UUID, UUID]], extra_people: list[UUID], period_ids: list[UUID], campus_ids: list[UUID]) -> None:
     owner.rollback()
     student_ids = [str(student_id) for _, student_id in students]
     if student_ids:
+        enrollment_ids = [str(row[0]) for row in owner.exec(
+            text("SELECT id FROM enrollments WHERE student_profile_id = ANY(CAST(:ids AS uuid[]))"),
+            params={"ids": student_ids},
+        ).all()]
+        if enrollment_ids:
+            owner.exec(text("DELETE FROM audit_logs WHERE entity_type='Enrollment' AND entity_id = ANY(CAST(:ids AS uuid[]))"), params={"ids": enrollment_ids})
+            owner.exec(text("DELETE FROM outbox_events WHERE aggregate_type='enrollment' AND aggregate_id = ANY(CAST(:ids AS uuid[]))"), params={"ids": enrollment_ids})
+            owner.exec(text("DELETE FROM student_section_assignments WHERE enrollment_id = ANY(CAST(:ids AS uuid[]))"), params={"ids": enrollment_ids})
+            owner.exec(text("DELETE FROM enrollments WHERE id = ANY(CAST(:ids AS uuid[]))"), params={"ids": enrollment_ids})
         owner.exec(text("DELETE FROM audit_logs WHERE entity_id = ANY(CAST(:ids AS uuid[]))"), params={"ids": student_ids})
         owner.exec(text("DELETE FROM outbox_events WHERE aggregate_id = ANY(CAST(:ids AS uuid[]))"), params={"ids": student_ids})
         owner.exec(text("DELETE FROM student_profiles WHERE id = ANY(CAST(:ids AS uuid[]))"), params={"ids": student_ids})
+    if period_ids:
+        owner.exec(text("DELETE FROM academic_periods WHERE id = ANY(CAST(:ids AS uuid[]))"), params={"ids": [str(value) for value in period_ids]})
+    if campus_ids:
+        owner.exec(text("DELETE FROM campuses WHERE id = ANY(CAST(:ids AS uuid[]))"), params={"ids": [str(value) for value in campus_ids]})
     for actor in actors:
         params = {key: str(value) for key, value in actor.items()}
         owner.exec(text("DELETE FROM membership_roles WHERE membership_id = CAST(:membership_id AS uuid)"), params=params)
@@ -110,12 +125,15 @@ def _pilot():
     actors: list[dict[str, UUID]] = []
     students: list[tuple[UUID, UUID]] = []
     extra_people: list[UUID] = []
+    period_ids: list[UUID] = []
+    campus_ids: list[UUID] = []
     try:
         assert owner.exec(text("SELECT 1 FROM institutions WHERE id=:id AND organization_id=:org"), params={"id": INSTITUTION_ID, "org": ORG_ID}).first()
-        authorized = _actor(owner, {"students.read", "students.manage", "admin.people.manage"})
+        authorized = _actor(owner, {"students.read", "students.manage", "enrollments.read", "enrollments.manage", "admin.people.manage"})
+        student_reader = _actor(owner, {"students.read"})
         bare_admin = _actor(owner, set())
         teacher = _actor(owner, set(), role_key="TEACHER")
-        actors.extend((authorized, bare_admin, teacher))
+        actors.extend((authorized, student_reader, bare_admin, teacher))
         local_person, local_student = _person_student(owner)
         students.append((local_person, local_student))
         foreign = owner.exec(
@@ -140,15 +158,18 @@ def _pilot():
                 "person": local_person,
                 "student": local_student,
                 "extra_people": extra_people,
+                "period_ids": period_ids,
+                "campus_ids": campus_ids,
                 "authorized_headers": _headers(authorized),
                 "bare_headers": _headers(bare_admin),
+                "student_reader_headers": _headers(student_reader),
                 "teacher_headers": _headers(teacher),
                 "client": TestClient(app, raise_server_exceptions=False),
             }
         finally:
             app.dependency_overrides.pop(get_session, None)
     finally:
-        _cleanup(owner, actors, students, extra_people)
+        _cleanup(owner, actors, students, extra_people, period_ids, campus_ids)
         owner.close()
         owner_engine.dispose()
 
@@ -302,3 +323,192 @@ def test_student_create_retry_is_idempotent_and_audit_failure_rolls_back(monkeyp
         assert owner.exec(text("SELECT count(*) FROM student_profiles WHERE person_id=:id"), params={"id": rollback_person.id}).one()[0] == 0
         assert owner.exec(text("SELECT count(*) FROM outbox_events WHERE event_type='student.profile.created'")).one()[0] == before_events
         assert owner.exec(text("SELECT count(*) FROM audit_logs WHERE action='STUDENT_PROFILE_CREATED'")).one()[0] == before_audits
+
+
+def test_enrollment_lifecycle_is_scoped_versioned_and_audited(monkeypatch) -> None:
+    with _pilot() as pilot:
+        owner = pilot["owner"]
+        period_id = uuid4()
+        campus_id = uuid4()
+        owner.exec(text("INSERT INTO campuses (id, institution_id, name, created_at) VALUES (:id, :institution, :name, CURRENT_TIMESTAMP)"),
+                   params={"id": campus_id, "institution": INSTITUTION_ID, "name": f"Synthetic M28-2 {campus_id.hex[:8]}"})
+        pilot["campus_ids"].append(campus_id)
+        pilot["period_ids"].append(period_id)
+        owner.exec(text("""INSERT INTO academic_periods
+            (id, organization_id, institution_id, code, name, starts_on, ends_on, status, created_at)
+            VALUES (:id, :org, :institution, :code, 'Synthetic M28-2', '2025-01-01', '2030-12-31', 'ACTIVE', CURRENT_TIMESTAMP)"""),
+            params={"id": period_id, "org": ORG_ID, "institution": INSTITUTION_ID, "code": f"M28-2-{period_id.hex[:12]}"})
+        foreign_institution = owner.exec(
+            text("SELECT id, organization_id FROM institutions WHERE id <> :id ORDER BY id LIMIT 1"),
+            params={"id": INSTITUTION_ID},
+        ).one()
+        foreign_period_id, foreign_campus_id, foreign_enrollment_id = uuid4(), uuid4(), uuid4()
+        pilot["period_ids"].append(foreign_period_id)
+        pilot["campus_ids"].append(foreign_campus_id)
+        owner.exec(text("""INSERT INTO academic_periods
+            (id, organization_id, institution_id, code, name, starts_on, ends_on, status, created_at)
+            VALUES (:id, :org, :institution, :code, 'Foreign synthetic period', '2025-01-01', '2030-12-31', 'ACTIVE', CURRENT_TIMESTAMP)"""),
+            params={"id": foreign_period_id, "org": foreign_institution[1], "institution": foreign_institution[0], "code": f"FOREIGN-{foreign_period_id.hex[:10]}"})
+        owner.exec(text("INSERT INTO campuses (id, institution_id, name, created_at) VALUES (:id, :institution, 'Foreign synthetic campus', CURRENT_TIMESTAMP)"),
+                   params={"id": foreign_campus_id, "institution": foreign_institution[0]})
+        owner.exec(text("""INSERT INTO enrollments
+            (id, organization_id, institution_id, student_profile_id, academic_period_id, campus_id, status, enrolled_on, created_at, updated_at)
+            VALUES (:id, :org, :institution, :student, :period, :campus, 'ACTIVE', '2026-01-10', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"""),
+            params={"id": foreign_enrollment_id, "org": foreign_institution[1], "institution": foreign_institution[0],
+                    "student": pilot["students"][1][1], "period": foreign_period_id, "campus": foreign_campus_id})
+        owner.commit()
+        client = pilot["client"]
+        student_id = pilot["students"][0][1]
+        body = {
+            "student_profile_id": str(student_id), "academic_period_id": str(period_id),
+            "campus_id": str(campus_id), "enrollment_number": "SYNTHETIC-ENR-01",
+            "status": "ACTIVE", "enrolled_on": "2026-01-10",
+        }
+        create = client.post("/api/v1/enrollments", headers=pilot["authorized_headers"], json=body)
+        assert create.status_code == 201, create.text
+        enrollment = create.json()
+        enrollment_id = UUID(enrollment["id"])
+        out_of_period = client.post("/api/v1/enrollments", headers=pilot["authorized_headers"], json={**body, "enrolled_on": "2031-01-01"})
+        assert out_of_period.status_code == 422
+        replay = client.post("/api/v1/enrollments", headers=pilot["authorized_headers"], json=body)
+        assert replay.status_code == 201
+        assert replay.json()["id"] == enrollment["id"]
+        assert owner.exec(text("SELECT count(*) FROM outbox_events WHERE aggregate_id=:id AND event_type='student.enrollment.created'"), params={"id": enrollment_id}).one()[0] == 1
+        assert owner.exec(text("SELECT count(*) FROM audit_logs WHERE entity_id=:id AND action='STUDENT_ENROLLMENT_CREATED'"), params={"id": enrollment_id}).one()[0] == 1
+        owner.exec(text("UPDATE academic_periods SET status='CLOSED' WHERE id=:id"), params={"id": period_id})
+        owner.commit()
+        closed_period_change = client.patch(
+            f"/api/v1/enrollments/{enrollment_id}/status", headers=pilot["authorized_headers"],
+            json={"status": "WITHDRAWN", "expected_updated_at": enrollment["updated_at"], "effective_on": "2026-05-20", "reason_code": "STUDENT_REQUEST"},
+        )
+        assert closed_period_change.status_code == 409
+        owner.exec(text("UPDATE academic_periods SET status='ACTIVE' WHERE id=:id"), params={"id": period_id})
+        owner.commit()
+
+        def fail_enrollment_audit(*args, **kwargs):
+            raise RuntimeError("synthetic enrollment audit failure")
+
+        with monkeypatch.context() as patcher:
+            patcher.setattr("app.modules.enrollment.service.record_audit", fail_enrollment_audit)
+            failed_withdrawal = client.patch(
+                f"/api/v1/enrollments/{enrollment_id}/status", headers=pilot["authorized_headers"],
+                json={"status": "WITHDRAWN", "expected_updated_at": enrollment["updated_at"], "effective_on": "2026-05-20", "reason_code": "STUDENT_REQUEST"},
+            )
+        assert failed_withdrawal.status_code == 500
+        owner.rollback()
+        assert owner.exec(text("SELECT status FROM enrollments WHERE id=:id"), params={"id": enrollment_id}).one()[0] == "ACTIVE"
+        assert owner.exec(text("SELECT count(*) FROM outbox_events WHERE aggregate_id=:id AND event_type='student.enrollment.status_changed'"), params={"id": enrollment_id}).one()[0] == 0
+        assert client.get("/api/v1/enrollments/options", headers=pilot["authorized_headers"]).json()["periods"][0]["id"] == str(period_id)
+
+        denied = client.post("/api/v1/enrollments", headers=pilot["bare_headers"], json=body)
+        assert denied.status_code == 403
+        assert client.post("/api/v1/enrollments", headers=pilot["teacher_headers"], json=body).status_code == 403
+        assert client.get("/api/v1/enrollments", headers=pilot["bare_headers"]).status_code == 403
+        assert client.get("/api/v1/enrollments", headers=pilot["student_reader_headers"]).status_code == 403
+        assert client.get("/api/v1/enrollments/options", headers=pilot["student_reader_headers"]).status_code == 403
+        foreign_student = pilot["students"][1][1]
+        foreign_body = {**body, "student_profile_id": str(foreign_student), "academic_period_id": str(period_id)}
+        assert client.post("/api/v1/enrollments", headers=pilot["authorized_headers"], json=foreign_body).status_code == 404
+        assert client.post("/api/v1/enrollments", headers=pilot["authorized_headers"], json={**body, "academic_period_id": str(foreign_period_id)}).status_code == 404
+        assert client.post("/api/v1/enrollments", headers=pilot["authorized_headers"], json={**body, "campus_id": str(foreign_campus_id)}).status_code == 404
+        assert client.get(f"/api/v1/enrollments/{foreign_enrollment_id}", headers=pilot["authorized_headers"]).status_code == 404
+        assert client.patch(
+            f"/api/v1/enrollments/{foreign_enrollment_id}/status", headers=pilot["authorized_headers"],
+            json={"status": "WITHDRAWN", "expected_updated_at": enrollment["updated_at"], "effective_on": "2026-05-20", "reason_code": "STUDENT_REQUEST"},
+        ).status_code == 404
+        assert client.post("/api/v1/enrollments", headers=pilot["authorized_headers"], json={**body, "institution_id": str(uuid4())}).status_code == 422
+
+        def change(target: str, revision: str, effective_on: str, reason: str | None = None):
+            return client.patch(
+                f"/api/v1/enrollments/{enrollment_id}/status",
+                headers=pilot["authorized_headers"],
+                json={"status": target, "expected_updated_at": revision, "effective_on": effective_on, "reason_code": reason},
+            )
+
+        invalid_date = change("WITHDRAWN", enrollment["updated_at"], "2026-01-09", "STUDENT_REQUEST")
+        assert invalid_date.status_code == 422
+        withdrawn = change("WITHDRAWN", enrollment["updated_at"], "2026-05-20", "STUDENT_REQUEST")
+        assert withdrawn.status_code == 200, withdrawn.text
+        retry = change("WITHDRAWN", enrollment["updated_at"], "2026-05-20", "STUDENT_REQUEST")
+        assert retry.status_code == 200 and retry.json()["status"] == "WITHDRAWN"
+        assert owner.exec(text("SELECT count(*) FROM outbox_events WHERE aggregate_id=:id AND event_type='student.enrollment.status_changed'"), params={"id": enrollment_id}).one()[0] == 1
+        stale_competitor = change("COMPLETED", enrollment["updated_at"], "2026-05-21")
+        assert stale_competitor.status_code == 409
+
+        reactivated = change("ACTIVE", withdrawn.json()["updated_at"], "2026-06-01", "RETURN_TO_STUDY")
+        assert reactivated.status_code == 200, reactivated.text
+        assert reactivated.json()["withdrawn_on"] is None
+        completed = change("COMPLETED", reactivated.json()["updated_at"], "2026-06-10")
+        assert completed.status_code == 200, completed.text
+        assert completed.json()["allowed_actions"] == []
+        assert change("WITHDRAWN", completed.json()["updated_at"], "2026-06-11", "OTHER").status_code == 409
+        assert client.patch(
+            f"/api/v1/enrollments/{enrollment_id}/status", headers=pilot["authorized_headers"],
+            json={"status": "TRANSFERRED", "expected_updated_at": completed.json()["updated_at"]},
+        ).status_code == 422
+
+        history = client.get(f"/api/v1/enrollments/{enrollment_id}/history", headers=pilot["authorized_headers"])
+        assert history.status_code == 200
+        changes = [item["details"] for item in history.json() if item["action"] == "STUDENT_ENROLLMENT_STATUS_CHANGED"]
+        assert [(item["from_status"], item["to_status"]) for item in changes] == [
+            ("ACTIVE", "WITHDRAWN"), ("WITHDRAWN", "ACTIVE"), ("ACTIVE", "COMPLETED"),
+        ]
+        assert changes[1]["previous_withdrawn_on"] == "2026-05-20"
+        assert owner.exec(text("SELECT count(*) FROM audit_logs WHERE entity_type='Enrollment' AND entity_id=:id"), params={"id": enrollment_id}).one()[0] == 4
+        assert client.get("/api/v1/enrollments", headers=pilot["authorized_headers"]).json()[0]["id"] == enrollment["id"]
+
+        second_person, second_student = _person_student(owner, code=f"SYN-M28-{uuid4().hex[:8]}")
+        third_person, third_student = _person_student(owner, code=f"SYN-M28-{uuid4().hex[:8]}")
+        pilot["students"].extend(((second_person, second_student), (third_person, third_student)))
+        owner.commit()
+        pending = client.post("/api/v1/enrollments", headers=pilot["authorized_headers"], json={
+            **body, "student_profile_id": str(second_student), "enrollment_number": "SYNTHETIC-ENR-02",
+            "status": "PENDING", "enrolled_on": None,
+        })
+        assert pending.status_code == 201, pending.text
+        activated = client.patch(
+            f"/api/v1/enrollments/{pending.json()['id']}/status", headers=pilot["authorized_headers"],
+            json={"status": "ACTIVE", "expected_updated_at": pending.json()["updated_at"], "effective_on": "2026-02-01"},
+        )
+        assert activated.status_code == 200, activated.text
+        concurrent_enrollment_id = activated.json()["id"]
+        revision = activated.json()["updated_at"]
+        prior_event_count = owner.exec(text("SELECT count(*) FROM outbox_events WHERE aggregate_id=:id AND event_type='student.enrollment.status_changed'"), params={"id": concurrent_enrollment_id}).one()[0]
+        def compete(target: str, effective_on: str, reason_code: str | None = None):
+            return client.patch(
+                f"/api/v1/enrollments/{concurrent_enrollment_id}/status",
+                headers=pilot["authorized_headers"],
+                json={"status": target, "expected_updated_at": revision, "effective_on": effective_on, "reason_code": reason_code},
+            )
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            outcomes = list(pool.map(lambda args: compete(*args), [
+                ("WITHDRAWN", "2026-05-01", "STUDENT_REQUEST"),
+                ("COMPLETED", "2026-05-01", None),
+            ]))
+        assert sorted(response.status_code for response in outcomes) == [200, 409]
+        assert owner.exec(text("SELECT count(*) FROM outbox_events WHERE aggregate_id=:id AND event_type='student.enrollment.status_changed'"), params={"id": concurrent_enrollment_id}).one()[0] == prior_event_count + 1
+        pending_cancel = client.post("/api/v1/enrollments", headers=pilot["authorized_headers"], json={
+            **body, "student_profile_id": str(third_student), "enrollment_number": "SYNTHETIC-ENR-03",
+            "status": "PENDING", "enrolled_on": None,
+        })
+        cancelled = client.patch(
+            f"/api/v1/enrollments/{pending_cancel.json()['id']}/status", headers=pilot["authorized_headers"],
+            json={"status": "CANCELLED", "expected_updated_at": pending_cancel.json()["updated_at"], "reason_code": "ADMIN_REQUEST"},
+        )
+        assert pending_cancel.status_code == 201 and cancelled.status_code == 200
+
+def test_enrollment_contract_rejects_mass_assignment_and_transferred() -> None:
+    from pydantic import ValidationError
+
+    from app.modules.enrollment.router import EnrollmentCreate, EnrollmentStatusUpdate
+
+    with pytest.raises(ValidationError):
+        EnrollmentCreate.model_validate({
+            "student_profile_id": str(uuid4()), "academic_period_id": str(uuid4()),
+            "campus_id": str(uuid4()), "status": "ACTIVE", "organization_id": str(uuid4()),
+        })
+    with pytest.raises(ValidationError):
+        EnrollmentStatusUpdate.model_validate({
+            "status": "TRANSFERRED", "expected_updated_at": datetime.now(UTC).isoformat(),
+        })

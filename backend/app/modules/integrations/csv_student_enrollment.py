@@ -83,6 +83,8 @@ def parse_csv_student_enrollment(payload: bytes) -> tuple[str, list[CsvRow]]:
                 if status_value not in {"PENDING", "ACTIVE"}:
                     raise ValueError("enrollment_status must be PENDING or ACTIVE")
                 enrolled_raw = _value(row.get("enrolled_on"), maximum=10)
+                if status_value == "ACTIVE" and not enrolled_raw:
+                    raise ValueError("ACTIVE enrollment requires enrolled_on")
                 rows.append(CsvRow(
                     row_number=row_number,
                     external_student_id=_value(row.get("external_student_id"), maximum=120, required=True) or "",

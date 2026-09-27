@@ -5,7 +5,8 @@
 M28-0 froze scope on published M27 tag at
 `8af4557ee77d04adb2cb20d5994684268aacd194`. Branch:
 `m28-operational-adoption-core`. M28-1 is CLOSED / PASS on migration
-`0043_m28_student_record_perms`; M28-2 onward remain NOT STARTED.
+`0044_m28_enrollment_read`; M28-1 and M28-2 are CLOSED / PASS. M28-3 onward
+remain NOT STARTED.
 
 Read [scope](M28_SCOPE.md), [inventory](M28_CAPABILITY_INVENTORY.md),
 [domain](M28_DOMAIN_BOUNDARIES.md), [security](M28_SECURITY_BOUNDARY.md) and
@@ -13,8 +14,8 @@ Read [scope](M28_SCOPE.md), [inventory](M28_CAPABILITY_INVENTORY.md),
 existing domain modules, React shell/components, TanStack Query/Router and
 Vitest. No new design system, state framework, worker, Redis or parallel SIS.
 
-Every migration below is a plan, not an existing revision, except the completed
-M28-1 revision 0043. Future revisions follow 0043; choose <=32-character IDs. Never
+Every migration below is a plan, not an existing revision, except completed
+M28-1 revision 0043 and M28-2 revision 0044. Future revisions follow 0044; choose <=32-character IDs. Never
 reserve several empty migrations, edit 0001–0042, or apply schema during M28-0.
 Physical receipt/history/version design is Luna's bounded implementation
 choice subject to the frozen behavior and ASTRA security acceptance.
@@ -42,28 +43,36 @@ choice subject to the frozen behavior and ASTRA security acceptance.
   passed. M1/M2/M3/M18/M24 directed regression: 71 passed. Full backend ran
   once after directed PASS.
 - Dependencies: M28-0 scope/security freeze.
-- Stop boundary respected: M28-2 lifecycle is NOT STARTED.
+- Stop boundary respected: M28-3 academic setup remains NOT STARTED.
 
-## M28-2 — Enrollment lifecycle
+## M28-2 — Enrollment lifecycle — CLOSED / PASS
 
-- Goal: enroll/activate/withdraw/reactivate/complete/cancel with reconstructable
-  history, including the already-supported M24 create-only intake.
-- Backend: move status mutation into enrollment service; implement the frozen
-  transitions, validation, revision, idempotency and atomic placement closure
-  on withdrawal; preserve uniqueness and source events.
-- Frontend: enrollment panel in the student record; bounded actions, explicit
-  withdrawal/completion confirmation, dates, conflicts and history.
-- Migration: likely revision/idempotency support if not supplied in M28-1;
-  minimal forward constraints if data preflight demonstrates need. No new
-  enrollment authority or TRANSFERRED enrollment enum.
-- Security: lifecycle permissions, student/period/campus IDOR, no auto-activation
-  by profile status, no cross-institution transfer command.
-- Tests: transition table, date boundaries, all retries and stale commands,
-  same-period duplicate, old-period preservation, withdrawal atomicity,
-  M1/M2/M18/M21 enrollment projection/M24 regressions, focused panel tests.
-- Dependencies: M28-1; uses existing periods/placements, not future new entities.
-- Full backend suite: NO.
-- Stop: no automated progression, admissions, cross-tenant transfer or import sync.
+- Goal delivered: canonical M1 enrollment lifecycle and history without a
+  parallel table. Exact same-period create replay and same-command transition
+  replay do not duplicate domain mutations, audit, or canonical events.
+- Backend: bounded PENDING/ACTIVE create; PENDING->ACTIVE/CANCELLED;
+  ACTIVE->WITHDRAWN/COMPLETED; explicit WITHDRAWN->ACTIVE reactivation that
+  first preserves the previous interval in audit/event evidence. TRANSFERRED
+  is rejected. Dates are period-bounded; active placement closes atomically
+  for withdrawal. A row lock and expected revision arbitrate competitors.
+- Permissions: 0044 adds the frozen `enrollments.read` catalog entry without
+  role grants. Reads require enrollments.read; mutations require the existing
+  enrollments.manage. Tenant/institution derives from CurrentPrincipal and
+  role permission association must belong to that institution.
+- Frontend: student detail exposes enrollment create/read/history and only
+  server-provided next actions; API refetches after commands and on 409.
+- Migration: `0044_m28_enrollment_read`, additive and forward-only. Required
+  because the frozen M28 security contract separated enrollment reads from
+  student-record reads while 0043 had seeded only enrollments.manage. No table,
+  RLS policy, historical migration, or automatic grant was changed.
+- Evidence: focused M1/M18/M24/M28-1 + M28-2 PostgreSQL/RLS suite, concurrency,
+  idempotency, transaction rollback, React tests/typecheck/build, Ruff,
+  `py_compile`, Alembic and diff checks. Full backend suite: NO; this slice
+  changes only the enrollment service boundary/catalog entry, and directed
+  regressions passed.
+- Details: [M28 enrollment](M28_ENROLLMENT.md).
+- Dependencies: M28-1; existing periods/placements only.
+- Stop boundary: no academic setup, placement transfer, attendance or results.
 
 ## M28-3 — Academic setup to course offering
 

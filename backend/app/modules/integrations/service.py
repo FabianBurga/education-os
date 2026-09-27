@@ -263,13 +263,22 @@ def _validate_csv_row(
     )).first()
     if existing_ref is not None:
         return "CONFLICT", "ALREADY_APPLIED", detail
-    period = session.exec(select(AcademicPeriod.id).where(
+    period = session.exec(select(AcademicPeriod).where(
         AcademicPeriod.organization_id == principal.organization_id,
         AcademicPeriod.institution_id == principal.institution_id,
         AcademicPeriod.code == row.academic_period_code,
     )).first()
     if period is None:
         return "INVALID", "ACADEMIC_PERIOD_NOT_FOUND", detail
+    if period.status == "CLOSED":
+        return "INVALID", "ACADEMIC_PERIOD_CLOSED", detail
+    if row.enrollment_status == "ACTIVE":
+        if period.status != "ACTIVE":
+            return "INVALID", "ACADEMIC_PERIOD_NOT_ACTIVE", detail
+        if row.enrolled_on is None:
+            return "INVALID", "ENROLLED_ON_REQUIRED", detail
+    if row.enrolled_on is not None and not period.starts_on <= row.enrolled_on <= period.ends_on:
+        return "INVALID", "ENROLLED_ON_OUTSIDE_PERIOD", detail
     try:
         campus_id = UUID(row.campus_id)
     except ValueError:
@@ -287,7 +296,7 @@ def _validate_csv_row(
         )).first()
         if existing_student is not None:
             return "CONFLICT", "STUDENT_IDENTITY_CONFLICT", detail
-    detail["academic_period_id"] = str(period)
+    detail["academic_period_id"] = str(period.id)
     return "VALID", None, detail
 
 

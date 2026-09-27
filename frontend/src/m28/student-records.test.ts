@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { ApiError } from "../lib/api";
-import { studentRecordCapabilities, studentRecordErrorMessage } from "./student-records";
+import { enrollmentCapabilities, studentRecordCapabilities, studentRecordErrorMessage } from "./student-records";
 
 describe("M28-1 student record capabilities and safe errors", () => {
   it("uses only effective permission keys, never role names", () => {
@@ -26,5 +26,14 @@ describe("M28-1 student record capabilities and safe errors", () => {
     expect(studentRecordErrorMessage(new Error("network internals"))).toBe(
       "No fue posible completar la solicitud. Inténtalo de nuevo.",
     );
+  });
+});
+
+describe("M28-2 enrollment capability boundary", () => {
+  it("uses effective permissions and never grants lifecycle actions from a role label", () => {
+    expect(enrollmentCapabilities(["SYSTEM_ADMIN", "RECTOR"])).toEqual({ canRead: false, canManage: false });
+    expect(enrollmentCapabilities(["students.read"])).toEqual({ canRead: false, canManage: false });
+    expect(enrollmentCapabilities(["enrollments.read"])).toEqual({ canRead: true, canManage: false });
+    expect(enrollmentCapabilities(["enrollments.read", "enrollments.manage"])).toEqual({ canRead: true, canManage: true });
   });
 });
