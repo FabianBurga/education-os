@@ -10,6 +10,8 @@ from sqlalchemy import text
 from sqlmodel import Session
 
 from app.api.access import TeacherPrincipal
+from app.modules.attendance.schemas import AttendanceExpectedState, AttendanceRecordUpsert
+from app.modules.attendance.service import apply_attendance_record
 from app.modules.audit.service import record_audit
 from app.modules.events.service import enqueue_canonical_event
 from app.modules.teacher_console.service import (
@@ -47,11 +49,15 @@ def teacher_offline_snapshot(session: Session, principal: TeacherPrincipal, *, d
     window_start=db_today-timedelta(days=days)
     window_end=db_today+timedelta(days=1)
     classes=list_teacher_classes(session, principal)
-    codes=list_attendance_codes(session)
+    codes=list_attendance_codes(session, principal)
     result=[]
     for classroom in classes:
         roster=list_roster(session, principal, classroom.course_offering_id)
-        sessions=[x for x in list_class_sessions(session, principal, classroom.course_offering_id) if window_start <= x.session_date <= window_end]
+        sessions=[
+            x
+            for x in list_class_sessions(session, principal, classroom.course_offering_id)
+            if x.status == "OPEN" and window_start <= x.session_date <= window_end
+        ]
         result.append(TeacherOfflineClassSnapshot(classroom=classroom, roster=roster, sessions=[TeacherOfflineSessionSnapshot(session=x, attendance=attendance_rows(session, principal, x.id)) for x in sessions]))
     generated=datetime.now(UTC)
     return TeacherOfflineSnapshot(generated_at=generated, expires_at=generated+timedelta(hours=SNAPSHOT_TTL_HOURS), days=days, classes=result, attendance_codes=codes)
@@ -111,19 +117,56 @@ def _receipt(session: Session, principal: TeacherPrincipal, operation_id: UUID):
 
 
 def _section(session: Session, principal: TeacherPrincipal, class_session_id: UUID) -> UUID:
-    row=session.exec(text("""SELECT cs.section_id FROM class_sessions cs JOIN teaching_assignments ta ON ta.course_offering_id=cs.course_offering_id AND ta.staff_profile_id=CAST(:staff_profile_id AS uuid) WHERE cs.id=CAST(:class_session_id AS uuid) AND cs.institution_id=CAST(:institution_id AS uuid) AND (ta.starts_on IS NULL OR ta.starts_on<=CURRENT_DATE) AND (ta.ends_on IS NULL OR ta.ends_on>=CURRENT_DATE) LIMIT 1"""),params={"staff_profile_id":str(principal.staff_profile_id),"class_session_id":str(class_session_id),"institution_id":str(principal.institution_id)}).first()
+    row=session.exec(text("""SELECT cs.section_id FROM class_sessions cs
+      JOIN teaching_assignments ta ON ta.course_offering_id=cs.course_offering_id
+        AND ta.staff_profile_id=CAST(:staff_profile_id AS uuid)
+        AND ta.organization_id=CAST(:organization_id AS uuid)
+        AND ta.institution_id=CAST(:institution_id AS uuid)
+      WHERE cs.id=CAST(:class_session_id AS uuid)
+        AND cs.organization_id=CAST(:organization_id AS uuid)
+        AND cs.institution_id=CAST(:institution_id AS uuid)
+        AND (ta.starts_on IS NULL OR ta.starts_on<=CURRENT_DATE)
+        AND (ta.ends_on IS NULL OR ta.ends_on>=CURRENT_DATE)
+        AND (ta.starts_on IS NULL OR ta.starts_on<=cs.session_date)
+        AND (ta.ends_on IS NULL OR ta.ends_on>=cs.session_date)
+      LIMIT 1"""),params={"staff_profile_id":str(principal.staff_profile_id),"class_session_id":str(class_session_id),"organization_id":str(principal.organization_id),"institution_id":str(principal.institution_id)}).first()
     if row is None:
         raise HTTPException(status_code=403,detail="Class session is outside the current teacher scope")
     return row[0]
 
 
-def _assert_target(session: Session, principal: TeacherPrincipal, section_id: UUID, assignment_id: UUID, code_id: UUID) -> None:
-    row=session.exec(text("""SELECT 1 FROM student_section_assignments ssa JOIN enrollments e ON e.id=ssa.enrollment_id JOIN student_profiles sp ON sp.id=e.student_profile_id WHERE ssa.id=CAST(:assignment AS uuid) AND ssa.section_id=CAST(:section AS uuid) AND ssa.status='ACTIVE' AND e.status='ACTIVE' AND sp.status='ACTIVE' LIMIT 1"""),params={"assignment":str(assignment_id),"section":str(section_id)}).first()
+def _assert_target(session: Session, principal: TeacherPrincipal, class_session_id: UUID, section_id: UUID, assignment_id: UUID) -> None:
+    row=session.exec(text("""SELECT 1
+      FROM class_sessions cs
+      JOIN course_offerings co ON co.id=cs.course_offering_id
+        AND co.organization_id=cs.organization_id AND co.institution_id=cs.institution_id
+      JOIN academic_periods ap ON ap.id=co.academic_period_id
+        AND ap.organization_id=cs.organization_id AND ap.institution_id=cs.institution_id
+      JOIN sections sec ON sec.id=cs.section_id
+        AND sec.organization_id=cs.organization_id AND sec.institution_id=cs.institution_id
+      JOIN student_section_assignments ssa ON ssa.section_id=sec.id
+        AND ssa.academic_period_id=co.academic_period_id
+        AND ssa.organization_id=cs.organization_id AND ssa.institution_id=cs.institution_id
+      JOIN enrollments e ON e.id=ssa.enrollment_id
+        AND e.organization_id=ssa.organization_id AND e.institution_id=ssa.institution_id
+      JOIN student_profiles sp ON sp.id=e.student_profile_id
+        AND sp.organization_id=e.organization_id AND sp.institution_id=e.institution_id
+      WHERE cs.id=CAST(:session_id AS uuid)
+        AND cs.section_id=CAST(:section AS uuid)
+        AND cs.organization_id=CAST(:organization_id AS uuid)
+        AND cs.institution_id=CAST(:institution_id AS uuid)
+        AND co.status='ACTIVE' AND ap.status='ACTIVE'
+        AND sec.status='ACTIVE'
+        AND cs.session_date BETWEEN ap.starts_on AND ap.ends_on
+        AND ssa.id=CAST(:assignment AS uuid)
+        AND ssa.status IN ('ACTIVE','TRANSFERRED')
+        AND ssa.assigned_on<=cs.session_date
+        AND (ssa.ended_on IS NULL OR ssa.ended_on>=cs.session_date)
+        AND e.status='ACTIVE' AND e.campus_id=sec.campus_id
+        AND sp.status='ACTIVE'
+      LIMIT 1"""),params={"session_id":str(class_session_id),"assignment":str(assignment_id),"section":str(section_id),"organization_id":str(principal.organization_id),"institution_id":str(principal.institution_id)}).first()
     if row is None:
         raise HTTPException(status_code=403,detail="Student is outside the current class session roster")
-    code=session.exec(text("""SELECT 1 FROM attendance_codes WHERE id=CAST(:id AS uuid) AND institution_id=CAST(:institution AS uuid) AND status='ACTIVE' LIMIT 1"""),params={"id":str(code_id),"institution":str(principal.institution_id)}).first()
-    if code is None:
-        raise HTTPException(status_code=409,detail="Attendance code is not active in the current institution")
 
 
 def _current(session: Session, class_session_id: UUID, assignment_id: UUID) -> TeacherOfflineAttendanceState:
@@ -136,47 +179,71 @@ def _by_id(session: Session, record_id: UUID):
     return _state(row) if row is not None else None
 
 
-def _apply(session: Session, principal: TeacherPrincipal, op: TeacherOfflineAttendanceOperation, section_id: UUID) -> TeacherOfflineAttendanceState:
-    row=session.exec(text("""
-      INSERT INTO attendance_records (id,organization_id,institution_id,section_id,class_session_id,student_section_assignment_id,attendance_code_id,minutes_late,note,created_at,updated_at)
-      VALUES (CAST(:id AS uuid),CAST(:org AS uuid),CAST(:inst AS uuid),CAST(:section AS uuid),CAST(:session AS uuid),CAST(:assignment AS uuid),CAST(:code AS uuid),:late,:note,NOW(),NOW())
-      ON CONFLICT (class_session_id,student_section_assignment_id) DO UPDATE SET attendance_code_id=EXCLUDED.attendance_code_id,minutes_late=EXCLUDED.minutes_late,note=EXCLUDED.note,updated_at=NOW()
-      RETURNING id,attendance_code_id,minutes_late,note
-    """),params={"id":str(uuid4()),"org":str(principal.organization_id),"inst":str(principal.institution_id),"section":str(section_id),"session":str(op.class_session_id),"assignment":str(op.desired.student_section_assignment_id),"code":str(op.desired.attendance_code_id),"late":op.desired.minutes_late,"note":op.desired.note}).one()
-    return _state(row)
-
-
 def _insert_receipt(session: Session, principal: TeacherPrincipal, op: TeacherOfflineAttendanceOperation, request_hash: str, record_id: UUID) -> None:
     session.exec(text("""INSERT INTO teacher_offline_receipts (id,organization_id,institution_id,actor_user_id,operation_id,operation_type,request_sha256,result_entity_id,status,created_at) VALUES (CAST(:id AS uuid),CAST(:org AS uuid),CAST(:inst AS uuid),CAST(:actor AS uuid),CAST(:operation AS uuid),'ATTENDANCE_MARK',:hash,CAST(:record AS uuid),'APPLIED',NOW())"""),params={"id":str(uuid4()),"org":str(principal.organization_id),"inst":str(principal.institution_id),"actor":str(principal.user_id),"operation":str(op.operation_id),"hash":request_hash,"record":str(record_id)})
 
 
 def _sync_one(session: Session, principal: TeacherPrincipal, op: TeacherOfflineAttendanceOperation) -> TeacherOfflineSyncResult:
     request_hash=_hash(op)
+    try:
+        section_id=_section(session,principal,op.class_session_id)
+        _assert_target(session,principal,op.class_session_id,section_id,op.desired.student_section_assignment_id)
+    except HTTPException as exc:
+        return TeacherOfflineSyncResult(operation_id=op.operation_id,status="REJECTED",detail=str(exc.detail))
     receipt=_receipt(session,principal,op.operation_id)
     if receipt is not None:
         if receipt[0]!=request_hash:
             return TeacherOfflineSyncResult(operation_id=op.operation_id,status="IDEMPOTENCY_MISMATCH",result_entity_id=receipt[1],server_state=_by_id(session,receipt[1]),detail="operation_id was already applied with a different payload")
         return TeacherOfflineSyncResult(operation_id=op.operation_id,status="REPLAYED",result_entity_id=receipt[1],server_state=_by_id(session,receipt[1]))
-    try:
-        section_id=_section(session,principal,op.class_session_id)
-        _assert_target(session,principal,section_id,op.desired.student_section_assignment_id,op.desired.attendance_code_id)
-    except HTTPException as exc:
-        return TeacherOfflineSyncResult(operation_id=op.operation_id,status="REJECTED",detail=str(exc.detail))
+    code=session.exec(text("""SELECT 1 FROM attendance_codes WHERE id=CAST(:id AS uuid)
+      AND organization_id=CAST(:organization_id AS uuid)
+      AND institution_id=CAST(:institution_id AS uuid) AND status='ACTIVE' LIMIT 1"""),params={"id":str(op.desired.attendance_code_id),"organization_id":str(principal.organization_id),"institution_id":str(principal.institution_id)}).first()
+    if code is None:
+        return TeacherOfflineSyncResult(operation_id=op.operation_id,status="REJECTED",detail="Attendance code is not active in the current institution")
     current=_current(session,op.class_session_id,op.desired.student_section_assignment_id)
     if not _same(op.base,current):
         return TeacherOfflineSyncResult(operation_id=op.operation_id,status="CONFLICT",result_entity_id=current.attendance_record_id,server_state=current,detail="Server attendance changed after the offline snapshot; explicit teacher resolution is required")
-    applied=_apply(session,principal,op,section_id)
-    assert applied.attendance_record_id is not None
-    record_audit(session,institution_id=principal.institution_id,actor_user_id=principal.user_id,action="TEACHER_OFFLINE_ATTENDANCE_SYNCED",entity_type="AttendanceRecord",entity_id=applied.attendance_record_id,metadata={"operation_id":str(op.operation_id),"source":"teacher_offline_pwa"})
-    enqueue_canonical_event(session,institution_id=principal.institution_id,event_type="teacher.attendance.synced",event_version=1,aggregate_type="attendance_record",aggregate_id=applied.attendance_record_id,actor_user_id=principal.user_id,correlation_id=op.operation_id,payload={"operation_id":str(op.operation_id),"class_session_id":str(op.class_session_id),"student_section_assignment_id":str(op.desired.student_section_assignment_id),"attendance_code_id":str(op.desired.attendance_code_id),"minutes_late":op.desired.minutes_late},metadata={"source":"teacher_offline_pwa","privacy":"note_excluded"})
-    _insert_receipt(session,principal,op,request_hash,applied.attendance_record_id)
-    return TeacherOfflineSyncResult(operation_id=op.operation_id,status="APPLIED",result_entity_id=applied.attendance_record_id,server_state=applied)
+    try:
+        mutation=apply_attendance_record(
+            session,
+            principal,
+            op.class_session_id,
+            AttendanceRecordUpsert(
+                student_section_assignment_id=op.desired.student_section_assignment_id,
+                attendance_code_id=op.desired.attendance_code_id,
+                minutes_late=op.desired.minutes_late,
+                note=op.desired.note,
+            ),
+            expected_state=AttendanceExpectedState(**op.base.model_dump()),
+            correction_reason="OFFLINE_RECONCILIATION",
+            source="teacher_offline_pwa",
+            correlation_id=op.operation_id,
+            teacher_scope_required=True,
+            commit=False,
+        )
+    except HTTPException as exc:
+        return TeacherOfflineSyncResult(operation_id=op.operation_id,status="REJECTED",detail=str(exc.detail))
+    record=mutation.record
+    record_id=record.id
+    record_audit(session,institution_id=principal.institution_id,actor_user_id=principal.user_id,action="TEACHER_OFFLINE_ATTENDANCE_SYNCED",entity_type="AttendanceRecord",entity_id=record_id,metadata={"operation_id":str(op.operation_id),"source":"teacher_offline_pwa"})
+    enqueue_canonical_event(session,institution_id=principal.institution_id,event_type="teacher.attendance.synced",event_version=1,aggregate_type="attendance_record",aggregate_id=record_id,actor_user_id=principal.user_id,correlation_id=op.operation_id,payload={"operation_id":str(op.operation_id),"class_session_id":str(op.class_session_id),"student_section_assignment_id":str(op.desired.student_section_assignment_id),"attendance_code_id":str(op.desired.attendance_code_id),"minutes_late":op.desired.minutes_late},metadata={"source":"teacher_offline_pwa","privacy":"note_excluded"})
+    _insert_receipt(session,principal,op,request_hash,record_id)
+    session.flush()
+    result_state=TeacherOfflineAttendanceState(attendance_record_id=record_id,attendance_code_id=record.attendance_code_id,minutes_late=record.minutes_late,note=record.note)
+    return TeacherOfflineSyncResult(operation_id=op.operation_id,status="APPLIED",result_entity_id=record_id,server_state=result_state)
 
 
-def sync_teacher_offline_operations(session: Session, principal: TeacherPrincipal, payload: TeacherOfflineSyncBatch) -> TeacherOfflineSyncResponse:
+def sync_teacher_offline_operations(
+    session: Session,
+    principal: TeacherPrincipal,
+    payload: TeacherOfflineSyncBatch,
+    *,
+    commit: bool = True,
+) -> TeacherOfflineSyncResponse:
     _require_capability(session,principal)
     _acquire_sync_locks(session, principal, payload.operations)
     ordered=sorted(payload.operations,key=lambda x:str(x.operation_id))
     results={x.operation_id:_sync_one(session,principal,x) for x in ordered}
-    session.commit()
+    if commit:
+        session.commit()
     return TeacherOfflineSyncResponse(results=[results[x.operation_id] for x in payload.operations])

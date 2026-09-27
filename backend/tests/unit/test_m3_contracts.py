@@ -46,5 +46,5 @@ def test_grading_scale_rejects_invalid_range() -> None:
 
 
 def test_m3_events_are_unique_and_namespaced() -> None:
-    assert len(M3_EVENT_NAMES) == 10
+    assert len(M3_EVENT_NAMES) == 13
     assert all("." in event for event in M3_EVENT_NAMES)

@@ -11,7 +11,10 @@ from app.modules.attendance.schemas import (
     AttendanceRecordUpsert,
     ClassSessionCreate,
 )
-from app.modules.attendance.service import create_session, upsert_record
+from app.modules.attendance.service import (
+    apply_attendance_record,
+    create_session,
+)
 from app.modules.audit.models import AuditLog
 from app.modules.automation.schemas import TaskComplete
 from app.modules.automation.service import acknowledge_task, complete_task
@@ -30,7 +33,7 @@ from app.modules.teacher_console.schemas import (
     TeacherAssessmentCreate,
     TeacherAssessmentRead,
     TeacherAttendanceCode,
-    TeacherAttendanceMark,
+    TeacherAttendanceCommand,
     TeacherAttendanceRow,
     TeacherCategoryCreate,
     TeacherCategoryRead,
@@ -379,7 +382,9 @@ def list_roster(
     ]
 
 
-def list_attendance_codes(session: Session) -> list[TeacherAttendanceCode]:
+def list_attendance_codes(
+    session: Session, principal: TeacherPrincipal
+) -> list[TeacherAttendanceCode]:
     rows = session.exec(
         text(
             """
@@ -393,8 +398,13 @@ def list_attendance_codes(session: Session) -> list[TeacherAttendanceCode]:
                 counts_as_late
             FROM attendance_codes
             WHERE status = 'ACTIVE'
+              AND organization_id = CAST(:organization_id AS uuid)
+              AND institution_id = CAST(:institution_id AS uuid)
             ORDER BY code
             """
+        ).bindparams(
+            organization_id=str(principal.organization_id),
+            institution_id=str(principal.institution_id),
         )
     ).all()
     return [
@@ -430,9 +440,15 @@ def list_class_sessions(
                 status
             FROM class_sessions
             WHERE course_offering_id = CAST(:course_offering_id AS uuid)
+              AND organization_id = CAST(:organization_id AS uuid)
+              AND institution_id = CAST(:institution_id AS uuid)
             ORDER BY session_date DESC, starts_at DESC
             """
-        ).bindparams(course_offering_id=str(course_offering_id))
+        ).bindparams(
+            course_offering_id=str(course_offering_id),
+            organization_id=str(principal.organization_id),
+            institution_id=str(principal.institution_id),
+        )
     ).all()
     return [
         TeacherClassSession(
@@ -494,18 +510,38 @@ def _session_scope(
     row = session.exec(
         text(
             """
-            SELECT cs.id, cs.course_offering_id, cs.section_id
+            SELECT cs.id, cs.course_offering_id, cs.section_id,
+                   cs.session_date, co.academic_period_id
             FROM class_sessions cs
             JOIN teaching_assignments ta
               ON ta.course_offering_id = cs.course_offering_id
              AND ta.staff_profile_id = CAST(:staff_profile_id AS uuid)
+             AND ta.organization_id = CAST(:organization_id AS uuid)
+             AND ta.institution_id = CAST(:institution_id AS uuid)
+            JOIN course_offerings co
+              ON co.id = cs.course_offering_id
+             AND co.organization_id = CAST(:organization_id AS uuid)
+             AND co.institution_id = CAST(:institution_id AS uuid)
+             AND co.status = 'ACTIVE'
+            JOIN academic_periods ap
+              ON ap.id = co.academic_period_id
+             AND ap.organization_id = CAST(:organization_id AS uuid)
+             AND ap.institution_id = CAST(:institution_id AS uuid)
+             AND ap.status = 'ACTIVE'
+             AND cs.session_date BETWEEN ap.starts_on AND ap.ends_on
             WHERE cs.id = CAST(:class_session_id AS uuid)
+              AND cs.organization_id = CAST(:organization_id AS uuid)
+              AND cs.institution_id = CAST(:institution_id AS uuid)
               AND (ta.starts_on IS NULL OR ta.starts_on <= CURRENT_DATE)
               AND (ta.ends_on IS NULL OR ta.ends_on >= CURRENT_DATE)
+              AND (ta.starts_on IS NULL OR ta.starts_on <= cs.session_date)
+              AND (ta.ends_on IS NULL OR ta.ends_on >= cs.session_date)
             LIMIT 1
             """
         ).bindparams(
             staff_profile_id=str(principal.staff_profile_id),
+            organization_id=str(principal.organization_id),
+            institution_id=str(principal.institution_id),
             class_session_id=str(class_session_id),
         )
     ).first()
@@ -539,21 +575,46 @@ def attendance_rows(
                 ar.note
             FROM student_section_assignments ssa
             JOIN enrollments e ON e.id = ssa.enrollment_id
+             AND e.organization_id = CAST(:organization_id AS uuid)
+             AND e.institution_id = CAST(:institution_id AS uuid)
             JOIN student_profiles sp ON sp.id = e.student_profile_id
+             AND sp.organization_id = CAST(:organization_id AS uuid)
+             AND sp.institution_id = CAST(:institution_id AS uuid)
             JOIN persons p ON p.id = sp.person_id
+             AND p.organization_id = CAST(:organization_id AS uuid)
             LEFT JOIN attendance_records ar
               ON ar.class_session_id = CAST(:class_session_id AS uuid)
              AND ar.student_section_assignment_id = ssa.id
+             AND ar.organization_id = CAST(:organization_id AS uuid)
+             AND ar.institution_id = CAST(:institution_id AS uuid)
             LEFT JOIN attendance_codes ac ON ac.id = ar.attendance_code_id
+             AND ac.organization_id = CAST(:organization_id AS uuid)
+             AND ac.institution_id = CAST(:institution_id AS uuid)
+            JOIN class_sessions cs ON cs.id = CAST(:class_session_id AS uuid)
+             AND cs.organization_id = CAST(:organization_id AS uuid)
+             AND cs.institution_id = CAST(:institution_id AS uuid)
+            JOIN sections sec ON sec.id = ssa.section_id
+             AND sec.organization_id = CAST(:organization_id AS uuid)
+             AND sec.institution_id = CAST(:institution_id AS uuid)
+             AND sec.academic_period_id = ssa.academic_period_id
             WHERE ssa.section_id = CAST(:section_id AS uuid)
-              AND ssa.status = 'ACTIVE'
+              AND ssa.institution_id = CAST(:institution_id AS uuid)
+              AND ssa.status IN ('ACTIVE', 'TRANSFERRED')
+              AND ssa.assigned_on <= cs.session_date
+              AND (ssa.ended_on IS NULL OR ssa.ended_on >= cs.session_date)
               AND e.status = 'ACTIVE'
               AND sp.status = 'ACTIVE'
+              AND e.campus_id = sec.campus_id
+              AND ssa.academic_period_id = CAST(:period_id AS uuid)
+              AND sec.status = 'ACTIVE'
             ORDER BY p.family_names, p.given_names
             """
         ).bindparams(
             class_session_id=str(class_session_id),
             section_id=str(scoped[2]),
+            organization_id=str(principal.organization_id),
+            institution_id=str(principal.institution_id),
+            period_id=str(scoped[4]),
         )
     ).all()
     return [
@@ -577,51 +638,28 @@ def mark_attendance(
     session: Session,
     principal: TeacherPrincipal,
     class_session_id: UUID,
-    payload: TeacherAttendanceMark,
+    payload: TeacherAttendanceCommand,
 ):
-    scoped = _session_scope(session, principal, class_session_id)
-    belongs = session.exec(
-        text(
-            """
-            SELECT 1
-            FROM student_section_assignments
-            WHERE id = CAST(:assignment_id AS uuid)
-              AND section_id = CAST(:section_id AS uuid)
-              AND status = 'ACTIVE'
-            LIMIT 1
-            """
-        ).bindparams(
-            assignment_id=str(payload.student_section_assignment_id),
-            section_id=str(scoped[2]),
-        )
-    ).first()
-    if belongs is None:
-        raise HTTPException(
-            status_code=403,
-            detail="Student is outside the class session roster",
-        )
-
-    record = upsert_record(
+    mutation = apply_attendance_record(
         session,
         principal,
         class_session_id,
-        AttendanceRecordUpsert(**payload.model_dump()),
-    )
-    _audit(
-        session,
-        principal,
-        "TEACHER_ATTENDANCE_MARKED",
-        "AttendanceRecord",
-        record.id,
-        {
-            "class_session_id": str(class_session_id),
-            "student_section_assignment_id": str(
-                payload.student_section_assignment_id
-            ),
-        },
+        AttendanceRecordUpsert(
+            student_section_assignment_id=payload.student_section_assignment_id,
+            attendance_code_id=payload.attendance_code_id,
+            minutes_late=payload.minutes_late,
+            note=payload.note,
+            expected_state=payload.expected_state,
+            correction_reason=payload.correction_reason,
+        ),
+        expected_state=payload.expected_state,
+        correction_reason=payload.correction_reason,
+        source="teacher_m10",
+        teacher_scope_required=True,
+        commit=False,
     )
     session.commit()
-    return record
+    return mutation.record
 
 
 def grading_periods(

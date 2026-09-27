@@ -12,5 +12,5 @@ export interface TeacherOfflineAttendanceOperation { operation_id:string; operat
 export type TeacherOfflineSyncStatus="APPLIED"|"REPLAYED"|"CONFLICT"|"IDEMPOTENCY_MISMATCH"|"REJECTED";
 export interface TeacherOfflineSyncResult { operation_id:string; status:TeacherOfflineSyncStatus; result_entity_id:string|null; server_state:TeacherOfflineAttendanceBase|null; detail:string|null; }
 export interface TeacherOfflineSyncResponse { results:TeacherOfflineSyncResult[]; }
-export type TeacherOfflineQueueStatus="PENDING"|"CONFLICT";
+export type TeacherOfflineQueueStatus="PENDING"|"CONFLICT"|"REJECTED";
 export interface TeacherOfflineQueuedOperation { queueKey:string; partitionKey:string; operationId:string; targetKey:string; createdAt:string; status:TeacherOfflineQueueStatus; detail:string|null; serverState:TeacherOfflineAttendanceBase|null; operation:TeacherOfflineAttendanceOperation; }

@@ -1,7 +1,10 @@
 from datetime import date, datetime, time
+from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from app.modules.attendance.schemas import AttendanceExpectedState
 
 
 class TeacherSummary(BaseModel):
@@ -75,6 +78,17 @@ class TeacherAttendanceMark(BaseModel):
     attendance_code_id: UUID
     minutes_late: int = Field(default=0, ge=0, le=1440)
     note: str | None = Field(default=None, max_length=500)
+
+
+class TeacherAttendanceCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    student_section_assignment_id: UUID
+    attendance_code_id: UUID
+    minutes_late: int = Field(default=0, ge=0, le=1440)
+    note: str | None = Field(default=None, max_length=500)
+    expected_state: AttendanceExpectedState | None = None
+    correction_reason: Literal["DATA_ENTRY_ERROR", "EVIDENCE_CORRECTION"] | None = None
 
 
 class TeacherAttendanceRow(BaseModel):

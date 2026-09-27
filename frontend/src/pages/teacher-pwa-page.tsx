@@ -120,6 +120,7 @@ export function TeacherPwaPage() {
   );
   const pending = queued.filter((item) => item.status === "PENDING").length;
   const conflicts = queued.filter((item) => item.status === "CONFLICT").length;
+  const rejected = queued.filter((item) => item.status === "REJECTED").length;
 
   async function prepare() {
     if (!online || !capability) return;
@@ -149,7 +150,7 @@ export function TeacherPwaPage() {
       row.student_section_assignment_id,
     );
     const existing = byTarget.get(target);
-    if (existing?.status === "CONFLICT") return;
+    if (existing?.status === "CONFLICT" || existing?.status === "REJECTED") return;
     const operationId = crypto.randomUUID();
     await putTeacherOfflineOperation({
       queueKey: teacherOfflineQueueKey(
@@ -220,7 +221,7 @@ export function TeacherPwaPage() {
           } else {
             await putTeacherOfflineOperation({
               ...local,
-              status: "CONFLICT",
+              status: result.status === "REJECTED" ? "REJECTED" : "CONFLICT",
               detail:
                 result.detail ??
                 `Sincronización detenida: ${result.status}`,
@@ -349,7 +350,7 @@ export function TeacherPwaPage() {
         </div>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-4">
+      <div className="grid gap-3 md:grid-cols-5">
         <Card>
           <CardContent className="pt-5">
             <div className="text-xs font-bold uppercase text-slate-400">Red</div>
@@ -382,6 +383,16 @@ export function TeacherPwaPage() {
               Conflictos
             </div>
             <div className="mt-2 text-2xl font-bold">{conflicts}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-5">
+            <div className="text-xs font-bold uppercase text-slate-400">
+              Rechazados
+            </div>
+            <div className="mt-2 text-2xl font-bold" data-testid="teacher-offline-rejected">
+              {rejected}
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -510,7 +521,7 @@ export function TeacherPwaPage() {
                           <select
                             className="w-full rounded-lg border px-3 py-2"
                             value={effective.attendance_code_id ?? ""}
-                            disabled={expired || local?.status === "CONFLICT"}
+                            disabled={expired || local?.status === "CONFLICT" || local?.status === "REJECTED"}
                             onChange={(event) => void queue(row, event.target.value)}
                             data-testid={`attendance-select-${row.student_section_assignment_id}`}
                           >
@@ -529,6 +540,20 @@ export function TeacherPwaPage() {
                             <span className="text-xs text-slate-400">Servidor</span>
                           ) : local.status === "PENDING" ? (
                             <Badge tone="warning">Pendiente</Badge>
+                          ) : local.status === "REJECTED" ? (
+                            <div className="space-y-2">
+                              <Badge tone="warning">Rechazado · autorización o alcance</Badge>
+                              <div className="text-xs text-slate-500">
+                                El servidor volvió a validar el acceso. No se confirmó este cambio; solicita acceso vigente o descártalo.
+                              </div>
+                              <Button
+                                variant="ghost"
+                                className="h-8 px-2 text-xs"
+                                onClick={() => void discard(local)}
+                              >
+                                Descartar local
+                              </Button>
+                            </div>
                           ) : (
                             <div className="space-y-2">
                               <Badge tone="warning">Conflicto</Badge>

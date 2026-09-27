@@ -15,9 +15,9 @@ def test_m21_enrollment_events_are_canonical():
 
 def test_m21_attendance_events_include_student_identity():
     src = _source("attendance/service.py")
-    assert 'event_type="student.attendance.recorded"' in src
-    assert 'event_type="student.attendance.updated"' in src
-    assert '"student_profile_id": str(enrollment.student_profile_id)' in src
+    assert 'event_type = "student.attendance.recorded"' in src
+    assert 'event_type = "student.attendance.updated"' in src
+    assert '"student_profile_id": str(assignment[4])' in src
 
 
 def test_m21_grade_events_include_student_identity():

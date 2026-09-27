@@ -138,7 +138,7 @@ choice subject to the frozen behavior and ASTRA security acceptance.
 - Stop boundary respected: no attendance correction, assessment/result entry or
   grade workflow. M28-5 remains NOT STARTED.
 
-## M28-5 — Attendance correction and offline evidence
+## M28-5 — Attendance correction and offline evidence — CLOSED / PASS
 
 - Goal: teacher records and corrects one session safely online/offline, with
   one logical canonical fact per successful change.
@@ -157,6 +157,13 @@ choice subject to the frozen behavior and ASTRA security acceptance.
 - Dependencies: M28-4.
 - Full backend suite: NO here; required at M28-7 after continuity consolidation.
 - Stop: attendance only; no offline grade entry or new sync queue technology.
+- Closure: attendance online/offline, authorization, conflict/idempotency, and
+  M18-to-M21 continuity gates passed on migration `0046_m28_attendance_perms`.
+  The M21 E2E fixture lookup was corrected to discover tenant fixtures under
+  the owner role; all mutations and projection work ran through runtime roles
+  in rollback-contained transactions. Focused M28/M21 integration regression:
+  8 passed, 0 skipped. Frontend focused tests, typecheck, production build,
+  changed-file Ruff/py_compile, Alembic head/current, and diff-check passed.
 
 ## M28-6 — Assessment result correction
 

@@ -22,7 +22,7 @@ from app.modules.teacher_console.schemas import (
     TeacherAssessmentCreate,
     TeacherAssessmentRead,
     TeacherAttendanceCode,
-    TeacherAttendanceMark,
+    TeacherAttendanceCommand,
     TeacherAttendanceRow,
     TeacherCategoryCreate,
     TeacherCategoryRead,
@@ -128,10 +128,10 @@ def alerts(principal: ClassPrincipalDep, session: SessionDep):
     response_model=list[TeacherAttendanceCode],
 )
 def attendance_codes(
-    _: AttendancePrincipalDep,
+    principal: AttendancePrincipalDep,
     session: SessionDep,
 ):
-    return list_attendance_codes(session)
+    return list_attendance_codes(session, principal)
 
 
 @router.get(
@@ -191,7 +191,7 @@ def session_attendance(
 )
 def session_attendance_mark(
     class_session_id: UUID,
-    payload: TeacherAttendanceMark,
+    payload: TeacherAttendanceCommand,
     principal: AttendancePrincipalDep,
     session: SessionDep,
 ):

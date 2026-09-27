@@ -129,7 +129,7 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px 10px
 <script>
 const tokenEl=document.getElementById('token');
 tokenEl.value=sessionStorage.getItem('education_os_teacher_token')||'';
-let state={summary:null,classes:[],alerts:[],codes:[],tasks:[],sessions:[],periods:[],categories:[],assessments:[]};
+let state={summary:null,classes:[],alerts:[],codes:[],tasks:[],sessions:[],attendanceRows:[],periods:[],categories:[],assessments:[]};
 
 function h(){return tokenEl.value.trim()?{'Authorization':'Bearer '+tokenEl.value.trim(),'Content-Type':'application/json'}:{'Content-Type':'application/json'}}
 async function api(path,opts={}){
@@ -201,7 +201,7 @@ async function createSession(){
 }
 async function loadAttendanceRows(){
  const sid=document.getElementById('sessionSelect').value;if(!sid)return;
- try{const rows=await api(`/sessions/${sid}/attendance`);renderAttendanceRows(rows)}catch(e){setStatus('Error: '+e.message)}
+ try{const rows=await api(`/sessions/${sid}/attendance`);state.attendanceRows=rows;renderAttendanceRows(rows)}catch(e){setStatus('Error: '+e.message)}
 }
 function renderAttendanceRows(rows){
  const codes=state.codes||[];
@@ -210,12 +210,14 @@ function renderAttendanceRows(rows){
  <select id="ac-${r.student_section_assignment_id}">${codes.map(c=>`<option value="${c.id}" ${c.id===r.attendance_code_id?'selected':''}>${esc(c.code)} · ${esc(c.label)}</option>`).join('')}</select>
  <input id="late-${r.student_section_assignment_id}" type="number" min="0" value="${r.minutes_late||0}">
  <input id="note-${r.student_section_assignment_id}" value="${esc(r.note||'')}" placeholder="Nota">
+ ${r.attendance_record_id?`<select id="reason-${r.student_section_assignment_id}" aria-label="Motivo de corrección"><option value="">Motivo de corrección…</option><option value="DATA_ENTRY_ERROR">Error de ingreso</option><option value="EVIDENCE_CORRECTION">Corrección de evidencia</option></select>`:''}
  <button onclick="saveAttendance('${r.student_section_assignment_id}')">Guardar</button></div>`).join(''):'<div class="empty">Sin estudiantes.</div>';
 }
 async function saveAttendance(aid){
  const sid=document.getElementById('sessionSelect').value;
- const body={student_section_assignment_id:aid,attendance_code_id:document.getElementById('ac-'+aid).value,minutes_late:Number(document.getElementById('late-'+aid).value||0),note:document.getElementById('note-'+aid).value||null};
- try{await api(`/sessions/${sid}/attendance`,{method:'PUT',body:JSON.stringify(body)});setStatus('Asistencia guardada.')}catch(e){setStatus('Error: '+e.message)}
+ const row=state.attendanceRows.find(x=>x.student_section_assignment_id===aid);if(!row)return;
+ const body={student_section_assignment_id:aid,attendance_code_id:document.getElementById('ac-'+aid).value,minutes_late:Number(document.getElementById('late-'+aid).value||0),note:document.getElementById('note-'+aid).value||null,expected_state:row.attendance_record_id?{attendance_record_id:row.attendance_record_id,attendance_code_id:row.attendance_code_id,minutes_late:row.minutes_late,note:row.note}:null,correction_reason:row.attendance_record_id?(document.getElementById('reason-'+aid)?.value||null):null};
+ try{await api(`/sessions/${sid}/attendance`,{method:'PUT',body:JSON.stringify(body)});setStatus('Asistencia guardada.');await loadAttendanceRows()}catch(e){setStatus('No se confirmó el cambio: '+e.message);await loadAttendanceRows()}
 }
 
 async function loadGradeWorkspace(){

@@ -1,4 +1,5 @@
 from datetime import date, time
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -12,6 +13,8 @@ class TenantRead(BaseModel):
 
 
 class AttendanceCodeCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     code: str = Field(min_length=1, max_length=24)
     label: str = Field(min_length=1, max_length=80)
     semantic: str = Field(pattern="^(PRESENT|ABSENT|LATE|EXCUSED|REMOTE|OTHER)$")
@@ -31,6 +34,8 @@ class AttendanceCodeRead(TenantRead):
 
 
 class ClassSessionCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     course_offering_id: UUID
     schedule_slot_id: UUID | None = None
     session_date: date
@@ -54,11 +59,31 @@ class ClassSessionRead(TenantRead):
     status: str
 
 
+class AttendanceExpectedState(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    attendance_record_id: UUID | None
+    attendance_code_id: UUID | None
+    minutes_late: int = Field(ge=0, le=1440)
+    note: str | None = Field(max_length=500)
+
+
 class AttendanceRecordUpsert(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     student_section_assignment_id: UUID
     attendance_code_id: UUID
     minutes_late: int = Field(default=0, ge=0, le=1440)
     note: str | None = Field(default=None, max_length=500)
+    expected_state: AttendanceExpectedState | None = None
+    correction_reason: Literal["DATA_ENTRY_ERROR", "EVIDENCE_CORRECTION"] | None = None
+
+
+class ClassSessionStatusChange(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    expected_status: Literal["OPEN"]
+    status: Literal["CLOSED", "CANCELLED"]
 
 
 class AttendanceRecordRead(TenantRead):
