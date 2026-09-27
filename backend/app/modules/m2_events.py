@@ -8,7 +8,9 @@ M2_EVENT_NAMES = frozenset(
         "curriculum.subject.added",
         "course.offering.created",
         "teaching.assignment.created",
+        "teaching.assignment.updated",
         "student.section.assigned",
+        "student.section.transferred",
         "schedule.slot.created",
     }
 )

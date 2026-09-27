@@ -35,4 +35,12 @@ describe("M28-3 academic structure workspace", () => {
     expect(html).toContain("Ofertas de curso");
     expect(html).not.toContain("Asignación docente");
   });
+
+  it("requires students.read before exposing roster records", () => {
+    const withoutStudentRead = renderPage(["academics.read"]);
+    expect(withoutStudentRead).toContain("Roster vigente por sección");
+    expect(withoutStudentRead).toContain("students.read");
+    const authorized = renderPage(["academics.read", "students.read"]);
+    expect(authorized).toContain("Sección");
+  });
 });

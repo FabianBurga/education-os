@@ -41,9 +41,57 @@ export interface EnrollmentOptions {
   campuses: Array<{ id: string; name: string }>;
 }
 
+export interface StudentPlacement {
+  id: string;
+  student_profile_id: string;
+  academic_period_id: string;
+  enrollment_id: string;
+  section_id: string;
+  status: "ACTIVE" | "TRANSFERRED" | "WITHDRAWN";
+  assigned_on: string;
+  ended_on: string | null;
+  section_code: string;
+  section_name: string;
+  is_current: boolean;
+}
+
+export interface PlacementOptions {
+  sections: Array<{ id: string; code: string; name: string }>;
+  current_placement_id: string | null;
+  current_section_id: string | null;
+}
+
+export interface PlacementCommandResult {
+  id: string;
+  academic_period_id: string;
+  enrollment_id: string;
+  section_id: string;
+  status: "ACTIVE" | "TRANSFERRED" | "WITHDRAWN";
+  assigned_on: string;
+  ended_on: string | null;
+}
+
 export function enrollmentCapabilities(permissions: string[]) {
   const granted = new Set(permissions);
   return { canRead: granted.has("enrollments.read"), canManage: granted.has("enrollments.manage") };
+}
+
+export function placementCapabilities(permissions: string[]) {
+  const granted = new Set(permissions);
+  return {
+    canRead: granted.has("academics.read") && granted.has("students.read") && granted.has("enrollments.read"),
+    canAssign: granted.has("academics.assign"),
+  };
+}
+
+export function placementErrorMessage(error: unknown): string {
+  if (error instanceof ApiError) {
+    if (error.status === 403) return "No tienes permiso efectivo para consultar o cambiar esta ubicación.";
+    if (error.status === 404) return "La matrícula o sección no está disponible en la institución activa.";
+    if (error.status === 409) return "La ubicación cambió o la evidencia existente impide el traslado. Actualiza el estado antes de continuar.";
+    if (error.status === 422) return "La fecha o selección no cumple las condiciones de ubicación.";
+  }
+  return "No fue posible completar la operación de ubicación. Inténtalo de nuevo.";
 }
 
 export function studentRecordCapabilities(permissions: string[]) {
@@ -107,6 +155,28 @@ export function transitionEnrollment(
   return apiFetch<EnrollmentRecord>(`/api/v1/enrollments/${encodeURIComponent(enrollmentId)}/status`, {
     method: "PATCH",
     body: JSON.stringify(input),
+  });
+}
+
+export function getStudentPlacements(studentId: string) {
+  return apiFetch<StudentPlacement[]>(`/api/v1/academics/students/${encodeURIComponent(studentId)}/placements`);
+}
+
+export function getPlacementOptions(enrollmentId: string) {
+  return apiFetch<PlacementOptions>(`/api/v1/academics/enrollments/${encodeURIComponent(enrollmentId)}/placement-options`);
+}
+
+export function assignStudentSection(input: { enrollment_id: string; section_id: string; assigned_on: string }) {
+  return apiFetch<PlacementCommandResult>("/api/v1/academics/student-section-assignments", {
+    method: "POST", body: JSON.stringify(input),
+  });
+}
+
+export function transferStudentSection(enrollmentId: string, input: {
+  expected_current_placement_id: string; section_id: string; effective_on: string;
+}) {
+  return apiFetch<PlacementCommandResult>(`/api/v1/academics/enrollments/${encodeURIComponent(enrollmentId)}/placements/transfer`, {
+    method: "POST", body: JSON.stringify(input),
   });
 }
 

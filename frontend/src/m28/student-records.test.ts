@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { ApiError } from "../lib/api";
-import { enrollmentCapabilities, studentRecordCapabilities, studentRecordErrorMessage } from "./student-records";
+import { enrollmentCapabilities, placementCapabilities, studentRecordCapabilities, studentRecordErrorMessage } from "./student-records";
 
 describe("M28-1 student record capabilities and safe errors", () => {
   it("uses only effective permission keys, never role names", () => {
@@ -35,5 +35,13 @@ describe("M28-2 enrollment capability boundary", () => {
     expect(enrollmentCapabilities(["students.read"])).toEqual({ canRead: false, canManage: false });
     expect(enrollmentCapabilities(["enrollments.read"])).toEqual({ canRead: true, canManage: false });
     expect(enrollmentCapabilities(["enrollments.read", "enrollments.manage"])).toEqual({ canRead: true, canManage: true });
+  });
+});
+
+describe("M28-4 placement capability boundary", () => {
+  it("requires read boundaries and never infers authority from role names", () => {
+    expect(placementCapabilities(["SYSTEM_ADMIN", "RECTOR"])).toEqual({ canRead: false, canAssign: false });
+    expect(placementCapabilities(["academics.read", "students.read", "enrollments.read"])).toEqual({ canRead: true, canAssign: false });
+    expect(placementCapabilities(["academics.assign"])).toEqual({ canRead: false, canAssign: true });
   });
 });

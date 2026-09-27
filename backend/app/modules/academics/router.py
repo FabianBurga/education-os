@@ -2,7 +2,7 @@ from datetime import date
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlmodel import Session
 
@@ -19,15 +19,20 @@ from app.modules.academics.schemas import (
     CurriculumSubjectRead,
     GradeLevelCreate,
     GradeLevelRead,
+    PlacementOptionsRead,
     ScheduleSlotCreate,
     ScheduleSlotRead,
     SectionCreate,
     SectionRead,
+    SectionRosterStudentRead,
+    StudentPlacementHistoryRead,
     StudentSectionAssignmentCreate,
     StudentSectionAssignmentRead,
+    StudentSectionAssignmentTransfer,
     SubjectCreate,
     SubjectRead,
     TeachingAssignmentCreate,
+    TeachingAssignmentEnd,
     TeachingAssignmentRead,
 )
 from app.modules.academics.service import (
@@ -41,6 +46,8 @@ from app.modules.academics.service import (
     create_student_section_assignment,
     create_subject,
     create_teaching_assignment,
+    end_teaching_assignment,
+    get_placement_options,
     list_academic_options,
     list_assignment_options,
     list_course_offerings,
@@ -49,10 +56,13 @@ from app.modules.academics.service import (
     list_grades,
     list_levels,
     list_schedule_slots,
+    list_section_roster,
     list_sections,
+    list_student_placements,
     list_student_section_assignments,
     list_subjects,
     list_teaching_assignments,
+    transfer_student_section_assignment,
 )
 
 router = APIRouter(prefix="/academics", tags=["academic-core"])
@@ -206,12 +216,36 @@ def teaching_assignments_list(principal: PrincipalDep, session: SessionDep):
     return list_teaching_assignments(session, principal)
 
 
+@router.patch("/teaching-assignments/{assignment_id}", response_model=TeachingAssignmentRead)
+def teaching_assignment_end(assignment_id: UUID, payload: TeachingAssignmentEnd,
+                            principal: PrincipalDep, session: SessionDep):
+    return end_teaching_assignment(session, principal, assignment_id, payload)
+
+
 @router.get(
     "/student-section-assignments",
     response_model=list[StudentSectionAssignmentRead],
 )
 def student_section_assignments_list(_: PrincipalDep, session: SessionDep):
     return list_student_section_assignments(session, _)
+
+
+@router.get("/students/{student_profile_id}/placements", response_model=list[StudentPlacementHistoryRead])
+def student_placements_list(student_profile_id: UUID, principal: PrincipalDep, session: SessionDep):
+    return list_student_placements(session, principal, student_profile_id)
+
+
+@router.get("/enrollments/{enrollment_id}/placement-options", response_model=PlacementOptionsRead)
+def student_placement_options(enrollment_id: UUID, principal: PrincipalDep, session: SessionDep):
+    return get_placement_options(session, principal, enrollment_id)
+
+
+@router.get("/sections/{section_id}/roster", response_model=list[SectionRosterStudentRead])
+def section_roster(section_id: UUID, principal: PrincipalDep, session: SessionDep,
+                   limit: int = 100, offset: int = 0):
+    if limit < 1 or limit > 250 or offset < 0:
+        raise HTTPException(status_code=422, detail="Invalid roster page bounds")
+    return list_section_roster(session, principal, section_id, limit, offset)
 
 
 @router.post(
@@ -225,6 +259,12 @@ def student_section_assignments_create(
     session: SessionDep,
 ):
     return create_student_section_assignment(session, principal, payload)
+
+
+@router.post("/enrollments/{enrollment_id}/placements/transfer", response_model=StudentSectionAssignmentRead)
+def student_placement_transfer(enrollment_id: UUID, payload: StudentSectionAssignmentTransfer,
+                               principal: PrincipalDep, session: SessionDep):
+    return transfer_student_section_assignment(session, principal, enrollment_id, payload)
 
 
 @router.get("/schedule-slots", response_model=list[ScheduleSlotRead])

@@ -151,10 +151,21 @@ class TeachingAssignmentRead(TenantRead):
     ends_on: date | None
 
 
+class TeachingAssignmentEnd(AcademicStructureCreate):
+    expected_ends_on: date | None
+    ends_on: date
+
+
 class StudentSectionAssignmentCreate(AcademicStructureCreate):
     enrollment_id: UUID
     section_id: UUID
     assigned_on: date
+
+
+class StudentSectionAssignmentTransfer(AcademicStructureCreate):
+    expected_current_placement_id: UUID
+    section_id: UUID
+    effective_on: date
 
 
 class StudentSectionAssignmentRead(TenantRead):
@@ -164,6 +175,36 @@ class StudentSectionAssignmentRead(TenantRead):
     status: str
     assigned_on: date
     ended_on: date | None
+
+
+class StudentPlacementHistoryRead(StudentSectionAssignmentRead):
+    section_code: str
+    section_name: str
+    student_profile_id: UUID
+    is_current: bool
+
+
+class SectionRosterStudentRead(BaseModel):
+    student_section_assignment_id: UUID
+    student_profile_id: UUID
+    student_code: str | None
+    student_name: str
+    enrollment_number: str | None
+    placement_status: str
+    assigned_on: date
+    ended_on: date | None
+
+
+class PlacementSectionOption(BaseModel):
+    id: UUID
+    code: str
+    name: str
+
+
+class PlacementOptionsRead(BaseModel):
+    sections: list[PlacementSectionOption]
+    current_placement_id: UUID | None
+    current_section_id: UUID | None
 
 
 class ScheduleSlotCreate(AcademicStructureCreate):

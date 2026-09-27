@@ -103,25 +103,40 @@ choice subject to the frozen behavior and ASTRA security acceptance.
   attendance, assessment/results or timetable optimization; these remain later
   slices (M28-4+).
 
-## M28-4 — Placement and teacher roster continuity
+## M28-4 — Placement and teacher roster continuity — CLOSED / PASS
 
-- Goal: place/transfer a student and assign/end a teacher assignment with a
-  correct current roster and preserved historical references.
-- Backend: atomic placement transfer locking enrollment; teacher-assignment
-  list/update/end; shared date/eligibility helpers scoped to existing M2/M10
-  domains. Preserve unique ACTIVE placement and unique course/staff pair.
-- Frontend: placement/assignment panels; teacher sees refreshed assigned roster.
-- Migration: NONE expected; conditional narrow history/concurrency support,
-  not a roster table. Do not loosen historical unique constraints.
-- Security: academics.assign distinct from role granting; cross-course teacher
-  and foreign section denied; transfer cannot change historical grades/attendance.
-- Tests: two competing transfers, exact dates, withdrawn student, ended teacher,
-  other course in same section, roster changes and history; M2/M10/M20/M21 scope
-  and M22 roster regressions plus focused UI/refetch.
-- Dependencies: M28-2, M28-3.
-- Full backend suite: NO, unless an actual shared security-boundary redesign
-  beyond this plan is approved; such a change gets its own integration gate.
-- Stop: no multi-tenure assignment redesign or cross-campus/institution transfer.
+- Goal delivered: initial placement, atomic same-campus/period section transfer,
+  retained placement intervals and derived institutional/teacher rosters using
+  the M2 authorities only.
+- Backend: enrollment row lock and expected-placement check arbitrate competing
+  transfers; exact replay does not duplicate event/audit; the existing unique
+  ACTIVE placement index remains authoritative. Date-valid rosters exclude
+  inactive enrollment/profile/section/period. Transfers that strand later
+  attendance or dated/undated grade evidence are rejected. Existing teacher
+  assignments can be ended through a locked expected-state command with audit
+  and `teaching.assignment.updated`; ended assignments lose roster access.
+- Frontend: student detail presents placement history and an authorized,
+  confirmed placement/section-transfer form; academic structure provides a
+  bounded section roster. Existing Teacher Console remains the assigned-course
+  roster UI. All mutations refetch server state.
+- Migration: NONE. Existing placement dates/status, tenant constraints, RLS/
+  FORCE RLS and partial unique active-placement index suffice. Revisions
+  0001–0045 are unchanged.
+- Security/evidence: effective academics.assign/read plus student/enrollment
+  read boundaries; principal institution predicates; teacher visibility depends
+  on an active date-valid assignment. PostgreSQL test verifies concurrent
+  A→B/A→C transfer (one 200, one 409), replay, current roster, teacher
+  authorization/revocation, unchanged enrollment state, foreign-object 404 and
+  transactional rollback on outbox failure.
+- Validation: 56 directed backend tests passed across M1/M2/M10/M18/M24/
+  M28-1/2; 14 focused frontend tests passed; frontend typecheck/build, changed
+  file Ruff, `py_compile`, Alembic and diff-check passed. Full backend was not
+  required because no shared authorization/RLS/outbox primitive or cross-domain
+  schema changed. The production build retains the pre-existing Vite
+  dynamic-import/chunk-size warning.
+- Details: [M28 placement and roster](M28_PLACEMENT_ROSTER.md).
+- Stop boundary respected: no attendance correction, assessment/result entry or
+  grade workflow. M28-5 remains NOT STARTED.
 
 ## M28-5 — Attendance correction and offline evidence
 

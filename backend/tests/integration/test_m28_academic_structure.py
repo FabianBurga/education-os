@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 from uuid import UUID, uuid4
 
 from sqlalchemy import text
@@ -28,6 +29,7 @@ def test_academic_structure_is_permission_scoped_integral_and_audited(monkeypatc
             "subjects": [], "sections": [], "curriculum_plans": [],
             "curriculum_subjects": [], "course_offerings": [], "teaching_assignments": [],
             "enrollments": [],
+            "student_section_assignments": [],
         }
         foreign: dict[str, str] = {}
         try:
@@ -195,6 +197,15 @@ def test_academic_structure_is_permission_scoped_integral_and_audited(monkeypatc
             assert section_response.status_code == 201, section_response.text
             section_id = section_response.json()["id"]
             generated["sections"].append(section_id)
+            target_sections = []
+            for suffix in ("B", "C"):
+                response = client.post("/api/v1/academics/sections", headers=headers, json={
+                    **section_body, "code": f"SC-{suffix}-{uuid4().hex[:6]}",
+                    "name": f"Synthetic transfer section {suffix}",
+                })
+                assert response.status_code == 201, response.text
+                target_sections.append(response.json()["id"])
+                generated["sections"].append(response.json()["id"])
             assert client.post("/api/v1/academics/sections", headers=headers,
                                json={**section_body, "organization_id": str(uuid4())}).status_code == 422
             assert client.post("/api/v1/academics/sections", headers=headers,
@@ -233,6 +244,8 @@ def test_academic_structure_is_permission_scoped_integral_and_audited(monkeypatc
             }).status_code == 404
 
             staff_id = str(actor["staff_id"])
+            assert client.get(f"/api/v1/teacher/classes/{offering_id}/roster",
+                              headers=pilot["teacher_headers"]).status_code == 403
             assignment_response = client.post("/api/v1/academics/teaching-assignments", headers=headers, json={
                 "course_offering_id": offering_id, "staff_profile_id": staff_id,
                 "starts_on": "2026-01-01", "ends_on": "2027-12-31",
@@ -240,6 +253,15 @@ def test_academic_structure_is_permission_scoped_integral_and_audited(monkeypatc
             assert assignment_response.status_code == 201, assignment_response.text
             assignment_id = assignment_response.json()["id"]
             generated["teaching_assignments"].append(assignment_id)
+            teacher_assignment = client.post("/api/v1/academics/teaching-assignments", headers=headers, json={
+                "course_offering_id": offering_id,
+                "staff_profile_id": str(pilot["actors"][3]["staff_id"]),
+                "starts_on": "2026-01-01",
+            })
+            assert teacher_assignment.status_code == 201, teacher_assignment.text
+            generated["teaching_assignments"].append(teacher_assignment.json()["id"])
+            assert client.get(f"/api/v1/teacher/classes/{offering_id}/roster",
+                              headers=pilot["teacher_headers"]).status_code == 200
             assert client.post("/api/v1/academics/teaching-assignments", headers=headers, json={
                 "course_offering_id": offering_id, "staff_profile_id": foreign["staff"],
             }).status_code == 404
@@ -247,6 +269,121 @@ def test_academic_structure_is_permission_scoped_integral_and_audited(monkeypatc
             assert client.post("/api/v1/academics/levels", headers=pilot["teacher_headers"], json={
                 "code": "TEACHER", "name": "No", "sort_order": 1,
             }).status_code == 403
+
+            placement_url = "/api/v1/academics/student-section-assignments"
+            initial_body = {"enrollment_id": enrollment_id, "section_id": section_id, "assigned_on": "2026-02-02"}
+            initial = client.post(placement_url, headers=headers, json=initial_body)
+            assert initial.status_code == 201, initial.text
+            placement_id = initial.json()["id"]
+            generated["student_section_assignments"].append(placement_id)
+            teacher_roster = client.get(f"/api/v1/teacher/classes/{offering_id}/roster",
+                                        headers=pilot["teacher_headers"])
+            assert teacher_roster.status_code == 200
+            assert [item["student_profile_id"] for item in teacher_roster.json()] == [str(pilot["student"])]
+            teacher_classes = client.get("/api/v1/teacher/classes", headers=pilot["teacher_headers"])
+            assert teacher_classes.status_code == 200
+            assert next(item for item in teacher_classes.json() if item["course_offering_id"] == offering_id)["student_count"] == 1
+            teacher_summary = client.get("/api/v1/teacher/summary", headers=pilot["teacher_headers"])
+            assert teacher_summary.status_code == 200 and teacher_summary.json()["unique_students"] == 1
+            teacher_assignment_id = teacher_assignment.json()["id"]
+            end_assignment_path = f"/api/v1/academics/teaching-assignments/{teacher_assignment_id}"
+            ended_assignment = client.patch(end_assignment_path, headers=headers, json={
+                "expected_ends_on": None, "ends_on": "2026-09-26",
+            })
+            assert ended_assignment.status_code == 200, ended_assignment.text
+            assert client.patch(end_assignment_path, headers=pilot["teacher_headers"], json={
+                "expected_ends_on": None, "ends_on": "2026-09-26",
+            }).status_code == 403
+            replay_end = client.patch(end_assignment_path, headers=headers, json={
+                "expected_ends_on": None, "ends_on": "2026-09-26",
+            })
+            assert replay_end.status_code == 200
+            assert client.patch(end_assignment_path, headers=headers, json={
+                "expected_ends_on": None, "ends_on": "2026-09-25",
+            }).status_code == 409
+            assert owner.exec(text("SELECT count(*) FROM outbox_events WHERE aggregate_id=:id"),
+                              params={"id": teacher_assignment_id}).one()[0] == 2
+            assert client.get(f"/api/v1/teacher/classes/{offering_id}/roster",
+                              headers=pilot["teacher_headers"]).status_code == 403
+            placement_options = client.get(
+                f"/api/v1/academics/enrollments/{enrollment_id}/placement-options", headers=headers,
+            )
+            assert placement_options.status_code == 200
+            assert {item["id"] for item in placement_options.json()["sections"]} == set(target_sections)
+            assert client.get(
+                f"/api/v1/academics/enrollments/{enrollment_id}/placement-options",
+                headers=pilot["bare_headers"],
+            ).status_code == 403
+            event_before_retry = owner.exec(text("SELECT count(*) FROM outbox_events WHERE aggregate_id=:id"),
+                                            params={"id": placement_id}).one()[0]
+            retry_initial = client.post(placement_url, headers=headers, json=initial_body)
+            assert retry_initial.status_code == 201 and retry_initial.json()["id"] == placement_id
+            assert owner.exec(text("SELECT count(*) FROM outbox_events WHERE aggregate_id=:id"),
+                              params={"id": placement_id}).one()[0] == event_before_retry
+            assert client.post(placement_url, headers=pilot["bare_headers"], json=initial_body).status_code == 403
+            assert client.post(placement_url, headers=pilot["teacher_headers"], json=initial_body).status_code == 403
+            assert client.post(placement_url, headers=headers, json={**initial_body, "status": "TRANSFERRED"}).status_code == 422
+            assert client.post(placement_url, headers=headers, json={**initial_body, "section_id": foreign["section"]}).status_code == 404
+
+            transfer_path = f"/api/v1/academics/enrollments/{enrollment_id}/placements/transfer"
+            transfer_date = "2026-04-01"
+            transfer_payloads = [
+                {"expected_current_placement_id": placement_id, "section_id": target, "effective_on": transfer_date}
+                for target in target_sections
+            ]
+            with ThreadPoolExecutor(max_workers=2) as pool:
+                transfer_responses = list(pool.map(
+                    lambda payload: client.post(transfer_path, headers=headers, json=payload),
+                    transfer_payloads,
+                ))
+            assert sorted(response.status_code for response in transfer_responses) == [200, 409], [
+                (response.status_code, response.text) for response in transfer_responses
+            ]
+            winner = next(response.json() for response in transfer_responses if response.status_code == 200)
+            generated["student_section_assignments"].append(winner["id"])
+            active_section = winner["section_id"]
+            previous_state = owner.exec(text("SELECT status, ended_on FROM student_section_assignments WHERE id=:id"),
+                                         params={"id": placement_id}).one()
+            assert (previous_state[0], previous_state[1].isoformat()) == ("TRANSFERRED", "2026-03-31")
+            replay = client.post(transfer_path, headers=headers, json={
+                "expected_current_placement_id": placement_id, "section_id": active_section,
+                "effective_on": transfer_date,
+            })
+            assert replay.status_code == 200 and replay.json()["id"] == winner["id"]
+            history = client.get(f"/api/v1/academics/students/{pilot['student']}/placements", headers=headers)
+            assert history.status_code == 200 and len(history.json()) == 2
+            assert client.get(f"/api/v1/academics/students/{pilot['students'][1][1]}/placements",
+                              headers=headers).status_code == 404
+            assert client.get(f"/api/v1/academics/sections/{active_section}/roster",
+                              headers=pilot["bare_headers"]).status_code == 403
+            assert client.get(f"/api/v1/academics/sections/{active_section}/roster?limit=251",
+                              headers=headers).status_code == 422
+            roster = client.get(f"/api/v1/academics/sections/{active_section}/roster", headers=headers)
+            assert roster.status_code == 200 and roster.json()[0]["student_profile_id"] == str(pilot["student"])
+            previous_roster = client.get(f"/api/v1/academics/sections/{section_id}/roster", headers=headers)
+            assert previous_roster.status_code == 200 and previous_roster.json() == []
+            assert owner.exec(text("SELECT count(*) FROM student_section_assignments WHERE enrollment_id=:id AND status='ACTIVE'"),
+                              params={"id": enrollment_id}).one()[0] == 1
+            assert owner.exec(text("SELECT count(*) FROM outbox_events WHERE aggregate_id=:id"),
+                              params={"id": winner["id"]}).one()[0] == 1
+            assert client.post(transfer_path, headers=headers, json={
+                "expected_current_placement_id": winner["id"],
+                "section_id": next(section for section in target_sections if section != active_section),
+                "effective_on": transfer_date,
+            }).status_code == 422
+            assert client.get(f"/api/v1/academics/sections/{foreign['section']}/roster", headers=headers).status_code == 404
+            enrollment_after_transfer = client.get(f"/api/v1/enrollments/{enrollment_id}", headers=headers).json()
+            assert enrollment_after_transfer["status"] == "ACTIVE"
+            with monkeypatch.context() as patcher:
+                patcher.setattr(academic_service, "enqueue_canonical_event", _fail_outbox)
+                failed_transfer = client.post(transfer_path, headers=headers, json={
+                    "expected_current_placement_id": winner["id"],
+                    "section_id": next(section for section in target_sections if section != active_section),
+                    "effective_on": "2026-08-01",
+                })
+            assert failed_transfer.status_code == 500
+            assert owner.exec(text("SELECT id FROM student_section_assignments WHERE enrollment_id=:id AND status='ACTIVE'"),
+                              params={"id": enrollment_id}).one()[0] == UUID(winner["id"])
 
             event_count = owner.exec(text("SELECT count(*) FROM outbox_events WHERE aggregate_id=ANY(CAST(:ids AS uuid[]))"),
                                      params={"ids": [period_id, level_id, grade_id, subject_id, section_id, plan_id, curriculum_subject_id, offering_id, assignment_id]}).one()[0]
@@ -288,6 +425,11 @@ def test_academic_structure_is_permission_scoped_integral_and_audited(monkeypatc
                 owner.exec(text("DELETE FROM outbox_events WHERE aggregate_id=ANY(CAST(:ids AS uuid[]))"), params=id_params)
             if generated["enrollments"]:
                 enrollment_ids = generated["enrollments"]
+                placement_ids = generated["student_section_assignments"]
+                if placement_ids:
+                    owner.exec(text("DELETE FROM audit_logs WHERE entity_id=ANY(CAST(:ids AS uuid[]))"), params={"ids": placement_ids})
+                    owner.exec(text("DELETE FROM outbox_events WHERE aggregate_id=ANY(CAST(:ids AS uuid[]))"), params={"ids": placement_ids})
+                    owner.exec(text("DELETE FROM student_section_assignments WHERE id=ANY(CAST(:ids AS uuid[]))"), params={"ids": placement_ids})
                 owner.exec(text("DELETE FROM audit_logs WHERE entity_type='Enrollment' AND entity_id=ANY(CAST(:ids AS uuid[]))"), params={"ids": enrollment_ids})
                 owner.exec(text("DELETE FROM outbox_events WHERE aggregate_type='enrollment' AND aggregate_id=ANY(CAST(:ids AS uuid[]))"), params={"ids": enrollment_ids})
                 owner.exec(text("DELETE FROM enrollments WHERE id=ANY(CAST(:ids AS uuid[]))"), params={"ids": enrollment_ids})

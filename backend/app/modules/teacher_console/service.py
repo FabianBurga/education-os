@@ -83,15 +83,21 @@ def _offering_scope(
             JOIN teaching_assignments ta
               ON ta.course_offering_id = co.id
              AND ta.staff_profile_id = CAST(:staff_profile_id AS uuid)
+             AND ta.organization_id = CAST(:organization_id AS uuid)
+             AND ta.institution_id = CAST(:institution_id AS uuid)
             WHERE co.id = CAST(:course_offering_id AS uuid)
+              AND co.organization_id = CAST(:organization_id AS uuid)
+              AND co.institution_id = CAST(:institution_id AS uuid)
               AND co.status = 'ACTIVE'
               AND (ta.starts_on IS NULL OR ta.starts_on <= CURRENT_DATE)
               AND (ta.ends_on IS NULL OR ta.ends_on >= CURRENT_DATE)
             LIMIT 1
             """
         ).bindparams(
-            staff_profile_id=str(principal.staff_profile_id),
-            course_offering_id=str(course_offering_id),
+                staff_profile_id=str(principal.staff_profile_id),
+                course_offering_id=str(course_offering_id),
+                organization_id=str(principal.organization_id),
+                institution_id=str(principal.institution_id),
         )
     ).first()
     if row is None:
@@ -138,9 +144,10 @@ def teacher_summary(
         text(
             """
             WITH scoped AS (
-                SELECT DISTINCT co.id, co.section_id
+                SELECT DISTINCT co.id, co.section_id, co.academic_period_id
                 FROM teaching_assignments ta
                 JOIN course_offerings co ON co.id = ta.course_offering_id
+                JOIN academic_periods ap ON ap.id=co.academic_period_id AND ap.status='ACTIVE'
                 WHERE ta.staff_profile_id = CAST(:staff_profile_id AS uuid)
                   AND co.status = 'ACTIVE'
                   AND (ta.starts_on IS NULL OR ta.starts_on <= CURRENT_DATE)
@@ -151,8 +158,19 @@ def teacher_summary(
                 FROM scoped s
                 JOIN student_section_assignments ssa
                   ON ssa.section_id = s.section_id
-                 AND ssa.status = 'ACTIVE'
+                 AND ssa.academic_period_id = s.academic_period_id
+                 AND ssa.status IN ('ACTIVE', 'TRANSFERRED')
+                 AND ssa.assigned_on <= CURRENT_DATE
+                 AND (ssa.ended_on IS NULL OR ssa.ended_on >= CURRENT_DATE)
                 JOIN enrollments e ON e.id = ssa.enrollment_id
+                JOIN student_profiles sp ON sp.id = e.student_profile_id
+                  AND sp.status = 'ACTIVE'
+                JOIN sections sec ON sec.id = ssa.section_id
+                  AND sec.academic_period_id = ssa.academic_period_id
+                  AND sec.campus_id = e.campus_id AND sec.status = 'ACTIVE'
+                JOIN academic_periods ap ON ap.id = ssa.academic_period_id
+                  AND ap.status = 'ACTIVE'
+                WHERE e.status = 'ACTIVE'
             )
             SELECT
                 (SELECT COUNT(*) FROM scoped),
@@ -237,7 +255,12 @@ def list_teacher_classes(
                 sub.name,
                 ta.assignment_role,
                 COUNT(DISTINCT ssa.id) FILTER (
-                    WHERE ssa.status = 'ACTIVE'
+                    WHERE ssa.status IN ('ACTIVE', 'TRANSFERRED')
+                      AND ssa.assigned_on <= CURRENT_DATE
+                      AND (ssa.ended_on IS NULL OR ssa.ended_on >= CURRENT_DATE)
+                      AND roster_enrollment.id IS NOT NULL
+                      AND roster_student.id IS NOT NULL
+                      AND roster_enrollment.campus_id = sec.campus_id
                 )
             FROM teaching_assignments ta
             JOIN course_offerings co ON co.id = ta.course_offering_id
@@ -247,8 +270,17 @@ def list_teacher_classes(
             JOIN subjects sub ON sub.id = co.subject_id
             LEFT JOIN student_section_assignments ssa
               ON ssa.section_id = co.section_id
+             AND ssa.academic_period_id = co.academic_period_id
+            LEFT JOIN enrollments roster_enrollment
+              ON roster_enrollment.id = ssa.enrollment_id
+             AND roster_enrollment.status = 'ACTIVE'
+            LEFT JOIN student_profiles roster_student
+              ON roster_student.id = roster_enrollment.student_profile_id
+             AND roster_student.status = 'ACTIVE'
             WHERE ta.staff_profile_id = CAST(:staff_profile_id AS uuid)
               AND co.status = 'ACTIVE'
+              AND ap.status = 'ACTIVE'
+              AND sec.status = 'ACTIVE'
               AND (ta.starts_on IS NULL OR ta.starts_on <= CURRENT_DATE)
               AND (ta.ends_on IS NULL OR ta.ends_on >= CURRENT_DATE)
             GROUP BY
@@ -308,13 +340,32 @@ def list_roster(
             JOIN enrollments e ON e.id = ssa.enrollment_id
             JOIN student_profiles sp ON sp.id = e.student_profile_id
             JOIN persons p ON p.id = sp.person_id
+            JOIN sections sec ON sec.id = ssa.section_id
+              AND sec.academic_period_id = ssa.academic_period_id
+            JOIN academic_periods ap ON ap.id = ssa.academic_period_id
             WHERE ssa.section_id = CAST(:section_id AS uuid)
-              AND ssa.status = 'ACTIVE'
+              AND ssa.organization_id = CAST(:organization_id AS uuid)
+              AND ssa.institution_id = CAST(:institution_id AS uuid)
+              AND ssa.status IN ('ACTIVE', 'TRANSFERRED')
+              AND ssa.assigned_on <= CURRENT_DATE
+              AND (ssa.ended_on IS NULL OR ssa.ended_on >= CURRENT_DATE)
+              AND ssa.academic_period_id = sec.academic_period_id
               AND e.status = 'ACTIVE'
               AND sp.status = 'ACTIVE'
+              AND e.campus_id = sec.campus_id
+              AND e.organization_id = CAST(:organization_id AS uuid)
+              AND e.institution_id = CAST(:institution_id AS uuid)
+              AND sp.organization_id = CAST(:organization_id AS uuid)
+              AND sp.institution_id = CAST(:institution_id AS uuid)
+              AND sec.status = 'ACTIVE'
+              AND ap.status = 'ACTIVE'
             ORDER BY p.family_names, p.given_names
             """
-        ).bindparams(section_id=str(scope[1]))
+        ).bindparams(
+            section_id=str(scope[1]),
+            organization_id=str(principal.organization_id),
+            institution_id=str(principal.institution_id),
+        )
     ).all()
     return [
         TeacherRosterStudent(

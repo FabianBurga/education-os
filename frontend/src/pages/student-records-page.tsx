@@ -14,6 +14,14 @@ import {
   studentRecordCapabilities,
   studentRecordErrorMessage,
   transitionEnrollment,
+  placementCapabilities,
+  placementErrorMessage,
+  getStudentPlacements,
+  getPlacementOptions,
+  assignStudentSection,
+  transferStudentSection,
+  type PlacementOptions,
+  type PlacementCommandResult,
   updateStudentRecord,
   type StudentRecord,
 } from "../m28/student-records";
@@ -96,10 +104,74 @@ export function StudentRecordsPage() {
           {enrollmentAccess.canRead
             ? <EnrollmentPanel studentId={detail.data.id} canManage={enrollmentAccess.canManage} />
             : <p className="mt-6 border-t pt-4 text-xs text-slate-600">La lectura de matrículas e historial requiere enrollments.read.</p>}
+          <PlacementPanel studentId={detail.data.id} permissions={bootstrap.permissions} />
         </> : null}
       </section>
     </div>
   </main>;
+}
+
+function PlacementPanel({ studentId, permissions }: { studentId: string; permissions: string[] }) {
+  const client = useQueryClient();
+  const { canRead, canAssign } = placementCapabilities(permissions);
+  const [enrollmentId, setEnrollmentId] = useState("");
+  const [sectionId, setSectionId] = useState("");
+  const [effectiveOn, setEffectiveOn] = useState("");
+  const [confirmed, setConfirmed] = useState(false);
+  const enrollments = useQuery({ queryKey: ["m28-enrollments", studentId], queryFn: () => getStudentEnrollments(studentId), enabled: canRead, retry: false });
+  const placements = useQuery({ queryKey: ["m28-student-placements", studentId], queryFn: () => getStudentPlacements(studentId), enabled: canRead, retry: false });
+  const activeEnrollments = (enrollments.data ?? []).filter((item) => item.status === "ACTIVE");
+  useEffect(() => {
+    if (!enrollmentId && activeEnrollments[0]) setEnrollmentId(activeEnrollments[0].id);
+  }, [activeEnrollments, enrollmentId]);
+  const options = useQuery({
+    queryKey: ["m28-placement-options", enrollmentId],
+    queryFn: () => getPlacementOptions(enrollmentId),
+    enabled: canAssign && enrollmentId !== "",
+    retry: false,
+  });
+  useEffect(() => {
+    if (options.data && !options.data.sections.some((item) => item.id === sectionId)) {
+      setSectionId(options.data.sections[0]?.id ?? "");
+    }
+  }, [options.data, sectionId]);
+  const command = useMutation<PlacementCommandResult, unknown, PlacementOptions>({
+    mutationFn: (current) => current.current_placement_id
+      ? transferStudentSection(enrollmentId, {
+        expected_current_placement_id: current.current_placement_id,
+        section_id: sectionId,
+        effective_on: effectiveOn,
+      })
+      : assignStudentSection({ enrollment_id: enrollmentId, section_id: sectionId, assigned_on: effectiveOn }),
+    onSuccess: async () => {
+      setConfirmed(false);
+      await client.invalidateQueries({ queryKey: ["m28-student-placements", studentId] });
+      await client.invalidateQueries({ queryKey: ["m28-placement-options", enrollmentId] });
+      await client.invalidateQueries({ queryKey: ["m28-section-roster"] });
+    },
+    onError: async (error) => {
+      if (error instanceof ApiError && error.status === 409) {
+        await client.invalidateQueries({ queryKey: ["m28-student-placements", studentId] });
+        await client.invalidateQueries({ queryKey: ["m28-placement-options", enrollmentId] });
+      }
+    },
+  });
+  if (!canRead) return <p className="mt-6 border-t pt-4 text-xs text-slate-600">El historial de ubicación requiere academics.read, students.read y enrollments.read.</p>;
+  return <section className="mt-6 border-t pt-4" aria-label="Ubicación académica">
+    <h3 className="text-base font-bold text-slate-900">Ubicación y cambios de sección</h3>
+    {placements.isPending ? <p role="status" className="mt-2 text-sm text-slate-600">Cargando historial de ubicación…</p> : null}
+    {placements.isError ? <p role="alert" className="mt-2 text-sm text-rose-800">{placementErrorMessage(placements.error)}</p> : null}
+    {placements.data?.length ? <ol className="mt-2 space-y-1 text-sm">{placements.data.map((item) => <li key={item.id}>{item.section_name} ({item.section_code}) · {item.is_current ? "Vigente" : item.status} · {item.assigned_on}{item.ended_on ? ` – ${item.ended_on}` : ""}</li>)}</ol> : null}
+    {canAssign ? <div className="mt-4 grid gap-2 sm:grid-cols-2">
+      <label className="grid gap-1 text-sm font-medium">Matrícula activa<select aria-label="Matrícula activa para ubicación" value={enrollmentId} onChange={(event) => { setEnrollmentId(event.target.value); setConfirmed(false); }} className="rounded-lg border px-3 py-2"><option value="">Selecciona…</option>{activeEnrollments.map((item) => <option key={item.id} value={item.id}>{item.academic_period_name} · {item.status}</option>)}</select></label>
+      <label className="grid gap-1 text-sm font-medium">Sección destino<select aria-label="Sección destino" value={sectionId} onChange={(event) => { setSectionId(event.target.value); setConfirmed(false); }} disabled={!options.data?.sections.length} className="rounded-lg border px-3 py-2"><option value="">Selecciona…</option>{(options.data?.sections ?? []).map((item) => <option key={item.id} value={item.id}>{item.name} ({item.code})</option>)}</select></label>
+      <label className="grid gap-1 text-sm font-medium">Fecha efectiva<input aria-label="Fecha efectiva de ubicación" type="date" value={effectiveOn} onChange={(event) => { setEffectiveOn(event.target.value); setConfirmed(false); }} className="rounded-lg border px-3 py-2" /></label>
+      {options.data?.current_placement_id ? <label className="flex items-start gap-2 text-sm sm:col-span-2"><input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} /><span>Confirmo el cambio de sección desde la fecha indicada. No modifica la matrícula.</span></label> : null}
+      <button type="button" disabled={command.isPending || !enrollmentId || !sectionId || !effectiveOn || (Boolean(options.data?.current_placement_id) && !confirmed)} onClick={() => options.data && command.mutate(options.data)} className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50">{command.isPending ? "Guardando…" : options.data?.current_placement_id ? "Transferir de sección" : "Asignar sección"}</button>
+      {options.isPending ? <p role="status" className="text-sm text-slate-600">Consultando opciones permitidas…</p> : null}
+      {options.isError || command.error ? <p role="alert" className="text-sm text-rose-800">{placementErrorMessage(options.error ?? command.error)}</p> : null}
+    </div> : null}
+  </section>;
 }
 
 function EnrollmentPanel({ studentId, canManage }: { studentId: string; canManage: boolean }) {

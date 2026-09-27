@@ -27,7 +27,6 @@ def test_teacher_only_actor_is_blocked_from_broad_legacy_staff_surfaces() -> Non
 
     for path in (
         "app/api/v1/m1_router.py",
-        "app/api/v1/m2_router.py",
         "app/api/v1/m3_router.py",
         "app/api/v1/m5_router.py",
         "app/modules/family_portal/admin_router.py",
@@ -35,3 +34,8 @@ def test_teacher_only_actor_is_blocked_from_broad_legacy_staff_surfaces() -> Non
     ):
         source = (ROOT / path).read_text(encoding="utf-8")
         assert "require_privileged_staff_access" in source
+
+    m2_router = (ROOT / "app/api/v1/m2_router.py").read_text(encoding="utf-8")
+    academic_service = (ROOT / "app/modules/academics/service.py").read_text(encoding="utf-8")
+    assert "academics_router" in m2_router
+    assert 'require_academic_permission(session, principal, "academics.assign")' in academic_service

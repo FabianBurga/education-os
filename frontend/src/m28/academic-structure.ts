@@ -17,7 +17,7 @@ export interface AcademicEntity {
   staff_profile_id?: string;
   curriculum_subject_id?: string | null;
   starts_on?: string;
-  ends_on?: string;
+  ends_on?: string | null;
   capacity?: number;
   area?: string | null;
   sort_order?: number;
@@ -26,6 +26,17 @@ export interface AcademicEntity {
 export interface AcademicOptions {
   periods: Array<{ id: string; code: string; name: string; starts_on: string; ends_on: string; status: string }>;
   campuses: Array<{ id: string; name: string }>;
+}
+
+export interface SectionRosterStudent {
+  student_section_assignment_id: string;
+  student_profile_id: string;
+  student_code: string | null;
+  student_name: string;
+  enrollment_number: string | null;
+  placement_status: string;
+  assigned_on: string;
+  ended_on: string | null;
 }
 
 export function academicCapabilities(permissions: string[]) {
@@ -60,4 +71,15 @@ export function transitionPeriod(id: string, expected_status: string, status: "A
   return apiFetch<AcademicEntity>(`/api/v1/academic-periods/${encodeURIComponent(id)}/status`, {
     method: "PATCH", body: JSON.stringify({ expected_status, status }),
   });
+}
+
+export function endTeachingAssignment(id: string, expected_ends_on: string | null, ends_on: string) {
+  return apiFetch<AcademicEntity>(`/api/v1/academics/teaching-assignments/${encodeURIComponent(id)}`, {
+    method: "PATCH", body: JSON.stringify({ expected_ends_on, ends_on }),
+  });
+}
+
+export function getSectionRoster(sectionId: string, offset = 0) {
+  const query = new URLSearchParams({ limit: "100", offset: String(offset) });
+  return apiFetch<SectionRosterStudent[]>(`/api/v1/academics/sections/${encodeURIComponent(sectionId)}/roster?${query}`);
 }

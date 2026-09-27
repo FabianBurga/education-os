@@ -48,5 +48,6 @@ def test_section_capacity_must_be_positive() -> None:
 
 
 def test_m2_event_names_are_unique_and_namespaced() -> None:
-    assert len(M2_EVENT_NAMES) == 10
+    assert len(M2_EVENT_NAMES) == 12
     assert all("." in event for event in M2_EVENT_NAMES)
+    assert {"student.section.transferred", "teaching.assignment.updated"} <= M2_EVENT_NAMES
