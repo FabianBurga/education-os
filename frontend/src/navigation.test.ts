@@ -75,6 +75,11 @@ describe("M15 role-aware navigation", () => {
     expect(modulesForContext(context(["integrations.run"]))).toEqual([]);
   });
 
+  it("shows institutional student records only with students.read", () => {
+    expect(modulesForContext(context(["students.read"])).map((item) => item.id)).toEqual(["student-records"]);
+    expect(modulesForContext(context(["admin.console.access"])).map((item) => item.id)).not.toContain("student-records");
+  });
+
   it("resolves stable module ids used by the router", () => {
     expect(findModule("guardian")?.permission).toBe(
       "guardian.console.access",

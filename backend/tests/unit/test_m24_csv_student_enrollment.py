@@ -91,5 +91,8 @@ def test_m24_csv_routes_are_explicit_and_apply_uses_canonical_services_only():
     assert "/runs/{run_id}/items" in router
     assert "create_student_profile" in service
     assert "create_enrollment_record" in service
+    assert '"students.manage"' in service
+    assert '"enrollments.manage"' in service
+    assert 'source="M24_IMPORT"' in service
     assert "enqueue_canonical_event" not in service
     assert "begin_nested" in service

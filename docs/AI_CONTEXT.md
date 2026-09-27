@@ -9,14 +9,18 @@ Authoritative M25 release tag: `m25-governed-provider-explainer-v0.25.3`.
 
 Current working branch: `m28-operational-adoption-core`.
 
-Current database revision: `0042_m27_true_recurrence`.
+Current database revision: `0043_m28_student_record_perms`.
 
 M27 - Institutional Decision & Accountability OS is CLOSED / PASS and published.
-M28 - Operational Adoption Core is in M28-0 planning/bootstrap only. Read
-[M28 scope](m28/M28_SCOPE.md), inventory, domain/security/event contracts and
-implementation plan before handing M28-1 to Luna. M28 product implementation
-has not started. M27 value evidence remains PASS_WITH_HUMAN_LIMITATIONS;
-controlled human pilot ready YES, field validated NO, production certified NO.
+M28-0 scope freeze and M28-1 Secure Student Record are CLOSED / PASS locally.
+M28-1 added effective `students.read` / `students.manage` gates, scoped
+minimized student APIs, optimistic updates, atomic audit/M18 outbox, and the
+existing React student-record workspace. Migration head is
+`0043_m28_student_record_perms`. Read [M28 scope](m28/M28_SCOPE.md),
+implementation plan, and [M28-1 evidence](m28/M28_STUDENT_RECORD.md) before
+starting M28-2. Enrollment lifecycle remains NOT STARTED. M27 value evidence
+remains PASS_WITH_HUMAN_LIMITATIONS; controlled human pilot ready YES, field
+validated NO, production certified NO.
 
 M26-1 is CLOSED and M26-2 governed Mentor runtime is CLOSED / PASS. M26-2
 delivers the L0 `mentor_institution_briefing` v1 runtime with typed

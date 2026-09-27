@@ -15,6 +15,7 @@ from app.modules.audit.service import record_audit
 from app.modules.enrollment.models import AcademicPeriod
 from app.modules.enrollment.service import create_enrollment_record
 from app.modules.integrations.access import (
+    require_integration_permission,
     require_integrations_audit_read,
     require_integrations_manage,
     require_integrations_run,
@@ -410,6 +411,8 @@ def list_run_events(session: Session, principal: CurrentPrincipal, run_id: UUID)
 
 def apply_csv_student_enrollment(session: Session, principal: CurrentPrincipal, run_id: UUID) -> IntegrationRunRead:
     require_integrations_run(session, principal)
+    require_integration_permission(session, principal, "students.manage")
+    require_integration_permission(session, principal, "enrollments.manage")
     run = session.get(IntegrationRun, run_id)
     if run is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Integration run not found")
@@ -435,8 +438,12 @@ def apply_csv_student_enrollment(session: Session, principal: CurrentPrincipal, 
                     given_names=detail["given_names"], family_names=detail["family_names"],
                 ))
                 session.flush()
-                student = create_student_profile(
-                    session, principal, person_id=person.id, student_code=detail.get("student_code"),
+                student, _created = create_student_profile(
+                    session,
+                    principal,
+                    person_id=person.id,
+                    student_code=detail.get("student_code"),
+                    source="M24_IMPORT",
                 )
                 session.flush()
                 enrollment = create_enrollment_record(

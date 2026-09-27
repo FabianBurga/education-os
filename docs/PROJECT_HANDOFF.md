@@ -2,11 +2,13 @@
 
 ## Current handoff point
 
-M28-0 planning/bootstrap now uses local branch `m28-operational-adoption-core`,
-created from published tag `m27-decision-accountability-os-v0.27.0` at
-`8af4557ee77d04adb2cb20d5994684268aacd194`. M28 runtime implementation is
-NOT STARTED. Review [M28 scope and boundaries](m28/M28_SCOPE.md) and
-[slice handoff](m28/M28_IMPLEMENTATION_PLAN.md) before Luna implements M28-1.
+M28-1 Secure Student Record is CLOSED / PASS locally on
+`m28-operational-adoption-core`, descended from published tag
+`m27-decision-accountability-os-v0.27.0` at
+`8af4557ee77d04adb2cb20d5994684268aacd194`. Current Alembic head/current is
+`0043_m28_student_record_perms`. Review [M28-1 evidence](m28/M28_STUDENT_RECORD.md)
+and the [slice plan](m28/M28_IMPLEMENTATION_PLAN.md) before Luna implements
+M28-2 Enrollment Lifecycle. No push/tag/release is authorized.
 The M27 implementation/pilot evidence below remains historical evidence;
 its 692a8c2 implementation SHA is not the published closeout/tag SHA.
 
@@ -139,8 +141,8 @@ human observation. Do not claim field outcomes or production certification.
 
 ## Next step
 
-M28 - Operational Adoption Core is in M28-0 planning/bootstrap. Implementation
-requires the separate reviewed slice handoff. Preserve
+M28-1 student-record operations are closed locally. M28-2 Enrollment Lifecycle
+is the next planned slice and requires its separate reviewed handoff. Preserve
 M26's L0 read/explain scope, M22 boundary, human-control language, and
 no-live-provider posture until a later approved slice changes them.
 

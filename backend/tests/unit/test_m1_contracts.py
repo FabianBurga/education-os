@@ -36,5 +36,6 @@ def test_period_rejects_reversed_dates() -> None:
 
 
 def test_m1_event_names_are_unique_and_namespaced() -> None:
-    assert len(M1_EVENT_NAMES) == 8
+    assert len(M1_EVENT_NAMES) == 9
+    assert "student.profile.updated" in M1_EVENT_NAMES
     assert all("." in name for name in M1_EVENT_NAMES)

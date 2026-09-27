@@ -2,15 +2,17 @@
   "project": "Education OS",
   "authoritative_committed_source": "8af4557ee77d04adb2cb20d5994684268aacd194",
   "source_base_commit": "8af4557ee77d04adb2cb20d5994684268aacd194",
-  "database_revision": "0042_m27_true_recurrence",
+  "database_revision": "0043_m28_student_record_perms",
   "active_milestone": "M28",
-  "active_slice": "M28-0",
+  "active_slice": "M28-1",
   "previous_slice": "M27-CLOSED",
   "branch": "m28-operational-adoption-core",
   "previous_milestone": "M27",
-  "milestone_status": "M28_PLANNING_BOOTSTRAP",
-  "m28_0_status": "SCOPE_FROZEN_PENDING_REVIEW",
-  "m28_implementation_status": "NOT_STARTED",
+  "milestone_status": "M28_IN_PROGRESS",
+  "m28_0_status": "CLOSED_PASS",
+  "m28_1_status": "CLOSED_PASS",
+  "m28_2_status": "NOT_STARTED",
+  "m28_implementation_status": "M28_1_CLOSED",
   "m28_scope_document": "docs/m28/M28_SCOPE.md",
   "m27_release_tag": "m27-decision-accountability-os-v0.27.0",
   "m27_release_commit": "8af4557ee77d04adb2cb20d5994684268aacd194",
@@ -25,7 +27,7 @@
   "m25_release_tag": "m25-governed-provider-explainer-v0.25.3",
   "remote_backup": "M27_PUBLISHED_M28_LOCAL_ONLY",
   "validated_uncommitted_slices": [],
-  "next_slice": "M28-1 Permission-safe student record (after M28-0 review)",
+  "next_slice": "M28-2 Enrollment lifecycle",
   "closed_milestones": ["M20", "M21", "M22", "M23", "M24", "M25-1", "M25-2", "M25-3A", "M25-3B", "M25-3C", "M25-3D", "M25", "M26-1", "M26-2", "M26-3", "M26-4", "M26", "M27-1", "M27-2", "M27-3", "M27-4", "M27-5", "M27-6", "M27-7", "M27-8", "M27"],
   "provider_network_calls_enabled": false,
   "provider_validation": "FAKE_PROVIDER_ONLY",
@@ -36,7 +38,7 @@
     "domain_mutation": false
   },
   "live_provider_status": "NOT_EXECUTED_HOLD_EXTERNAL",
-  "test_summary": "Published M27 evidence: 743 passed, 1 skipped, 0 failed, exit_code 0; not rerun for M28-0",
+  "test_summary": "M28-1: 749 backend passed, 0 failed, 1 opt-in M21 E2E skipped; frontend 71 passed; typecheck/build/Ruff changed files/py_compile/Alembic PASS",
   "m26_2_validation": {
     "targeted": 75,
     "m26_integration": 61,
@@ -60,5 +62,6 @@
   "m27_6_status": "CLOSED_PASS",
   "m27_7_status": "CLOSED_PASS",
   "m27_8_status": "CLOSED_PASS_WITH_HUMAN_LIMITATIONS",
-  "next_step": "ASTRA review of M28-0 contracts; separate Luna handoff for M28-1"
+  "m28_1_evidence": "docs/m28/M28_STUDENT_RECORD.md",
+  "next_step": "ASTRA review of M28-1 closeout; separate Luna handoff for M28-2"
 }

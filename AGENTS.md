@@ -15,17 +15,17 @@ Branch:
 m28-operational-adoption-core
 
 Current Alembic revision:
-0042_m27_true_recurrence
+0043_m28_student_record_perms
 
 Current phase:
-M28-0 — Canonical Bootstrap & Scope Freeze (planning only)
+M28-1 — Secure Student Record (CLOSED / PASS)
 
 M28 canonical base:
 Published annotated tag m27-decision-accountability-os-v0.27.0
 8af4557ee77d04adb2cb20d5994684268aacd194
 M28 planning contracts: docs/m28/M28_SCOPE.md and linked boundary/plan files.
-M28 implementation: NOT STARTED; stop after M28-0 for ASTRA review.
-No push/tag/release is authorized by the M28-0 task.
+M28-0: CLOSED / PASS. M28-1: CLOSED / PASS. M28-2: NOT STARTED.
+No push/tag/release is authorized by the M28-1 task.
 
 M27 canonical closure:
 M27 — Institutional Decision & Accountability OS: CLOSED / PASS
@@ -48,7 +48,7 @@ M26-2:
 CLOSED / PASS
 
 Next task:
-Review M28-0 scope freeze before handing M28-1 to Luna.
+Review M28-1 evidence before handing M28-2 to Luna.
 
 Current validated M26-1 configuration evidence:
 - M26 config: 6 passed.
@@ -269,8 +269,10 @@ M27 — Institutional Decision & Accountability OS is CLOSED / PASS and publishe
 `8af4557ee77d04adb2cb20d5994684268aacd194`, with migration
 `0042_m27_true_recurrence`. Technical and synthetic operational validation
 passed; value evidence is `PASS_WITH_HUMAN_LIMITATIONS`. The next milestone is
-M28 - Operational Adoption Core. M28-0 planning/bootstrap is active; runtime
-implementation remains NOT STARTED. Older planning sections below are historical.
+M28 - Operational Adoption Core. M28-0 is CLOSED / PASS and M28-1 Secure
+Student Record is CLOSED / PASS locally. Current migration is
+`0043_m28_student_record_perms`; M28-2 is NOT STARTED. Older planning sections
+below are historical.
 
 ## Current task (historical planning notes)
 The immediate next boundary is M27-6 — Accountability Metrics & Outcome Intelligence. M27-5 builds on the

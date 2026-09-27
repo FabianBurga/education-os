@@ -19,6 +19,7 @@ import { IntegrationWorkspacePage } from "./pages/integration-workspace-page";
 import { MentorBriefingPage, MentorBriefingPanel } from "./pages/mentor-briefing-page";
 import { canUseMentor } from "./m26/mentor";
 import { AccountabilityCasePage, AccountabilityPage } from "./pages/accountability-page";
+import { StudentRecordsPage } from "./pages/student-records-page";
 import type { UiBootstrap } from "./types/bootstrap";
 
 function RootLayout(){const queryClient=useQueryClient();const[authRevision,setAuthRevision]=useState(0);const token=readAccessToken();const q=useQuery({queryKey:["ui-bootstrap",token,authRevision],queryFn:()=>apiFetch<UiBootstrap>("/api/v1/ui/bootstrap"),enabled:Boolean(token),retry:false});useEffect(()=>{if(q.data)saveCachedBootstrap(q.data);},[q.data]);const cached=readCachedBootstrap();const authFailure=q.error instanceof ApiError&&(q.error.status===401||q.error.status===403);const bootstrap=q.data??(q.isError&&!authFailure?cached:null);function submitToken(next:string){clearCachedBootstrap();saveAccessToken(next);queryClient.clear();setAuthRevision(v=>v+1);}async function signOut(){if(bootstrap)await purgeTeacherOfflinePartition(teacherOfflinePartitionKey(bootstrap));clearAccessToken();queryClient.clear();setAuthRevision(v=>v+1);}const errorMessage=useMemo(()=>{if(!q.error)return undefined;if(q.error instanceof ApiError){if(q.error.status===401||q.error.status===403)return"El token no tiene un contexto válido para Education OS.";return`No fue posible iniciar la sesión: ${q.error.message}`;}return"No fue posible iniciar la sesión.";},[q.error]);if(!token)return<TokenGate initialToken="" errorMessage={undefined} onSubmit={submitToken}/>;if(q.isError&&!bootstrap)return<TokenGate initialToken={token} errorMessage={errorMessage} onSubmit={submitToken}/>;if(!bootstrap)return<main className="flex min-h-screen items-center justify-center"><div className="rounded-2xl border border-slate-200 bg-white px-6 py-5 text-sm font-semibold text-slate-600 shadow-sm">Cargando contexto institucional…</div></main>;return<AppContextProvider value={{bootstrap,signOut}}><AppShell><Outlet/></AppShell></AppContextProvider>}
@@ -38,6 +39,7 @@ function WorkspaceRouteComponent(){
   if (moduleId === "mentor") return <MentorBriefingPage />;
   if (moduleId === "copilot") return <CopilotWorkspacePage />;
   if (moduleId === "integrations") return <IntegrationWorkspacePage />;
+  if (moduleId === "student-records") return <StudentRecordsPage />;
   if (moduleId === "accountability") return <AccountabilityPage />;
   if (moduleId === "coordination" && bootstrap.permissions.includes("coord.console.access") && canUseMentor(bootstrap.permissions)) {
     return <div className="space-y-6"><MentorBriefingPanel /><WorkspacePage moduleId={moduleId} /></div>;

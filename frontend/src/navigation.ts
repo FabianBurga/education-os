@@ -42,6 +42,15 @@ export const MODULES: ModuleDefinition[] = [
     audience: "Operación institucional",
   },
   {
+    id: "student-records",
+    label: "Registros estudiantiles",
+    shortLabel: "Estudiantes · gestión",
+    description: "Consulta y edición mínima de registros en la institución activa.",
+    permission: "students.read",
+    legacyPath: "",
+    audience: "Administración institucional",
+  },
+  {
     id: "copilot",
     label: "Copiloto gobernado",
     shortLabel: "Copiloto",

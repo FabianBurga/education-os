@@ -189,6 +189,29 @@ def _require_staff_permission(
     return principal
 
 
+def require_student_record_permission(
+    session: Session, principal: CurrentPrincipal, permission_key: str
+) -> None:
+    """Authorize a student-record operation from the effective permission set."""
+    if permission_key not in {"students.read", "students.manage"}:
+        raise ValueError("Unsupported student-record permission")
+    if not _permission_exists(session, principal, permission_key):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Student record permission required",
+        )
+
+
+def require_student_identity_management(
+    session: Session, principal: CurrentPrincipal
+) -> None:
+    if not _permission_exists(session, principal, "admin.people.manage"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Authorized identity selection required",
+        )
+
+
 def require_coordination_access(
     principal: CurrentPrincipal = Depends(get_current_principal),
     session: Session = Depends(get_session),

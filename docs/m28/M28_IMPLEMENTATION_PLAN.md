@@ -2,10 +2,10 @@
 
 ## Baseline and constraints
 
-M28-0 is documentation only, based on published M27 tag at
+M28-0 froze scope on published M27 tag at
 `8af4557ee77d04adb2cb20d5994684268aacd194`. Branch:
-`m28-operational-adoption-core`; source head `0042_m27_true_recurrence`.
-All slices below are NOT STARTED. Do not implement M28-1 as part of M28-0.
+`m28-operational-adoption-core`. M28-1 is CLOSED / PASS on migration
+`0043_m28_student_record_perms`; M28-2 onward remain NOT STARTED.
 
 Read [scope](M28_SCOPE.md), [inventory](M28_CAPABILITY_INVENTORY.md),
 [domain](M28_DOMAIN_BOUNDARIES.md), [security](M28_SECURITY_BOUNDARY.md) and
@@ -13,35 +13,36 @@ Read [scope](M28_SCOPE.md), [inventory](M28_CAPABILITY_INVENTORY.md),
 existing domain modules, React shell/components, TanStack Query/Router and
 Vitest. No new design system, state framework, worker, Redis or parallel SIS.
 
-Every migration below is a plan, not an existing revision. First required
-forward revision follows 0042; choose <=32-character revision IDs. Never
+Every migration below is a plan, not an existing revision, except the completed
+M28-1 revision 0043. Future revisions follow 0043; choose <=32-character IDs. Never
 reserve several empty migrations, edit 0001–0042, or apply schema during M28-0.
 Physical receipt/history/version design is Luna's bounded implementation
 choice subject to the frozen behavior and ASTRA security acceptance.
 
-## M28-1 — Permission-safe student record
+## M28-1 — Permission-safe student record — CLOSED / PASS
 
-- Goal: an explicitly authorized operator can find/create/read/update a
-  student without inheriting account/role administration or another institution's
-  person directory.
-- Backend: introduce catalog/gates from the security contract for M1–M3, reuse
-  permission resolver; typed student mutations, bounded record/list and minimal
-  guardian reference/link operation. Reuse existing canonical services; protect
-  legacy endpoints too. Keep M10 teacher APIs and M24 separately authorized;
-  seed no blanket academic SYSTEM_ADMIN grants.
-- Frontend: one student record/list entry in the existing administration
-  workspace, selected by effective permissions; reuse current components and
-  error/loading patterns. No account/role creation in the student form.
-- Migration: expected permission catalog; receipt/version support only if
-  existing storage cannot enforce command retry/conflict. No Student copy.
-- Security: custom role versus no-permission staff, bare SYSTEM_ADMIN,
-  teacher bypass, org Person exposure, cross-tenant link and mass assignment.
-- Tests: real HTTP create/read/patch + PostgreSQL RLS; duplicate/retry/rollback;
-  M1/M8/M10/M24 directed regression; focused student UX and privacy tests.
-- Dependencies: M28-0 review.
-- Full backend suite: YES, once after focused gates, because this consolidates
-  authorization on shared legacy entry points. Frontend build if routing changes.
-- Stop: safe basic record only; no enrollment lifecycle/placement implementation.
+- Goal delivered: explicitly permissioned institutional student lookup and
+  bounded profile maintenance, without new identity/enrollment authorities.
+- Backend delivered: operation gates on M1 student endpoints, bounded keyset
+  read API, minimized DTOs, strict input schemas, scoped ID lookup, optimistic
+  update conflict, idempotent duplicate create, active-enrollment status guard,
+  atomic audit/M18 outbox. Catalog migration 0043 adds `students.read`,
+  `students.manage`, and the M24-required `enrollments.manage`; it grants no
+  permissions to roles automatically. M24 apply requires integration, student,
+  and enrollment permissions while using the same canonical services.
+- Frontend delivered: existing React/TanStack workspace navigation and a
+  responsive list/detail/edit view selected by effective permissions. Loading,
+  empty, denied, not-visible, validation, conflict, and generic server/network
+  states are bounded and do not expose raw errors.
+- No schema tables, RLS policy changes, Student copies, guardian linking, Person
+  edits, enrollment lifecycle, or placement were added. Existing M0-M3 models
+  and M24 import authority remain canonical. Details: [M28 student record](M28_STUDENT_RECORD.md).
+- Evidence: 749 backend passed, 1 opt-in M21 E2E skipped, 0 failed; 71 frontend
+  tests, typecheck, production build, changed-file Ruff, py_compile, and Alembic
+  passed. M1/M2/M3/M18/M24 directed regression: 71 passed. Full backend ran
+  once after directed PASS.
+- Dependencies: M28-0 scope/security freeze.
+- Stop boundary respected: M28-2 lifecycle is NOT STARTED.
 
 ## M28-2 — Enrollment lifecycle
 

@@ -1,14 +1,16 @@
 # Current State
 
-## Current planning/bootstrap
+## Current engineering state
 
 M27 is CLOSED / PASS and published as `m27-decision-accountability-os-v0.27.0`
-at `8af4557ee77d04adb2cb20d5994684268aacd194`. M28-0 — Canonical Bootstrap &
-Scope Freeze is planning only on `m28-operational-adoption-core`, created from
-that exact tag. No M28 production code or migration is implemented. Source head
-remains `0042_m27_true_recurrence`; this planning stage does not recertify DB
-runtime state. Contracts and the Luna handoff are in [docs/m28](m28/M28_SCOPE.md).
-Next action: ASTRA review, then a separate M28-1 handoff. No publication in M28-0.
+at `8af4557ee77d04adb2cb20d5994684268aacd194`. M28-0 scope freeze and M28-1
+Secure Student Record are CLOSED / PASS locally on
+`m28-operational-adoption-core`; Alembic head/current is
+`0043_m28_student_record_perms`. M28-1 adds permission-gated, tenant-scoped
+student list/detail/update, atomic audit/outbox, M24 permission checks, and a
+minimal React record workspace. See [M28 implementation plan](m28/M28_IMPLEMENTATION_PLAN.md)
+and [M28-1 evidence](m28/M28_STUDENT_RECORD.md). M28-2 Enrollment Lifecycle is
+the next planned slice and has NOT STARTED. No M28 push/tag/release is authorized.
 
 ## Formally closed
 
