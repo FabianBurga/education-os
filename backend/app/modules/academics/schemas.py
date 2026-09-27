@@ -12,7 +12,11 @@ class TenantRead(BaseModel):
     institution_id: UUID
 
 
-class AcademicLevelCreate(BaseModel):
+class AcademicStructureCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
+class AcademicLevelCreate(AcademicStructureCreate):
     code: str = Field(min_length=1, max_length=40)
     name: str = Field(min_length=1, max_length=120)
     sort_order: int = 0
@@ -25,7 +29,7 @@ class AcademicLevelRead(TenantRead):
     status: str
 
 
-class GradeLevelCreate(BaseModel):
+class GradeLevelCreate(AcademicStructureCreate):
     academic_level_id: UUID
     code: str = Field(min_length=1, max_length=40)
     name: str = Field(min_length=1, max_length=120)
@@ -40,7 +44,7 @@ class GradeLevelRead(TenantRead):
     status: str
 
 
-class SubjectCreate(BaseModel):
+class SubjectCreate(AcademicStructureCreate):
     code: str = Field(min_length=1, max_length=40)
     name: str = Field(min_length=1, max_length=160)
     area: str | None = Field(default=None, max_length=120)
@@ -53,7 +57,7 @@ class SubjectRead(TenantRead):
     status: str
 
 
-class SectionCreate(BaseModel):
+class SectionCreate(AcademicStructureCreate):
     academic_period_id: UUID
     campus_id: UUID
     grade_level_id: UUID
@@ -77,7 +81,7 @@ class SectionRead(TenantRead):
     status: str
 
 
-class CurriculumPlanCreate(BaseModel):
+class CurriculumPlanCreate(AcademicStructureCreate):
     academic_period_id: UUID
     grade_level_id: UUID
     code: str = Field(min_length=1, max_length=40)
@@ -93,7 +97,7 @@ class CurriculumPlanRead(TenantRead):
     status: str
 
 
-class CurriculumSubjectCreate(BaseModel):
+class CurriculumSubjectCreate(AcademicStructureCreate):
     subject_id: UUID
     weekly_periods: int = Field(default=0, ge=0, le=60)
     is_required: bool = True
@@ -108,7 +112,7 @@ class CurriculumSubjectRead(TenantRead):
     sort_order: int
 
 
-class CourseOfferingCreate(BaseModel):
+class CourseOfferingCreate(AcademicStructureCreate):
     section_id: UUID
     subject_id: UUID
     curriculum_subject_id: UUID | None = None
@@ -122,7 +126,7 @@ class CourseOfferingRead(TenantRead):
     status: str
 
 
-class TeachingAssignmentCreate(BaseModel):
+class TeachingAssignmentCreate(AcademicStructureCreate):
     course_offering_id: UUID
     staff_profile_id: UUID
     assignment_role: str = Field(
@@ -147,7 +151,7 @@ class TeachingAssignmentRead(TenantRead):
     ends_on: date | None
 
 
-class StudentSectionAssignmentCreate(BaseModel):
+class StudentSectionAssignmentCreate(AcademicStructureCreate):
     enrollment_id: UUID
     section_id: UUID
     assigned_on: date
@@ -162,7 +166,7 @@ class StudentSectionAssignmentRead(TenantRead):
     ended_on: date | None
 
 
-class ScheduleSlotCreate(BaseModel):
+class ScheduleSlotCreate(AcademicStructureCreate):
     course_offering_id: UUID
     weekday: int = Field(ge=1, le=7)
     starts_at: time

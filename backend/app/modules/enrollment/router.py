@@ -11,10 +11,13 @@ from app.db.session import get_session
 from app.modules.enrollment.models import AcademicPeriod, Enrollment
 from app.modules.enrollment.service import (
     available_enrollment_actions,
+    create_academic_period,
     create_enrollment_record,
     enrollment_history,
     get_period_in_scope,
+    require_academic_period_permission,
     require_enrollment_permission,
+    transition_academic_period,
     transition_enrollment,
 )
 from app.modules.students.models import StudentProfile
@@ -26,17 +29,23 @@ SessionDep = Annotated[Session, Depends(get_session)]
 
 
 class PeriodCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     code: str = Field(min_length=1, max_length=40)
     name: str = Field(min_length=1, max_length=120)
     starts_on: date
     ends_on: date
-    status: str = Field(default="PLANNED", pattern="^(PLANNED|ACTIVE|CLOSED)$")
 
     @model_validator(mode="after")
     def dates_are_valid(self):
         if self.ends_on < self.starts_on:
             raise ValueError("ends_on must be on or after starts_on")
         return self
+
+
+class PeriodStatusUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    expected_status: str = Field(pattern="^(PLANNED|ACTIVE|CLOSED)$")
+    status: str = Field(pattern="^(ACTIVE|CLOSED)$")
 
 
 class PeriodRead(BaseModel):
@@ -128,21 +137,31 @@ def _read(enrollment: Enrollment, period: AcademicPeriod) -> EnrollmentRead:
 
 
 @router.get("/academic-periods", response_model=list[PeriodRead])
-def list_periods(_: PrincipalDep, session: SessionDep):
-    return session.exec(select(AcademicPeriod).order_by(AcademicPeriod.starts_on.desc())).all()
+def list_periods(principal: PrincipalDep, session: SessionDep):
+    require_academic_period_permission(session, principal, "academics.read")
+    return session.exec(select(AcademicPeriod).where(
+        AcademicPeriod.organization_id == principal.organization_id,
+        AcademicPeriod.institution_id == principal.institution_id,
+    ).order_by(AcademicPeriod.starts_on.desc(), AcademicPeriod.id)).all()
 
 
 @router.post("/academic-periods", response_model=PeriodRead, status_code=201)
 def create_period(payload: PeriodCreate, principal: PrincipalDep, session: SessionDep):
-    period = AcademicPeriod(
-        organization_id=principal.organization_id,
-        institution_id=principal.institution_id,
-        **payload.model_dump(),
+    return create_academic_period(session, principal, **payload.model_dump())
+
+
+@router.patch("/academic-periods/{period_id}/status", response_model=PeriodRead)
+def update_period_status(
+    period_id: UUID,
+    payload: PeriodStatusUpdate,
+    principal: PrincipalDep,
+    session: SessionDep,
+):
+    return transition_academic_period(
+        session, principal, period_id,
+        expected_status=payload.expected_status,
+        target_status=payload.status,
     )
-    session.add(period)
-    session.commit()
-    session.refresh(period)
-    return period
 
 
 @router.get("/enrollments", response_model=list[EnrollmentRead])

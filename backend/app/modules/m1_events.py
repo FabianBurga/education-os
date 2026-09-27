@@ -7,6 +7,7 @@ M1_EVENT_NAMES = frozenset(
         "family.member.added",
         "student.guardian.linked",
         "academic_period.created",
+        "academic_period.status_changed",
         "enrollment.created",
         "enrollment.status.changed",
     }

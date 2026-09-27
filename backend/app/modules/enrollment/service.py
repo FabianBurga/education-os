@@ -13,6 +13,125 @@ from app.modules.enrollment.models import AcademicPeriod, Enrollment
 from app.modules.events.service import enqueue_canonical_event
 from app.modules.students.models import StudentProfile
 
+
+def require_academic_period_permission(session: Session, principal: CurrentPrincipal, key: str) -> None:
+    if key not in {"academics.read", "academics.manage"}:
+        raise ValueError("Unsupported academic-period permission")
+    row = session.exec(
+        text("""SELECT 1 FROM memberships m
+        JOIN membership_roles mr ON mr.membership_id=m.id
+        JOIN roles r ON r.id=mr.role_id AND r.institution_id=m.institution_id
+        JOIN role_permissions rp ON rp.role_id=mr.role_id
+        JOIN permissions p ON p.id=rp.permission_id
+        WHERE m.user_id=:user_id AND m.institution_id=:institution_id AND m.status='ACTIVE'
+          AND p.key=:permission LIMIT 1"""),
+        params={"user_id": principal.user_id, "institution_id": principal.institution_id, "permission": key},
+    ).first()
+    if row is None:
+        raise HTTPException(status_code=403, detail="Academic structure permission required")
+
+
+def create_academic_period(
+    session: Session,
+    principal: CurrentPrincipal,
+    *,
+    code: str,
+    name: str,
+    starts_on: date,
+    ends_on: date,
+) -> AcademicPeriod:
+    require_academic_period_permission(session, principal, "academics.manage")
+    if ends_on < starts_on:
+        raise HTTPException(status_code=422, detail="Academic period end must not precede its start")
+    period = AcademicPeriod(
+        organization_id=principal.organization_id,
+        institution_id=principal.institution_id,
+        code=code,
+        name=name,
+        starts_on=starts_on,
+        ends_on=ends_on,
+        status="PLANNED",
+    )
+    session.add(period)
+    try:
+        session.flush()
+    except IntegrityError as exc:
+        session.rollback()
+        raise HTTPException(status_code=409, detail="Academic period code already exists") from exc
+    enqueue_canonical_event(
+        session, institution_id=principal.institution_id,
+        event_type="academic_period.created", event_version=1,
+        aggregate_type="academic_period", aggregate_id=period.id,
+        actor_user_id=principal.user_id,
+        payload={"academic_period_id": str(period.id)},
+        metadata={"code": period.code, "status": period.status},
+    )
+    record_audit(
+        session, institution_id=principal.institution_id,
+        actor_user_id=principal.user_id, action="ACADEMIC_PERIOD_CREATED",
+        entity_type="AcademicPeriod", entity_id=period.id,
+        metadata={"code": period.code, "status": period.status},
+    )
+    try:
+        session.commit()
+    except IntegrityError as exc:
+        session.rollback()
+        raise HTTPException(status_code=409, detail="Academic period code already exists") from exc
+    session.refresh(period)
+    return period
+
+
+def transition_academic_period(
+    session: Session,
+    principal: CurrentPrincipal,
+    period_id: UUID,
+    *,
+    expected_status: str,
+    target_status: str,
+) -> AcademicPeriod:
+    require_academic_period_permission(session, principal, "academics.manage")
+    period = session.exec(select(AcademicPeriod).where(
+        AcademicPeriod.id == period_id,
+        AcademicPeriod.organization_id == principal.organization_id,
+        AcademicPeriod.institution_id == principal.institution_id,
+    ).with_for_update()).first()
+    if period is None:
+        raise HTTPException(status_code=404, detail="Academic period not found")
+    if period.status != expected_status:
+        raise HTTPException(status_code=409, detail="Academic period changed; reload and retry")
+    allowed = {"PLANNED": "ACTIVE", "ACTIVE": "CLOSED"}
+    if allowed.get(period.status) != target_status:
+        raise HTTPException(status_code=409, detail="Invalid academic period transition")
+    if target_status == "CLOSED":
+        active = session.exec(select(Enrollment.id).where(
+            Enrollment.organization_id == principal.organization_id,
+            Enrollment.institution_id == principal.institution_id,
+            Enrollment.academic_period_id == period.id,
+            Enrollment.status == "ACTIVE",
+        ).limit(1)).first()
+        if active is not None:
+            raise HTTPException(status_code=409, detail="Resolve active enrollments before closing the period")
+    previous = period.status
+    period.status = target_status
+    session.add(period)
+    enqueue_canonical_event(
+        session, institution_id=principal.institution_id,
+        event_type="academic_period.status_changed", event_version=1,
+        aggregate_type="academic_period", aggregate_id=period.id,
+        actor_user_id=principal.user_id,
+        payload={"academic_period_id": str(period.id), "previous_status": previous, "status": target_status},
+        metadata={"expected_status": expected_status},
+    )
+    record_audit(
+        session, institution_id=principal.institution_id,
+        actor_user_id=principal.user_id, action="ACADEMIC_PERIOD_STATUS_CHANGED",
+        entity_type="AcademicPeriod", entity_id=period.id,
+        metadata={"previous_status": previous, "status": target_status},
+    )
+    session.commit()
+    session.refresh(period)
+    return period
+
 _TRANSITIONS: dict[str, frozenset[str]] = {
     "PENDING": frozenset({"ACTIVE", "CANCELLED"}),
     "ACTIVE": frozenset({"WITHDRAWN", "COMPLETED"}),

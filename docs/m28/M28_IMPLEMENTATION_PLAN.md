@@ -4,9 +4,9 @@
 
 M28-0 froze scope on published M27 tag at
 `8af4557ee77d04adb2cb20d5994684268aacd194`. Branch:
-`m28-operational-adoption-core`. M28-1 is CLOSED / PASS on migration
-`0044_m28_enrollment_read`; M28-1 and M28-2 are CLOSED / PASS. M28-3 onward
-remain NOT STARTED.
+`m28-operational-adoption-core`. M28-1 and M28-2 are CLOSED / PASS; M28-3 is
+CLOSED / PASS on migration `0045_m28_academic_permissions`. M28-4 onward remain
+NOT STARTED.
 
 Read [scope](M28_SCOPE.md), [inventory](M28_CAPABILITY_INVENTORY.md),
 [domain](M28_DOMAIN_BOUNDARIES.md), [security](M28_SECURITY_BOUNDARY.md) and
@@ -15,7 +15,8 @@ existing domain modules, React shell/components, TanStack Query/Router and
 Vitest. No new design system, state framework, worker, Redis or parallel SIS.
 
 Every migration below is a plan, not an existing revision, except completed
-M28-1 revision 0043 and M28-2 revision 0044. Future revisions follow 0044; choose <=32-character IDs. Never
+M28-1 revision 0043, M28-2 revision 0044 and M28-3 revision 0045. Future
+revisions follow 0045; choose <=32-character IDs. Never
 reserve several empty migrations, edit 0001–0042, or apply schema during M28-0.
 Physical receipt/history/version design is Luna's bounded implementation
 choice subject to the frozen behavior and ASTRA security acceptance.
@@ -74,22 +75,33 @@ choice subject to the frozen behavior and ASTRA security acceptance.
 - Dependencies: M28-1; existing periods/placements only.
 - Stop boundary: no academic setup, placement transfer, attendance or results.
 
-## M28-3 — Academic setup to course offering
+## M28-3 — Academic structure operations — CLOSED / PASS
 
-- Goal: configure one operational period/level/grade/section/subject/offering
-  through the existing model with valid relationships.
-- Backend: bounded config lists/commands, period lifecycle, subperiod/date
-  consistency and safe immutable identifiers. Reuse M1 period/M2 academic services.
-- Frontend: extend existing administration academic setup with a small guided
-  sequence; keep existing legacy console reachable and governed.
-- Migration: NONE expected; use forward revision only for demonstrated
-  invariant/command-history need. No SchoolYear/calendar schema.
-- Security: academic read/manage, campus/period references, closed-period writes.
-- Tests: tenant/period mismatches, dates, duplicate configuration, close with
-  active enrollment rejection; M1/M2/M3 config/M8 regressions and setup UX.
-- Dependencies: M28-1 and lifecycle semantics in M28-2.
-- Full backend suite: NO.
-- Stop: no scheduling optimization, report cards or curriculum authoring engine.
+- Goal delivered: operationally maintain existing M1/M2 periods, levels,
+  grades, sections, subjects, curriculum links, course offerings and bounded
+  teaching assignments without parallel authority tables.
+- Backend: effective `academics.read`, `academics.manage`, and `academics.assign`
+  checks; principal-scoped reads; strict input schemas; institutional reference
+  validation; period PLANNED→ACTIVE→CLOSED with active-enrollment close guard;
+  atomic M1/M2 event/outbox and audit for touched writes. Generic entity edits
+  were not added because existing entities lack revision/history semantics.
+- Frontend: existing React workspace now has capability-driven setup for periods,
+  levels/grades, subjects, sections, offerings and separately authorized teacher
+  assignment creation; server refetch is authoritative.
+- Migration: `0045_m28_academic_permissions` only adds the three permission
+  catalog keys and makes no role grants; no table or RLS change. Required because
+  the frozen security contract calls for explicit academic read/manage/assign
+  capabilities and M1/M2 legacy routes had only generic staff guards.
+- Evidence: 49 directed backend tests passed, including real foreign-tenant
+  references, M2 FORCE-RLS metadata, M1/M18/M24/M28-1/2 compatibility and
+  outbox-failure rollback. Focused frontend tests and typecheck passed;
+  production build passed with existing dynamic-import/chunk-size warnings.
+  Changed-file Ruff, `py_compile`, Alembic and diff-check passed. Full backend
+  was not required because no shared auth/RLS/transaction primitive changed.
+- Details: [M28 academic structure](M28_ACADEMIC_STRUCTURE.md).
+- Stop boundary respected: no student placement transfer/roster lifecycle,
+  attendance, assessment/results or timetable optimization; these remain later
+  slices (M28-4+).
 
 ## M28-4 — Placement and teacher roster continuity
 

@@ -51,6 +51,15 @@ export const MODULES: ModuleDefinition[] = [
     audience: "Administración institucional",
   },
   {
+    id: "academic-structure",
+    label: "Estructura académica",
+    shortLabel: "Estructura",
+    description: "Configuración institucional de períodos, niveles, secciones, asignaturas y ofertas.",
+    permission: "academics.read",
+    legacyPath: "",
+    audience: "Administración académica",
+  },
+  {
     id: "copilot",
     label: "Copiloto gobernado",
     shortLabel: "Copiloto",
