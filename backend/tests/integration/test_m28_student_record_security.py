@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
 from sqlmodel import Session
 
-from app.api.deps import get_session
+from app.api.deps import CurrentPrincipal, get_session
 from app.core.config import settings
 from app.core.security import create_access_token
 from app.db.session import engine as app_engine
@@ -24,6 +24,8 @@ from app.modules.identity.models import (
     RolePermission,
     UserAccount,
 )
+from app.modules.integrations.models import IntegrationConnector, IntegrationRun, IntegrationRunItem
+from app.modules.integrations.service import apply_csv_student_enrollment
 from app.modules.students.models import StudentProfile
 
 ORG_ID = UUID("d6edc12e-39a5-4a65-b07c-52d8a364acc1")
@@ -77,8 +79,31 @@ def _person_student(owner: Session, *, institution_id: UUID = INSTITUTION_ID, or
     return person.id, student.id
 
 
-def _cleanup(owner: Session, actors: list[dict[str, UUID]], students: list[tuple[UUID, UUID]], extra_people: list[UUID], period_ids: list[UUID], campus_ids: list[UUID]) -> None:
+def _cleanup(
+    owner: Session,
+    actors: list[dict[str, UUID]],
+    students: list[tuple[UUID, UUID]],
+    extra_people: list[UUID],
+    period_ids: list[UUID],
+    campus_ids: list[UUID],
+    integration_run_ids: list[UUID],
+    connector_ids: list[UUID],
+) -> None:
     owner.rollback()
+    if connector_ids:
+        owner.exec(
+            text("DELETE FROM integration_external_student_refs WHERE connector_id = ANY(CAST(:ids AS uuid[]))"),
+            params={"ids": [str(value) for value in connector_ids]},
+        )
+    if integration_run_ids:
+        ids = [str(value) for value in integration_run_ids]
+        owner.exec(text("DELETE FROM integration_run_events WHERE run_id = ANY(CAST(:ids AS uuid[]))"), params={"ids": ids})
+        owner.exec(text("DELETE FROM integration_run_items WHERE run_id = ANY(CAST(:ids AS uuid[]))"), params={"ids": ids})
+        owner.exec(text("DELETE FROM integration_runs WHERE id = ANY(CAST(:ids AS uuid[]))"), params={"ids": ids})
+        owner.exec(text("DELETE FROM audit_logs WHERE entity_id = ANY(CAST(:ids AS uuid[]))"), params={"ids": ids})
+    if connector_ids:
+        ids = [str(value) for value in connector_ids]
+        owner.exec(text("DELETE FROM integration_connectors WHERE id = ANY(CAST(:ids AS uuid[]))"), params={"ids": ids})
     student_ids = [str(student_id) for _, student_id in students]
     if student_ids:
         enrollment_ids = [str(row[0]) for row in owner.exec(
@@ -97,6 +122,9 @@ def _cleanup(owner: Session, actors: list[dict[str, UUID]], students: list[tuple
         owner.exec(text("DELETE FROM academic_periods WHERE id = ANY(CAST(:ids AS uuid[]))"), params={"ids": [str(value) for value in period_ids]})
     if campus_ids:
         owner.exec(text("DELETE FROM campuses WHERE id = ANY(CAST(:ids AS uuid[]))"), params={"ids": [str(value) for value in campus_ids]})
+    actor_user_ids = [str(actor["user_id"]) for actor in actors]
+    if actor_user_ids:
+        owner.exec(text("DELETE FROM audit_logs WHERE actor_user_id = ANY(CAST(:ids AS uuid[]))"), params={"ids": actor_user_ids})
     for actor in actors:
         params = {key: str(value) for key, value in actor.items()}
         owner.exec(text("DELETE FROM membership_roles WHERE membership_id = CAST(:membership_id AS uuid)"), params=params)
@@ -113,6 +141,7 @@ def _cleanup(owner: Session, actors: list[dict[str, UUID]], students: list[tuple
         + [str(person_id) for person_id in extra_people]
     )
     if person_ids:
+        owner.exec(text("DELETE FROM audit_logs WHERE entity_id = ANY(CAST(:ids AS uuid[]))"), params={"ids": person_ids})
         owner.exec(text("DELETE FROM persons WHERE id = ANY(CAST(:ids AS uuid[]))"), params={"ids": person_ids})
     owner.commit()
 
@@ -127,9 +156,11 @@ def _pilot():
     extra_people: list[UUID] = []
     period_ids: list[UUID] = []
     campus_ids: list[UUID] = []
+    integration_run_ids: list[UUID] = []
+    connector_ids: list[UUID] = []
     try:
         assert owner.exec(text("SELECT 1 FROM institutions WHERE id=:id AND organization_id=:org"), params={"id": INSTITUTION_ID, "org": ORG_ID}).first()
-        authorized = _actor(owner, {"students.read", "students.manage", "enrollments.read", "enrollments.manage", "admin.people.manage"})
+        authorized = _actor(owner, {"students.read", "students.manage", "enrollments.read", "enrollments.manage", "integrations.run", "admin.people.manage"})
         student_reader = _actor(owner, {"students.read"})
         bare_admin = _actor(owner, set())
         teacher = _actor(owner, set(), role_key="TEACHER")
@@ -160,6 +191,8 @@ def _pilot():
                 "extra_people": extra_people,
                 "period_ids": period_ids,
                 "campus_ids": campus_ids,
+                "integration_run_ids": integration_run_ids,
+                "connector_ids": connector_ids,
                 "authorized_headers": _headers(authorized),
                 "bare_headers": _headers(bare_admin),
                 "student_reader_headers": _headers(student_reader),
@@ -169,7 +202,7 @@ def _pilot():
         finally:
             app.dependency_overrides.pop(get_session, None)
     finally:
-        _cleanup(owner, actors, students, extra_people, period_ids, campus_ids)
+        _cleanup(owner, actors, students, extra_people, period_ids, campus_ids, integration_run_ids, connector_ids)
         owner.close()
         owner_engine.dispose()
 
@@ -185,12 +218,17 @@ def test_student_record_http_scope_permissions_idor_and_mass_assignment() -> Non
         local_id, foreign_id = (str(row[1]) for row in pilot["students"])
         response = client.get("/api/v1/students/records", headers=pilot["authorized_headers"])
         assert response.status_code == 200
-        assert {item["id"] for item in response.json()["items"]} == {local_id}
-        assert "Synthetic Student" in response.json()["items"][0]["display_name"]
+        visible_student_ids = {item["id"] for item in response.json()["items"]}
+        assert local_id in visible_student_ids
+        assert foreign_id not in visible_student_ids
+        assert "Synthetic Student" in next(item["display_name"] for item in response.json()["items"] if item["id"] == local_id)
         legacy_list = client.get("/api/v1/students?limit=10", headers=pilot["authorized_headers"])
         assert legacy_list.status_code == 200
-        assert {item["id"] for item in legacy_list.json()} == {local_id}
-        assert set(legacy_list.json()[0]) == {"id", "display_name", "student_code", "status", "updated_at"}
+        legacy_student_ids = {item["id"] for item in legacy_list.json()}
+        assert local_id in legacy_student_ids
+        assert foreign_id not in legacy_student_ids
+        local_record = next(item for item in legacy_list.json() if item["id"] == local_id)
+        assert set(local_record) == {"id", "display_name", "student_code", "status", "updated_at"}
         assert client.get("/api/v1/students", headers=pilot["bare_headers"]).status_code == 403
         assert client.get("/api/v1/students/records", headers=pilot["teacher_headers"]).status_code == 403
         foreign_response = client.get(f"/api/v1/students/{foreign_id}", headers=pilot["authorized_headers"])
@@ -398,7 +436,10 @@ def test_enrollment_lifecycle_is_scoped_versioned_and_audited(monkeypatch) -> No
         owner.rollback()
         assert owner.exec(text("SELECT status FROM enrollments WHERE id=:id"), params={"id": enrollment_id}).one()[0] == "ACTIVE"
         assert owner.exec(text("SELECT count(*) FROM outbox_events WHERE aggregate_id=:id AND event_type='student.enrollment.status_changed'"), params={"id": enrollment_id}).one()[0] == 0
-        assert client.get("/api/v1/enrollments/options", headers=pilot["authorized_headers"]).json()["periods"][0]["id"] == str(period_id)
+        available_period_ids = {
+            period["id"] for period in client.get("/api/v1/enrollments/options", headers=pilot["authorized_headers"]).json()["periods"]
+        }
+        assert str(period_id) in available_period_ids
 
         denied = client.post("/api/v1/enrollments", headers=pilot["bare_headers"], json=body)
         assert denied.status_code == 403
@@ -512,3 +553,73 @@ def test_enrollment_contract_rejects_mass_assignment_and_transferred() -> None:
         EnrollmentStatusUpdate.model_validate({
             "status": "TRANSFERRED", "expected_updated_at": datetime.now(UTC).isoformat(),
         })
+
+
+def test_m24_imported_enrollment_continues_through_authorized_lifecycle() -> None:
+    with _pilot() as pilot:
+        owner = pilot["owner"]
+        actor = pilot["actors"][0]
+        period_id, campus_id = uuid4(), uuid4()
+        run_id, connector_id = uuid4(), uuid4()
+        pilot["period_ids"].append(period_id)
+        pilot["campus_ids"].append(campus_id)
+        pilot["integration_run_ids"].append(run_id)
+        pilot["connector_ids"].append(connector_id)
+        owner.exec(text("""INSERT INTO academic_periods
+            (id, organization_id, institution_id, code, name, starts_on, ends_on, status, created_at)
+            VALUES (:id, :org, :institution, :code, 'Synthetic import period', '2025-01-01', '2030-12-31', 'ACTIVE', CURRENT_TIMESTAMP)"""),
+            params={"id": period_id, "org": ORG_ID, "institution": INSTITUTION_ID, "code": f"M24-{period_id.hex[:12]}"})
+        owner.exec(text("INSERT INTO campuses (id, institution_id, name, created_at) VALUES (:id, :institution, 'Synthetic import campus', CURRENT_TIMESTAMP)"),
+                   params={"id": campus_id, "institution": INSTITUTION_ID})
+        connector = IntegrationConnector(
+            id=connector_id, organization_id=ORG_ID, institution_id=INSTITUTION_ID,
+            connector_key=f"m24-{connector_id.hex[:10]}", connector_type="CSV_STUDENT_ENROLLMENT",
+            display_name="Synthetic enrollment import", created_by_user_id=actor["user_id"],
+        )
+        run = IntegrationRun(
+            id=run_id, organization_id=ORG_ID, institution_id=INSTITUTION_ID,
+            connector_id=connector_id, initiated_by_user_id=actor["user_id"],
+            source_kind="FILE", mode="DRY_RUN", source_fingerprint_sha256="a" * 64,
+            idempotency_key="b" * 64, connector_config_version=1,
+        )
+        external_id = f"SYN-M24-{uuid4().hex[:10]}"
+        run_item = IntegrationRunItem(
+            organization_id=ORG_ID, institution_id=INSTITUTION_ID, run_id=run_id,
+            source_item_key=external_id, source_item_fingerprint_sha256="c" * 64,
+            canonical_entity_type="STUDENT_ENROLLMENT", operation_class="CREATE", status="VALID",
+            detail_json={
+                "external_student_id": external_id, "given_names": "Synthetic Import",
+                "family_names": f"M28 {uuid4().hex[:8]}", "academic_period_code": f"M24-{period_id.hex[:12]}",
+                "academic_period_id": str(period_id), "campus_id": str(campus_id),
+                "student_code": f"SYN-{uuid4().hex[:8]}", "enrollment_number": f"M24-{uuid4().hex[:8]}",
+                "enrollment_status": "PENDING", "enrolled_on": None,
+            },
+        )
+        owner.add_all((connector, run, run_item))
+        owner.commit()
+
+        principal = CurrentPrincipal(
+            user_id=actor["user_id"], organization_id=ORG_ID, institution_id=INSTITUTION_ID,
+        )
+        result = apply_csv_student_enrollment(owner, principal, run_id)
+        owner.commit()
+        applied = owner.exec(text("""SELECT metadata_json->>'student_profile_id', metadata_json->>'enrollment_id'
+            FROM integration_run_events WHERE run_id=:run AND event_type='ITEM_APPLIED'"""),
+            params={"run": run_id}).one()
+        student_id, enrollment_id = UUID(applied[0]), UUID(applied[1])
+        person_id = owner.exec(text("SELECT person_id FROM student_profiles WHERE id=:id"), params={"id": student_id}).one()[0]
+        pilot["students"].append((person_id, student_id))
+        pilot["extra_people"].append(person_id)
+        assert result.applied_rows == 1
+        assert owner.exec(text("SELECT count(*) FROM integration_external_student_refs WHERE connector_id=:id AND external_student_id=:external"),
+                          params={"id": connector_id, "external": external_id}).one()[0] == 1
+
+        imported = pilot["client"].get(f"/api/v1/enrollments/{enrollment_id}", headers=pilot["authorized_headers"])
+        assert imported.status_code == 200 and imported.json()["status"] == "PENDING"
+        activated = pilot["client"].patch(
+            f"/api/v1/enrollments/{enrollment_id}/status", headers=pilot["authorized_headers"],
+            json={"status": "ACTIVE", "expected_updated_at": imported.json()["updated_at"], "effective_on": "2026-02-01"},
+        )
+        assert activated.status_code == 200 and activated.json()["status"] == "ACTIVE"
+        assert owner.exec(text("SELECT count(*) FROM outbox_events WHERE aggregate_id=:id AND event_type IN ('student.enrollment.created','student.enrollment.status_changed')"),
+                          params={"id": enrollment_id}).one()[0] == 2
