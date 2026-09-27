@@ -22,9 +22,9 @@ def test_m21_attendance_events_include_student_identity():
 
 def test_m21_grade_events_include_student_identity():
     src = _source("grades/service.py")
-    assert 'event_type="student.grade.recorded"' in src
-    assert 'event_type="student.grade.updated"' in src
-    assert '"student_profile_id": str(enrollment.student_profile_id)' in src
+    assert '"student.grade.updated" if existing is not None else "student.grade.recorded"' in src
+    assert '"student_profile_id": str(eligibility[0])' in src
+    assert '"previous_score": previous_value["score"] if previous_value else None' in src
 
 
 def test_m21_signal_lifecycle_events():

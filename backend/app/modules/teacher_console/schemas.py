@@ -2,7 +2,7 @@ from datetime import date, datetime, time
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, FiniteFloat, model_validator
 
 from app.modules.attendance.schemas import AttendanceExpectedState
 
@@ -132,12 +132,23 @@ class TeacherCategoryRead(BaseModel):
 
 
 class TeacherAssessmentCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     grading_period_id: UUID
     assessment_category_id: UUID
     code: str = Field(min_length=1, max_length=40)
     title: str = Field(min_length=1, max_length=160)
-    max_score: float = Field(default=10.0, gt=0.0)
+    max_score: FiniteFloat = Field(gt=0.0)
     due_on: date | None = None
+    operation_id: UUID
+
+    @model_validator(mode="after")
+    def valid_max_score_precision(self):
+        from decimal import Decimal
+
+        value = Decimal(str(self.max_score))
+        if value > Decimal("99999.999") or value.quantize(Decimal("0.001")) != value:
+            raise ValueError("max_score must fit Numeric(8,3)")
+        return self
 
 
 class TeacherAssessmentRead(BaseModel):
@@ -153,14 +164,35 @@ class TeacherAssessmentRead(BaseModel):
     status: str
 
 
+class TeacherAssessmentStatusChange(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    expected_status: Literal["DRAFT", "PUBLISHED", "CLOSED", "ARCHIVED"]
+    status: Literal["DRAFT", "PUBLISHED", "CLOSED", "ARCHIVED"]
+    operation_id: UUID
+
+
 class TeacherGradeMark(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     student_section_assignment_id: UUID
-    score: float | None = Field(default=None, ge=0.0)
+    score: float | None = Field(default=None, ge=0.0, allow_inf_nan=False)
     status: str = Field(
         default="PENDING",
         pattern="^(PENDING|GRADED|MISSING|EXCUSED)$",
     )
     feedback: str | None = Field(default=None, max_length=1000)
+    expected_revision: int = Field(default=0, ge=0)
+    operation_id: UUID
+    correction_reason: Literal["DATA_ENTRY_ERROR", "EVIDENCE_CORRECTION"] | None = None
+
+    @model_validator(mode="after")
+    def valid_score_precision(self):
+        if self.score is not None:
+            from decimal import Decimal
+
+            value = Decimal(str(self.score))
+            if value > Decimal("99999.999") or value.quantize(Decimal("0.001")) != value:
+                raise ValueError("score must fit Numeric(8,3)")
+        return self
 
 
 class TeacherGradeRow(BaseModel):
@@ -172,6 +204,7 @@ class TeacherGradeRow(BaseModel):
     score: float | None
     status: str
     feedback: str | None
+    revision: int
 
 
 class TeacherAlert(BaseModel):

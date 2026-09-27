@@ -11,6 +11,8 @@ from app.modules.grades.schemas import (
     AssessmentCategoryRead,
     AssessmentCreate,
     AssessmentRead,
+    AssessmentStatusChange,
+    GradeEntryHistoryRead,
     GradeEntryRead,
     GradeEntryUpsert,
     GradingPeriodCreate,
@@ -22,10 +24,12 @@ from app.modules.grades.schemas import (
 )
 from app.modules.grades.service import (
     add_scale_band,
+    change_assessment_status,
     create_assessment,
     create_category,
     create_period,
     create_scale,
+    grade_entry_history,
     list_assessments,
     list_categories,
     list_entries,
@@ -41,7 +45,7 @@ SessionDep = Annotated[Session, Depends(get_session)]
 
 @router.get("/periods", response_model=list[GradingPeriodRead])
 def periods_list(_: PrincipalDep, session: SessionDep):
-    return list_periods(session)
+    return list_periods(session, _)
 
 
 @router.post("/periods", response_model=GradingPeriodRead, status_code=201)
@@ -55,7 +59,7 @@ def periods_create(
 
 @router.get("/scales", response_model=list[GradingScaleRead])
 def scales_list(_: PrincipalDep, session: SessionDep):
-    return list_scales(session)
+    return list_scales(session, _)
 
 
 @router.post("/scales", response_model=GradingScaleRead, status_code=201)
@@ -83,7 +87,7 @@ def scale_bands_create(
 
 @router.get("/categories", response_model=list[AssessmentCategoryRead])
 def categories_list(_: PrincipalDep, session: SessionDep):
-    return list_categories(session)
+    return list_categories(session, _)
 
 
 @router.post("/categories", response_model=AssessmentCategoryRead, status_code=201)
@@ -97,7 +101,7 @@ def categories_create(
 
 @router.get("/assessments", response_model=list[AssessmentRead])
 def assessments_list(_: PrincipalDep, session: SessionDep):
-    return list_assessments(session)
+    return list_assessments(session, _)
 
 
 @router.post("/assessments", response_model=AssessmentRead, status_code=201)
@@ -110,15 +114,38 @@ def assessments_create(
 
 
 @router.get(
+    "/assessments/{assessment_id}/entries/{assignment_id}/history",
+    response_model=list[GradeEntryHistoryRead],
+)
+def entries_history(
+    assessment_id: UUID,
+    assignment_id: UUID,
+    principal: PrincipalDep,
+    session: SessionDep,
+):
+    return grade_entry_history(session, principal, assessment_id, assignment_id)
+
+
+@router.patch("/assessments/{assessment_id}/status", response_model=AssessmentRead)
+def assessment_status_change(
+    assessment_id: UUID,
+    payload: AssessmentStatusChange,
+    principal: PrincipalDep,
+    session: SessionDep,
+):
+    return change_assessment_status(session, principal, assessment_id, payload)
+
+
+@router.get(
     "/assessments/{assessment_id}/entries",
     response_model=list[GradeEntryRead],
 )
 def entries_list(
     assessment_id: UUID,
-    _: PrincipalDep,
+    principal: PrincipalDep,
     session: SessionDep,
 ):
-    return list_entries(session, assessment_id)
+    return list_entries(session, principal, assessment_id)
 
 
 @router.put(

@@ -33,8 +33,12 @@ def test_m6_family_routes_registered() -> None:
 
 
 def test_internal_milestone_routers_keep_required_access_boundaries() -> None:
-    for router in (m1_router, m2_router, m3_router, m5_router):
+    for router in (m1_router, m3_router, m5_router):
         assert require_staff_access in _dependency_calls(router)
+
+    # M28-3 replaced M2's broad router guard with operation-specific academic
+    # permissions and tenant/scope checks; retain that narrower frozen boundary.
+    assert require_staff_access not in _dependency_calls(m2_router)
 
     # M22 delegates intelligence authorization to route-level guards.
     # The M4 parent router must no longer impose coord.console.access.

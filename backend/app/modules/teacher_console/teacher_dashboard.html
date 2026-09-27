@@ -102,7 +102,7 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px 10px
 <select id="categorySelect" class="full"></select>
 <input id="assessmentCode" placeholder="Código evaluación">
 <input id="assessmentTitle" placeholder="Título evaluación">
-<input id="assessmentMax" type="number" min="0.1" step="0.1" value="10">
+<input id="assessmentMax" type="number" min="0.001" step="0.001" required>
 <input id="assessmentDue" type="date">
 <button class="accent full" onclick="createAssessment()">Crear evaluación</button>
 </div>
@@ -129,7 +129,7 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px 10px
 <script>
 const tokenEl=document.getElementById('token');
 tokenEl.value=sessionStorage.getItem('education_os_teacher_token')||'';
-let state={summary:null,classes:[],alerts:[],codes:[],tasks:[],sessions:[],attendanceRows:[],periods:[],categories:[],assessments:[]};
+let state={summary:null,classes:[],alerts:[],codes:[],tasks:[],sessions:[],attendanceRows:[],periods:[],categories:[],assessments:[],gradeOperations:{},assessmentOperation:null,statusOperations:{},gradeRows:[]};
 
 function h(){return tokenEl.value.trim()?{'Authorization':'Bearer '+tokenEl.value.trim(),'Content-Type':'application/json'}:{'Content-Type':'application/json'}}
 async function api(path,opts={}){
@@ -238,18 +238,28 @@ async function createCategory(){
 async function createAssessment(){
  const id=document.getElementById('gradeClass').value;
  const due=document.getElementById('assessmentDue').value;
- const body={grading_period_id:document.getElementById('gradingPeriod').value,assessment_category_id:document.getElementById('categorySelect').value,code:document.getElementById('assessmentCode').value,title:document.getElementById('assessmentTitle').value,max_score:Number(document.getElementById('assessmentMax').value||10),due_on:due||null};
- try{await api(`/classes/${id}/assessments`,{method:'POST',body:JSON.stringify(body)});setStatus('Evaluación creada.');await loadGradeWorkspace()}catch(e){setStatus('Error: '+e.message)}
+ const maxValue=document.getElementById('assessmentMax').value;
+ if(!maxValue){setStatus('Enter the maximum score defined for this assessment.');return}
+ const body={grading_period_id:document.getElementById('gradingPeriod').value,assessment_category_id:document.getElementById('categorySelect').value,code:document.getElementById('assessmentCode').value,title:document.getElementById('assessmentTitle').value,max_score:Number(maxValue),due_on:due||null};
+ const fingerprint=JSON.stringify(body);if(!state.assessmentOperation||state.assessmentOperation.fingerprint!==fingerprint)state.assessmentOperation={fingerprint,operation_id:crypto.randomUUID()};
+ try{await api(`/classes/${id}/assessments`,{method:'POST',body:JSON.stringify({...body,operation_id:state.assessmentOperation.operation_id})});state.assessmentOperation=null;setStatus('Assessment saved as draft.');await loadGradeWorkspace()}catch(e){setStatus(gradeError(e))}
 }
 function renderAssessments(){
  const xs=state.assessments||[];
  document.getElementById('assessmentsBody').innerHTML=xs.length?`<table><thead><tr><th>Código</th><th>Título</th><th>Máximo</th><th>Fecha</th></tr></thead><tbody>${xs.map(x=>`<tr><td>${esc(x.code)}</td><td>${esc(x.title)}</td><td>${x.max_score}</td><td>${esc(x.due_on||'—')}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">Sin evaluaciones.</div>';
+ document.getElementById('assessmentsBody').innerHTML=xs.length?`<table><thead><tr><th>Code</th><th>Assessment</th><th>Maximum</th><th>Due</th><th>Status</th><th>Action</th></tr></thead><tbody>${xs.map(x=>`<tr><td>${esc(x.code)}</td><td>${esc(x.title)}</td><td>${x.max_score}</td><td>${esc(x.due_on||'—')}</td><td>${esc(x.status)}</td><td>${x.status==='DRAFT'?`<button onclick="setAssessmentStatus('${x.id}','PUBLISHED')">Publish</button> <button onclick="setAssessmentStatus('${x.id}','ARCHIVED')">Archive</button>`:x.status==='PUBLISHED'?`<button onclick="setAssessmentStatus('${x.id}','CLOSED')">Close</button>`:x.status==='CLOSED'?`<button onclick="setAssessmentStatus('${x.id}','ARCHIVED')">Archive</button>`:''}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">No assessments.</div>';
  document.getElementById('assessmentSelect').innerHTML=xs.map(x=>opt(x.id,`${x.code} · ${x.title}`)).join('');
  if(xs.length)loadGradeRows(); else document.getElementById('gradeRows').innerHTML='<div class="empty">Crea una evaluación.</div>';
 }
+async function setAssessmentStatus(id,next){
+ const item=state.assessments.find(x=>x.id===id);if(!item)return;
+ const key=`${id}:${item.status}:${next}`;if(!state.statusOperations[key])state.statusOperations[key]=crypto.randomUUID();
+ try{await api(`/assessments/${id}/status`,{method:'PATCH',body:JSON.stringify({expected_status:item.status,status:next,operation_id:state.statusOperations[key]})});delete state.statusOperations[key];setStatus('Assessment status updated.');await loadGradeWorkspace()}
+ catch(e){setStatus(gradeError(e));if(e.message.startsWith('409')){delete state.statusOperations[key];await loadGradeWorkspace()}}
+}
 async function loadGradeRows(){
  const id=document.getElementById('assessmentSelect').value;if(!id)return;
- try{renderGradeRows(await api(`/assessments/${id}/grades`))}catch(e){setStatus('Error: '+e.message)}
+ try{state.gradeRows=await api(`/assessments/${id}/grades`);renderGradeRows(state.gradeRows)}catch(e){setStatus(gradeError(e))}
 }
 function renderGradeRows(rows){
  document.getElementById('gradeRows').innerHTML=rows.length?rows.map(r=>`<div class="grade-row">
@@ -264,6 +274,32 @@ async function saveGrade(aid){
  const body={student_section_assignment_id:aid,score:raw===''?null:Number(raw),status,feedback:document.getElementById('gf-'+aid).value||null};
  try{await api(`/assessments/${id}/grades`,{method:'PUT',body:JSON.stringify(body)});setStatus('Calificación guardada.')}catch(e){setStatus('Error: '+e.message)}
 }
+
+function renderGradeRows(rows){
+ const assessment=state.assessments.find(x=>x.id===document.getElementById('assessmentSelect').value);
+ document.getElementById('gradeRows').innerHTML=rows.length?rows.map(r=>{
+  const aid=r.student_section_assignment_id;const locked=assessment&&['CLOSED','ARCHIVED'].includes(assessment.status);
+  return `<div class="grade-row"><div><strong>${esc(r.student_name)}</strong><div class="sub">${esc(r.student_code||'')} · revision ${r.revision}</div></div>
+   <input id="score-${aid}" type="number" min="0" max="${assessment?.max_score??''}" step="0.001" value="${r.score??''}" ${locked?'disabled':''}>
+   <select id="gs-${aid}" ${locked?'disabled':''}>${['PENDING','GRADED','MISSING','EXCUSED'].map(s=>`<option ${s===r.status?'selected':''}>${s}</option>`).join('')}</select>
+   <input id="gf-${aid}" value="${esc(r.feedback||'')}" placeholder="Feedback" ${locked?'disabled':''}>
+   ${r.grade_entry_id?`<select id="reason-${aid}" aria-label="Correction reason"><option value="">Correction reason...</option><option value="DATA_ENTRY_ERROR">Data entry error</option><option value="EVIDENCE_CORRECTION">Evidence correction</option></select><button onclick="loadGradeHistory('${aid}')">History</button>`:''}
+   <button onclick="saveGrade('${aid}')" ${locked?'disabled':''}>Save</button></div>`;
+ }).join(''):'<div class="empty">No eligible students in the current roster.</div>';
+}
+async function saveGrade(aid){
+ const id=document.getElementById('assessmentSelect').value;const raw=document.getElementById('score-'+aid).value;const status=document.getElementById('gs-'+aid).value;
+ const row=state.gradeRows.find(x=>x.student_section_assignment_id===aid);
+ const body={student_section_assignment_id:aid,score:raw===''?null:Number(raw),status,feedback:document.getElementById('gf-'+aid).value||null,expected_revision:row?.revision??0,correction_reason:row?.grade_entry_id?(document.getElementById('reason-'+aid)?.value||null):null};
+ const fingerprint=JSON.stringify(body);let pending=state.gradeOperations[aid];if(!pending||pending.fingerprint!==fingerprint){pending={fingerprint,operation_id:crypto.randomUUID()};state.gradeOperations[aid]=pending}
+ try{await api(`/assessments/${id}/grades`,{method:'PUT',body:JSON.stringify({...body,operation_id:pending.operation_id})});delete state.gradeOperations[aid];setStatus('Result saved.');await loadGradeRows()}
+ catch(e){setStatus(gradeError(e));if(e.message.startsWith('409')){delete state.gradeOperations[aid];await loadGradeRows()}}
+}
+async function loadGradeHistory(aid){
+ const id=document.getElementById('assessmentSelect').value;
+ try{const rows=await api(`/assessments/${id}/grades/${aid}/history`);setStatus(rows.length?rows.map(x=>`Revision ${x.revision}: ${JSON.stringify(x.previous_value)} -> ${JSON.stringify(x.new_value)} · ${x.correction_reason||'initial record'} · ${x.created_at}`).join(' | '):'No result history.')}catch(e){setStatus(gradeError(e))}
+}
+function gradeError(e){const message=e.message||'';if(message.startsWith('403'))return 'Forbidden: current course authorization is required.';if(message.startsWith('404'))return 'Assessment or student is not visible in your scope.';if(message.startsWith('409'))return 'Conflict: result or assessment changed. Refreshing current data.';if(message.startsWith('422'))return 'Validation error: check status, precision and score maximum.';return `Network or server error: ${message}`}
 
 function renderTasks(){
  const xs=state.tasks||[];

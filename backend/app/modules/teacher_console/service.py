@@ -21,17 +21,23 @@ from app.modules.automation.service import acknowledge_task, complete_task
 from app.modules.grades.schemas import (
     AssessmentCategoryCreate,
     AssessmentCreate,
+    AssessmentStatusChange,
     GradeEntryUpsert,
 )
 from app.modules.grades.service import (
+    change_assessment_status,
     create_assessment,
     create_category,
     upsert_entry,
+)
+from app.modules.grades.service import (
+    grade_entry_history as get_grade_entry_history,
 )
 from app.modules.teacher_console.schemas import (
     TeacherAlert,
     TeacherAssessmentCreate,
     TeacherAssessmentRead,
+    TeacherAssessmentStatusChange,
     TeacherAttendanceCode,
     TeacherAttendanceCommand,
     TeacherAttendanceRow,
@@ -782,15 +788,6 @@ def create_teacher_category(
             **payload.model_dump(),
         ),
     )
-    _audit(
-        session,
-        principal,
-        "TEACHER_CATEGORY_CREATED",
-        "AssessmentCategory",
-        entity.id,
-        {"course_offering_id": str(course_offering_id)},
-    )
-    session.commit()
     return TeacherCategoryRead(
         id=entity.id,
         course_offering_id=entity.course_offering_id,
@@ -886,15 +883,6 @@ def create_teacher_assessment(
             **payload.model_dump(),
         ),
     )
-    _audit(
-        session,
-        principal,
-        "TEACHER_ASSESSMENT_CREATED",
-        "Assessment",
-        entity.id,
-        {"course_offering_id": str(course_offering_id)},
-    )
-    session.commit()
     return TeacherAssessmentRead(
         id=entity.id,
         course_offering_id=entity.course_offering_id,
@@ -917,12 +905,23 @@ def _assessment_scope(
     row = session.exec(
         text(
             """
-            SELECT a.id, a.course_offering_id, a.section_id, a.max_score
+            SELECT a.id, a.course_offering_id, a.section_id, a.max_score,
+                   a.status, a.due_on, a.grading_period_id
             FROM assessments a
             JOIN teaching_assignments ta
               ON ta.course_offering_id = a.course_offering_id
              AND ta.staff_profile_id = CAST(:staff_profile_id AS uuid)
+             AND ta.organization_id = CAST(:organization_id AS uuid)
+             AND ta.institution_id = CAST(:institution_id AS uuid)
+            JOIN course_offerings co ON co.id=a.course_offering_id
+             AND co.organization_id=CAST(:organization_id AS uuid)
+             AND co.institution_id=CAST(:institution_id AS uuid)
+             AND co.status='ACTIVE'
+            JOIN academic_periods ap ON ap.id=co.academic_period_id
+             AND ap.status='ACTIVE'
             WHERE a.id = CAST(:assessment_id AS uuid)
+              AND a.organization_id = CAST(:organization_id AS uuid)
+              AND a.institution_id = CAST(:institution_id AS uuid)
               AND (ta.starts_on IS NULL OR ta.starts_on <= CURRENT_DATE)
               AND (ta.ends_on IS NULL OR ta.ends_on >= CURRENT_DATE)
             LIMIT 1
@@ -930,6 +929,8 @@ def _assessment_scope(
         ).bindparams(
             staff_profile_id=str(principal.staff_profile_id),
             assessment_id=str(assessment_id),
+            organization_id=str(principal.organization_id),
+            institution_id=str(principal.institution_id),
         )
     ).first()
     if row is None:
@@ -958,6 +959,12 @@ def grade_rows(
                 ge.score,
                 COALESCE(ge.status, 'PENDING'),
                 ge.feedback
+                ,COALESCE((SELECT MAX((al.metadata_json->>'result_revision')::integer)
+                    FROM audit_logs al
+                    WHERE al.institution_id=CAST(:institution_id AS uuid)
+                      AND al.entity_type='GradeEntry' AND al.entity_id=ge.id
+                      AND al.action IN ('GRADE_RESULT_RECORDED','GRADE_RESULT_CORRECTED')
+                      AND al.metadata_json ? 'result_revision'),0) AS result_revision
             FROM student_section_assignments ssa
             JOIN enrollments e ON e.id = ssa.enrollment_id
             JOIN student_profiles sp ON sp.id = e.student_profile_id
@@ -967,13 +974,26 @@ def grade_rows(
              AND ge.student_section_assignment_id = ssa.id
             WHERE ssa.section_id = CAST(:section_id AS uuid)
               AND ssa.status = 'ACTIVE'
+              AND ssa.organization_id = CAST(:organization_id AS uuid)
+              AND ssa.institution_id = CAST(:institution_id AS uuid)
+              AND ssa.academic_period_id = (SELECT academic_period_id FROM course_offerings WHERE id=CAST(:course_offering_id AS uuid))
+              AND ssa.assigned_on <= CURRENT_DATE
+              AND (ssa.ended_on IS NULL OR ssa.ended_on >= CURRENT_DATE)
+              AND e.organization_id = CAST(:organization_id AS uuid)
+              AND e.institution_id = CAST(:institution_id AS uuid)
+              AND e.academic_period_id = ssa.academic_period_id
               AND e.status = 'ACTIVE'
+              AND sp.organization_id = CAST(:organization_id AS uuid)
+              AND sp.institution_id = CAST(:institution_id AS uuid)
               AND sp.status = 'ACTIVE'
             ORDER BY p.family_names, p.given_names
             """
         ).bindparams(
             assessment_id=str(assessment_id),
             section_id=str(scope[2]),
+            organization_id=str(principal.organization_id),
+            institution_id=str(principal.institution_id),
+            course_offering_id=str(scope[1]),
         )
     ).all()
     return [
@@ -986,6 +1006,7 @@ def grade_rows(
             score=float(row[5]) if row[5] is not None else None,
             status=row[6],
             feedback=row[7],
+            revision=int(row[8]),
         )
         for row in rows
     ]
@@ -1005,12 +1026,16 @@ def mark_grade(
             FROM student_section_assignments
             WHERE id = CAST(:assignment_id AS uuid)
               AND section_id = CAST(:section_id AS uuid)
+              AND organization_id = CAST(:organization_id AS uuid)
+              AND institution_id = CAST(:institution_id AS uuid)
               AND status = 'ACTIVE'
             LIMIT 1
             """
         ).bindparams(
             assignment_id=str(payload.student_section_assignment_id),
             section_id=str(scope[2]),
+            organization_id=str(principal.organization_id),
+            institution_id=str(principal.institution_id),
         )
     ).first()
     if belongs is None:
@@ -1025,21 +1050,32 @@ def mark_grade(
         assessment_id,
         GradeEntryUpsert(**payload.model_dump()),
     )
-    _audit(
+    return entry
+
+
+def change_teacher_assessment_status(
+    session: Session,
+    principal: TeacherPrincipal,
+    assessment_id: UUID,
+    payload: TeacherAssessmentStatusChange,
+):
+    _assessment_scope(session, principal, assessment_id)
+    return change_assessment_status(
         session,
         principal,
-        "TEACHER_GRADE_RECORDED",
-        "GradeEntry",
-        entry.id,
-        {
-            "assessment_id": str(assessment_id),
-            "student_section_assignment_id": str(
-                payload.student_section_assignment_id
-            ),
-        },
+        assessment_id,
+        AssessmentStatusChange(**payload.model_dump()),
     )
-    session.commit()
-    return entry
+
+
+def teacher_grade_history(
+    session: Session,
+    principal: TeacherPrincipal,
+    assessment_id: UUID,
+    assignment_id: UUID,
+):
+    _assessment_scope(session, principal, assessment_id)
+    return get_grade_entry_history(session, principal, assessment_id, assignment_id)
 
 
 def list_teacher_alerts(

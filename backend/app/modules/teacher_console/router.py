@@ -16,11 +16,12 @@ from app.api.access import (
 from app.db.session import get_session
 from app.modules.attendance.schemas import AttendanceRecordRead
 from app.modules.automation.schemas import AutomationTaskRead
-from app.modules.grades.schemas import GradeEntryRead
+from app.modules.grades.schemas import GradeEntryHistoryRead, GradeEntryRead
 from app.modules.teacher_console.schemas import (
     TeacherAlert,
     TeacherAssessmentCreate,
     TeacherAssessmentRead,
+    TeacherAssessmentStatusChange,
     TeacherAttendanceCode,
     TeacherAttendanceCommand,
     TeacherAttendanceRow,
@@ -40,6 +41,7 @@ from app.modules.teacher_console.schemas import (
 from app.modules.teacher_console.service import (
     acknowledge_teacher_task,
     attendance_rows,
+    change_teacher_assessment_status,
     complete_teacher_task,
     create_teacher_assessment,
     create_teacher_category,
@@ -56,6 +58,7 @@ from app.modules.teacher_console.service import (
     list_teacher_tasks,
     mark_attendance,
     mark_grade,
+    teacher_grade_history,
     teacher_summary,
 )
 
@@ -167,6 +170,32 @@ def class_session_create(
         course_offering_id,
         payload,
     )
+
+
+@router.patch(
+    "/assessments/{assessment_id}/status",
+    response_model=TeacherAssessmentRead,
+)
+def assessment_status(
+    assessment_id: UUID,
+    payload: TeacherAssessmentStatusChange,
+    principal: GradesPrincipalDep,
+    session: SessionDep,
+):
+    return change_teacher_assessment_status(session, principal, assessment_id, payload)
+
+
+@router.get(
+    "/assessments/{assessment_id}/grades/{assignment_id}/history",
+    response_model=list[GradeEntryHistoryRead],
+)
+def assessment_grade_history(
+    assessment_id: UUID,
+    assignment_id: UUID,
+    principal: GradesPrincipalDep,
+    session: SessionDep,
+):
+    return teacher_grade_history(session, principal, assessment_id, assignment_id)
 
 
 @router.get(

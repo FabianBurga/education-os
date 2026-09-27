@@ -20,6 +20,8 @@ def test_m3_routes_registered() -> None:
         "/api/v1/grades/scales/{scale_id}/bands",
         "/api/v1/grades/categories",
         "/api/v1/grades/assessments",
+        "/api/v1/grades/assessments/{assessment_id}/status",
+        "/api/v1/grades/assessments/{assessment_id}/entries/{assignment_id}/history",
         "/api/v1/grades/assessments/{assessment_id}/entries",
     }
     assert expected.issubset(paths)
@@ -46,5 +48,6 @@ def test_grading_scale_rejects_invalid_range() -> None:
 
 
 def test_m3_events_are_unique_and_namespaced() -> None:
-    assert len(M3_EVENT_NAMES) == 13
+    assert len(M3_EVENT_NAMES) == 14
     assert all("." in event for event in M3_EVENT_NAMES)
+    assert "assessment.status_changed" in M3_EVENT_NAMES

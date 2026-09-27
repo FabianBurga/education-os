@@ -11,6 +11,7 @@ M3_EVENT_NAMES = frozenset(
         "grading.scale.created",
         "assessment.category.created",
         "assessment.created",
+        "assessment.status_changed",
         "grade.recorded",
         "grade.updated",
     }

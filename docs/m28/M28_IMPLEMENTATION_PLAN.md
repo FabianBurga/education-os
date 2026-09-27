@@ -165,24 +165,38 @@ choice subject to the frozen behavior and ASTRA security acceptance.
   8 passed, 0 skipped. Frontend focused tests, typecheck, production build,
   changed-file Ruff/py_compile, Alembic head/current, and diff-check passed.
 
-## M28-6 — Assessment result correction
+## M28-6 — Assessment and results operations — CLOSED / PASS
 
-- Goal: assigned teacher creates a bounded assessment, records and corrects
-  results without losing prior evidence or fabricating zero grades.
-- Backend: existing assessment/category/period/entry services; finite score
-  and status rules, immutable used denominator, explicit correction history,
-  expected revision and single transaction including audit/event.
-- Frontend: extend existing teacher workspace with minimal assessment/result
-  panel, reuse M10 APIs and source permissions; display missing/excused explicitly.
-- Migration: conditional result revision/receipt support; no final transcript store.
-- Security: assignment/roster, grade/manage versus historical correction,
-  private feedback, period/offering/category mismatch.
-- Tests: score/status/precision boundaries, duplicate/retry/concurrent correction,
-  missing != zero, failed audit rollback; M3/M10/M11/M12/M18/M21/M22 affected
-  result regressions and focused frontend entry/error tests.
-- Dependencies: M28-3, M28-4; reuse command mechanics accepted in M28-5.
-- Full backend suite: NO.
-- Stop: no GPA/final-grade algorithm, promotion decision, national scale or LMS.
+- Goal delivered: authorized assessment definitions and student results remain
+  in M3; result corrections preserve prior evidence and distinguish zero from
+  missing.
+- Backend: operation-specific academic permission checks for institutional
+  actors; M10 teacher permission plus current assignment/offering/roster
+  validation; bounded assessment lifecycle; finite `NUMERIC(8,3)` scores,
+  assessment maximum validation and explicit status/score semantics. Operation
+  replay, expected revision, row locks, audit history and canonical outbox event
+  are transactionally coherent. No parallel authority or migration was needed.
+- M21 diagnosis: the installed FORCE-RLS INSERT check was correct. The test's
+  suffixed synthetic role passed `admin.console.access` but did not satisfy the
+  SELECT visibility policy used by `INSERT ... RETURNING id`. The fixture now
+  uses the recognized M21 role key with only the required projector/read grants.
+  The runtime projector and policy were not changed. Same-tenant projection,
+  teacher/unprivileged denial and mismatched-institution denial are covered.
+- Frontend: extended the established M10 Teacher Console assessment/results
+  surface; no parallel gradebook. M11 M12 M3 M10 contract tests preserve their
+  existing route boundaries. No dedicated React assessment-result test exists.
+- Migration: NONE. Existing M3 structures, audit log and outbox provide the
+  required authority/history/event behavior; revisions 0001-0046 are unchanged.
+- Validation: directed M28/M3/M10/M18/M20/M21 regression 88 passed; backend
+  suite 768 passed, 2 skipped (the opt-in `M21_E2E_DATABASE_URL` attendance E2E
+  tests), 0 failed. The new result-to-M18-to-M21 test executed and passed with
+  0 skips. Frontend tests 76 passed; typecheck and production build passed;
+  Ruff, `py_compile`, Alembic heads/current and diff-check passed. Full backend
+  ran once after the shared M3 result authority change. Existing build chunk
+  size/dynamic-import and test JWT/pytest-marker warnings remain.
+- Details: [M28 assessment and results](M28_ASSESSMENT_RESULTS.md).
+- Stop boundary respected: no weighted/final-grade calculation, GPA,
+  report-card engine, promotion, graduation or progression logic.
 
 ## M28-7 — Operational history and evidence continuity
 
