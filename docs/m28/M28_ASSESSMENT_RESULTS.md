@@ -14,6 +14,11 @@ Assessment status follows the existing `DRAFT`, `PUBLISHED`, `CLOSED`, and
 commands move them through the lifecycle. A closed or archived assessment is
 not writable. Grading periods must belong to the offering's academic period;
 categories and assessments are likewise scoped to that offering and period.
+Grading periods use expected-state `PLANNED → ACTIVE → CLOSED` transitions
+through the institutional grades API; activation requires the parent academic
+period to be active. Status changes retain audit and canonical M18 event
+evidence. Teacher publication and closure use the assignment-scoped Teacher
+Console API.
 
 ## Result semantics and scores
 

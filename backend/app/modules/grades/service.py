@@ -32,6 +32,7 @@ from app.modules.grades.schemas import (
     GradeEntryRead,
     GradeEntryUpsert,
     GradingPeriodCreate,
+    GradingPeriodStatusChange,
     GradingScaleBandCreate,
     GradingScaleCreate,
 )
@@ -204,6 +205,46 @@ def create_period(
     session.commit()
     session.refresh(entity)
     return entity
+
+
+def change_grading_period_status(
+    session: Session,
+    principal: CurrentPrincipal,
+    period_id: UUID,
+    payload: GradingPeriodStatusChange,
+) -> GradingPeriod:
+    _require_grade_access(session, principal, manage=True)
+    period = _scope_query(session, GradingPeriod, period_id, principal, "Grading period", lock=True)
+    if period.status != payload.expected_status:
+        raise HTTPException(status_code=409, detail="Grading period status changed; reload and retry")
+    allowed = {"PLANNED": "ACTIVE", "ACTIVE": "CLOSED"}
+    if allowed.get(period.status) != payload.status:
+        raise HTTPException(status_code=409, detail="Invalid grading period status transition")
+    academic_period = _scope_query(session, AcademicPeriod, period.academic_period_id, principal, "Academic period")
+    if payload.status == "ACTIVE" and academic_period.status != "ACTIVE":
+        raise HTTPException(status_code=409, detail="Academic period must be active before its grading period")
+    previous_status = period.status
+    period.status = payload.status
+    session.add(period)
+    record_audit(
+        session, institution_id=principal.institution_id,
+        actor_user_id=principal.user_id, action="GRADING_PERIOD_STATUS_CHANGED",
+        entity_type="GradingPeriod", entity_id=period.id,
+        metadata={"academic_period_id": str(period.academic_period_id),
+                  "previous_status": previous_status, "status": payload.status},
+    )
+    enqueue_canonical_event(
+        session, institution_id=principal.institution_id,
+        event_type="grading_period.status_changed", event_version=1,
+        aggregate_type="grading_period", aggregate_id=period.id,
+        actor_user_id=principal.user_id,
+        payload={"grading_period_id": str(period.id),
+                 "academic_period_id": str(period.academic_period_id),
+                 "previous_status": previous_status, "status": payload.status},
+    )
+    session.commit()
+    session.refresh(period)
+    return period
 
 
 def list_scales(session: Session, principal: CurrentPrincipal):

@@ -17,6 +17,7 @@ from app.modules.grades.schemas import (
     GradeEntryUpsert,
     GradingPeriodCreate,
     GradingPeriodRead,
+    GradingPeriodStatusChange,
     GradingScaleBandCreate,
     GradingScaleBandRead,
     GradingScaleCreate,
@@ -25,6 +26,7 @@ from app.modules.grades.schemas import (
 from app.modules.grades.service import (
     add_scale_band,
     change_assessment_status,
+    change_grading_period_status,
     create_assessment,
     create_category,
     create_period,
@@ -55,6 +57,16 @@ def periods_create(
     session: SessionDep,
 ):
     return create_period(session, principal, payload)
+
+
+@router.patch("/periods/{period_id}/status", response_model=GradingPeriodRead)
+def periods_change_status(
+    period_id: UUID,
+    payload: GradingPeriodStatusChange,
+    principal: PrincipalDep,
+    session: SessionDep,
+):
+    return change_grading_period_status(session, principal, period_id, payload)
 
 
 @router.get("/scales", response_model=list[GradingScaleRead])

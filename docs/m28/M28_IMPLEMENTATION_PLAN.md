@@ -225,31 +225,33 @@ choice subject to the frozen behavior and ASTRA security acceptance.
   typecheck and production build passed (existing chunk/dynamic-import
   warnings). No Python files changed; Ruff/`py_compile` had no targets.
   Alembic heads/current remained `0046_m28_attendance_perms`; diff-check passed.
-- Stop boundary respected: M28-8 remains NOT STARTED. No new signal rules,
-  metrics, accountability automation, providers, or autonomous intervention.
+- At M28-7 closeout, M28-8 had not started. No new signal rules, metrics,
+  accountability automation, providers, or autonomous intervention were added.
 
 ## M28-8 — Controlled operational pilot and closeout
 
-- Goal: prove daily synthetic operation and prepare a controlled human run.
-- Backend/frontend: existing harnesses plus deterministic, synthetic fixtures
-  and strongest existing UI integration harness; repair only pilot blockers.
-- Migration: NONE expected; any genuine schema defect needs forward migration
-  and affected tests before returning to pilot. Never edit a historical revision.
-- Security: two institutions; operator, rector/coordinator, teachers A/B,
-  bare SYSTEM_ADMIN and guardian negative controls. Application-role sessions,
-  no real PII/providers; replay, concurrency and cleanup/reprovision safety.
-- Tests: one complete lifecycle, one withdrawal/reactivation/transfer history,
-  online/offline conflict, result correction, M24 import equivalence, cross-tenant
-  denial, current/suppressed evidence, and manual instrument preparation.
-- Dependencies: all previous slices accepted by ASTRA.
-- Full backend suite: YES once at final accepted product state; full frontend
-  tests/typecheck/build, changed-file Ruff, compile, Alembic and diff-check.
-  A later docs-only closeout reuses this evidence. Real post-gate code changes
-  invalidate the relevant evidence and require justified revalidation.
-- Artifact: commit/schema/dataset/clock, actors, scenarios, observed facts,
-  metric denominators, lineage, test summaries, cleanup and three gate decisions.
-- Stop: local closeout only; push/tag/release and later milestones need new
-  authorization. No claim of field validation or production certification.
+- Status: CLOSED / PASS. The rollback-contained pilot exercised ten synthetic
+  students, two sections, four offerings, two assignment-scoped teachers,
+  manager/coordinator governance, and unauthorized/SYSTEM_ADMIN denials.
+- Defect resolved: grading periods had no public PLANNED → ACTIVE lifecycle
+  route despite the M3 assessment write precondition. The new expected-state
+  operation is institutional-permission scoped and writes audit plus a
+  canonical outbox event. No schema/RLS migration was needed.
+- Evidence: online/offline attendance and replay/conflict; result entry,
+  correction/history and stale conflict; enrollment/placement transfer;
+  M18→M21 attendance/result projection and idempotent replay; existing M22
+  attendance-risk rule; human-owned/reviewed M27 case; separate M24 import
+  continuity test. No autonomous high-impact action was produced.
+- Validation: focused pilot/assessment/import 3 passed; explicit M21 online and
+  offline E2E 2 passed; full backend 769 passed, 0 failed, 2 expected opt-in
+  M21 skips; full frontend 76 passed; typecheck/build, changed-file Ruff,
+  py_compile, Alembic and diff-check passed. Local synthetic residue count 0.
+- Migration: NONE. Current Alembic is `0046_m28_attendance_perms`; 0043–0046
+  remain intact. See `M28_SYNTHETIC_PILOT.md` and `M28_CLOSEOUT.md` for detail.
+- Readiness: READY_FOR_CONTROLLED_HUMAN_PILOT=YES;
+  FIELD_VALIDATED=NO; PRODUCTION_CERTIFIED=NO. No push, tag, merge or release.
+- Stop: M28 is closed after the local M28-8 closure commit. Do not begin M29+
+  work or publish a release under this slice.
 
 ## Validation economy and reproducibility
 

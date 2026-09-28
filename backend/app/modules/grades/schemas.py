@@ -27,6 +27,12 @@ class GradingPeriodCreate(BaseModel):
         return self
 
 
+class GradingPeriodStatusChange(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    expected_status: Literal["PLANNED", "ACTIVE", "CLOSED"]
+    status: Literal["ACTIVE", "CLOSED"]
+
+
 class GradingPeriodRead(TenantRead):
     academic_period_id: UUID
     code: str
