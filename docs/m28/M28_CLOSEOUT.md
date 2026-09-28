@@ -2,12 +2,14 @@
 
 ## Status
 
-TECHNICAL_GATE: PASS  
-OPERATIONAL_GATE: PASS  
-SYNTHETIC_PILOT: PASS  
-READY_FOR_CONTROLLED_HUMAN_PILOT: YES  
-FIELD_VALIDATED: NO  
-PRODUCTION_CERTIFIED: NO
+| Gate | Result |
+| --- | --- |
+| TECHNICAL_GATE | PASS |
+| OPERATIONAL_GATE | PASS |
+| SYNTHETIC_PILOT | PASS |
+| READY_FOR_CONTROLLED_HUMAN_PILOT | YES |
+| FIELD_VALIDATED | NO |
+| PRODUCTION_CERTIFIED | NO |
 
 This closeout is based on local synthetic integration evidence. It makes no
 claim of real teacher adoption, field validation, measured time savings,
