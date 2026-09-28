@@ -439,13 +439,18 @@ def test_m28_synthetic_institution_operational_journey():
             roster = _assert(client.get(f"/api/v1/teacher/assessments/{assessment['id']}/grades", headers=teacher_headers), 200)
             entries = []
             for row_index, grade_row in enumerate(roster):
-                score = 0 if row_index == 0 else 14.5
+                status = "MISSING" if row_index == 4 else "GRADED"
+                score = None if status == "MISSING" else (0 if row_index == 0 else 14.5)
                 result = _assert(client.put(
                     f"/api/v1/teacher/assessments/{assessment['id']}/grades", headers=teacher_headers,
                     json={"student_section_assignment_id": grade_row["student_section_assignment_id"],
-                          "score": score, "status": "GRADED", "expected_revision": 0,
+                          "score": score, "status": status, "expected_revision": 0,
                           "operation_id": str(uuid4())},
                 ), 200)
+                if row_index == 4:
+                    assert result["status"] == "MISSING" and result["score"] is None
+                if row_index == 0:
+                    assert result["status"] == "GRADED" and result["score"] == 0.0
                 entries.append(result)
             entries_by_assessment.append(entries)
         assert sum(map(len, entries_by_assessment)) == 10

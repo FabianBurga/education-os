@@ -37,7 +37,8 @@ enrollment remains ACTIVE.
 Teacher A and Teacher B create separate assessment categories and assessments
 with explicit maximum score 20. The assessments use the scoped Teacher Console
 publication route. Ten eligible students receive results including a valid
-zero. A correction records the prior zero, new `12.125` value, actor and
+zero and a `MISSING` result with null score. A correction records the prior
+zero, new `12.125` value, actor and
 revision; a stale correction receives 409. Assessments and the grading period
 are closed through expected-state commands after entry.
 

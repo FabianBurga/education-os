@@ -44,8 +44,9 @@ one campus, one active academic period, two grade/section contexts, two
 subjects, four offerings, two teachers, and ten synthetic students. It covered
 student create/update and stale update, pending-to-active enrollment, current
 and historical placements with transfer, assignment-scoped roster reads,
-explicit-maximum published assessments, numeric zero and decimal result
-correction, stale correction conflict, assessment/grading-period closure,
+explicit-maximum published assessments, numeric zero, a distinct `MISSING`
+result with null score, decimal result correction, stale correction conflict,
+assessment/grading-period closure,
 online attendance correction, offline sync/replay/conflict, M18 ingestion,
 M21 projection/replay, the supported M22 attendance-risk signal, and the
 existing human-reviewed M27 accountability path. Fixture rows were rolled back
