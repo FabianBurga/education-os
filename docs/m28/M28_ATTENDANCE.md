@@ -82,13 +82,12 @@ The controlled M28 integration fixture exercises online creation and
 correction, stale online state, offline conflict, apply, replay, idempotency
 mismatch, scope revocation, event counts, rollback behavior, and audit/outbox
 atomicity. Unit contracts cover M21's canonical attendance event mapping and
-note minimization. The separate M21 database end-to-end test requires an active
-teacher/session/student fixture and skipped in this local database because no
-such fixture was available. The owner database role cannot run the M21 runtime
-projection function, by design; the runtime role cannot insert into the
-append-only M18 ledger. This slice therefore records the canonical M3 event and
-the existing M21 consumer contract, but did not claim a local end-to-end
-projection run.
+note minimization. The two M21 database end-to-end attendance tests were also
+executed against the configured local application database and passed. Their
+rollback-contained fixture provisions the required active teacher, session,
+student, and tenant context; M18 ingestion and M21 projection run through the
+runtime application principal. No owner/superuser bypass or direct M21 write is
+used for the continuity proof.
 
 There is no explicit attendance revision column: concurrency is guarded by a
 locked target plus expected-state comparison, while correction history is

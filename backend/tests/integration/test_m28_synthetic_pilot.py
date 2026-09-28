@@ -552,6 +552,47 @@ def test_m28_synthetic_institution_operational_journey():
         ), 200)["results"][0]
         assert stale_result["status"] == "CONFLICT"
 
+        # Reuse the operation ID against a different, still-authorized class
+        # after the original assignment is revoked.  The mismatch must not
+        # disclose the original target's attendance state.
+        alternate_session = _assert(client.post(
+            f"/api/v1/teacher/classes/{offerings[2]['id']}/sessions", headers=teacher_a, json={
+                "session_date": today.isoformat(), "starts_at": "10:00", "ends_at": "10:45",
+            },
+        ), 201)
+        before_mismatch_records = pilot["session"].exec(text(
+            "SELECT count(*) FROM attendance_records WHERE class_session_id IN (:original, :alternate)"
+        ), params={"original": first_session["id"], "alternate": alternate_session["id"]}).one()[0]
+        before_mismatch_events = pilot["session"].exec(text(
+            "SELECT count(*) FROM outbox_events WHERE event_type LIKE 'student.attendance.%'"
+        )).one()[0]
+        original_assignment = assignment_map["teacher_a"][0]
+        _assert(client.patch(
+            f"/api/v1/academics/teaching-assignments/{original_assignment['id']}", headers=manager,
+            json={"expected_ends_on": original_assignment["ends_on"], "ends_on": (today - timedelta(days=2)).isoformat()},
+        ), 200)
+        mismatch_after_revocation = offline_op.model_copy(update={
+            "operations": [offline_op.operations[0].model_copy(update={
+                "class_session_id": UUID(alternate_session["id"]),
+                "desired": offline_op.operations[0].desired.model_copy(update={
+                    "student_section_assignment_id": UUID(placements[1]),
+                }),
+            })],
+        })
+        mismatch = _assert(client.post(
+            "/api/v1/teacher/offline/sync", headers=teacher_a,
+            json=mismatch_after_revocation.model_dump(mode="json"),
+        ), 200)["results"][0]
+        assert mismatch["status"] == "IDEMPOTENCY_MISMATCH"
+        assert mismatch.get("result_entity_id") is None
+        assert mismatch.get("server_state") is None
+        assert pilot["session"].exec(text(
+            "SELECT count(*) FROM attendance_records WHERE class_session_id IN (:original, :alternate)"
+        ), params={"original": first_session["id"], "alternate": alternate_session["id"]}).one()[0] == before_mismatch_records
+        assert pilot["session"].exec(text(
+            "SELECT count(*) FROM outbox_events WHERE event_type LIKE 'student.attendance.%'"
+        )).one()[0] == before_mismatch_events
+
         transfer = _assert(client.post(
             f"/api/v1/academics/enrollments/{enrollments[0]}/placements/transfer", headers=manager,
             json={"expected_current_placement_id": placements[0], "section_id": sections[1]["id"],

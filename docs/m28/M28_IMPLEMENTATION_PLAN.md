@@ -4,9 +4,11 @@
 
 M28-0 froze scope on published M27 tag at
 `8af4557ee77d04adb2cb20d5994684268aacd194`. Branch:
-`m28-operational-adoption-core`. M28-1 and M28-2 are CLOSED / PASS; M28-3 is
-CLOSED / PASS on migration `0045_m28_academic_permissions`. M28-4 onward remain
-NOT STARTED.
+`m28-operational-adoption-core`. M28-1 through M28-8 are CLOSED / PASS on the
+local candidate branch; the forward-only migration head is
+`0046_m28_attendance_perms`. M28-8 is the final synthetic pilot and closeout
+slice. Publication remains a separate reviewed release decision, and M29 work
+is outside this plan.
 
 Read [scope](M28_SCOPE.md), [inventory](M28_CAPABILITY_INVENTORY.md),
 [domain](M28_DOMAIN_BOUNDARIES.md), [security](M28_SECURITY_BOUNDARY.md) and

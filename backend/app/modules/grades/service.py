@@ -147,8 +147,19 @@ def _grade_value(entry: GradeEntry | None) -> dict | None:
     return {
         "score": format(score.quantize(Decimal("0.001")), "f") if score is not None else None,
         "status": entry.status,
-        "feedback": entry.feedback,
     }
+
+
+def _grade_command_value(entry: GradeEntry | None) -> dict | None:
+    value = _grade_value(entry)
+    if value is None:
+        return None
+    return {**value, "feedback": entry.feedback}
+
+
+def _grade_request_fingerprint(value: dict) -> str:
+    raw = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+    return hashlib.sha256(raw).hexdigest()
 
 
 def _assessment_event(session: Session, principal: CurrentPrincipal, *, event_type: str, aggregate_id: UUID, payload: dict) -> None:
@@ -479,6 +490,7 @@ def upsert_entry(
         "status": payload.status,
         "feedback": payload.feedback,
     }
+    request_fingerprint = _grade_request_fingerprint(request_value)
     prior = session.exec(
         text("""SELECT entity_id, metadata_json FROM audit_logs
         WHERE institution_id=:institution_id AND entity_type='GradeEntry'
@@ -488,10 +500,16 @@ def upsert_entry(
     ).first()
     if prior is not None:
         metadata = prior[1]
+        prior_fingerprint = metadata.get("request_fingerprint")
+        same_request = (
+            prior_fingerprint == request_fingerprint
+            if prior_fingerprint is not None
+            else metadata.get("new_value") == request_value
+        )
         if (
             metadata.get("assessment_id") != str(assessment_id)
             or metadata.get("student_section_assignment_id") != str(assignment_id)
-            or metadata.get("new_value") != request_value
+            or not same_request
             or metadata.get("correction_reason") != payload.correction_reason
         ):
             raise HTTPException(status_code=409, detail="Operation id was already used for another result command")
@@ -578,7 +596,7 @@ def upsert_entry(
     if existing is not None and payload.correction_reason is None:
         raise HTTPException(status_code=422, detail="A bounded correction reason is required")
     previous_value = _grade_value(existing)
-    if previous_value == request_value:
+    if _grade_command_value(existing) == request_value:
         record_audit(
             session,
             institution_id=principal.institution_id,
@@ -590,7 +608,8 @@ def upsert_entry(
                 "operation_id": str(payload.operation_id),
                 "assessment_id": str(assessment_id),
                 "student_section_assignment_id": str(assignment_id),
-                "new_value": request_value,
+                "new_value": _grade_value(existing),
+                "request_fingerprint": request_fingerprint,
                 "correction_reason": payload.correction_reason,
             },
         )
@@ -627,7 +646,8 @@ def upsert_entry(
         "assessment_id": str(assessment_id),
         "student_section_assignment_id": str(assignment_id),
         "previous_value": previous_value,
-        "new_value": request_value,
+        "new_value": _grade_value(entry),
+        "request_fingerprint": request_fingerprint,
         "correction_reason": payload.correction_reason,
     }
     record_audit(

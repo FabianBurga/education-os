@@ -226,7 +226,7 @@ def test_assessment_results_are_scoped_versioned_audited_and_projected():
                 "student_section_assignment_id": str(generated["placement"]),
                 "score": 0,
                 "status": "GRADED",
-                "feedback": None,
+                "feedback": "private feedback must remain in the result only",
                 "expected_revision": 0,
                 "operation_id": str(uuid4()),
                 "correction_reason": None,
@@ -236,11 +236,22 @@ def test_assessment_results_are_scoped_versioned_audited_and_projected():
             generated["entry"] = first.json()["id"]
             assert first.json()["score"] == 0
             assert first.json()["status"] == "GRADED"
+            assert first.json()["feedback"] == create_result["feedback"]
             assert first.json()["revision"] == 1
             replay = client.put(result_url, headers=pilot["teacher_headers"], json=create_result)
             assert replay.status_code == 200, replay.text
             assert replay.json()["id"] == generated["entry"]
             assert owner.exec(text("SELECT count(*) FROM outbox_events WHERE aggregate_id=:id AND event_type='student.grade.recorded'"), params={"id": generated["entry"]}).one()[0] == 1
+            audit_metadata = owner.exec(
+                text("SELECT metadata_json FROM audit_logs WHERE entity_type='GradeEntry' AND entity_id=:id ORDER BY created_at"),
+                params={"id": generated["entry"]},
+            ).all()
+            assert audit_metadata
+            assert all("feedback" not in row[0] for row in audit_metadata)
+            assert all("private feedback must remain in the result only" not in str(row[0]) for row in audit_metadata)
+            assert audit_metadata[0][0]["new_value"] == {"score": "0.000", "status": "GRADED"}
+            feedback_mismatch = {**create_result, "feedback": "different command", "operation_id": create_result["operation_id"]}
+            assert client.put(result_url, headers=pilot["teacher_headers"], json=feedback_mismatch).status_code == 409
 
             invalid = {**create_result, "operation_id": str(uuid4()), "score": 17.251}
             assert client.put(result_url, headers=pilot["teacher_headers"], json=invalid).status_code == 422

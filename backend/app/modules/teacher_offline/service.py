@@ -193,7 +193,11 @@ def _sync_one(session: Session, principal: TeacherPrincipal, op: TeacherOfflineA
     receipt=_receipt(session,principal,op.operation_id)
     if receipt is not None:
         if receipt[0]!=request_hash:
-            return TeacherOfflineSyncResult(operation_id=op.operation_id,status="IDEMPOTENCY_MISMATCH",result_entity_id=receipt[1],server_state=_by_id(session,receipt[1]),detail="operation_id was already applied with a different payload")
+            # A changed payload is not a replay.  The submitted target has
+            # already been authorized above, but the original receipt target
+            # may no longer be in the teacher's current scope.  Never load or
+            # return that protected row for a mismatch response.
+            return TeacherOfflineSyncResult(operation_id=op.operation_id,status="IDEMPOTENCY_MISMATCH",detail="operation_id was already applied with a different payload")
         return TeacherOfflineSyncResult(operation_id=op.operation_id,status="REPLAYED",result_entity_id=receipt[1],server_state=_by_id(session,receipt[1]))
     code=session.exec(text("""SELECT 1 FROM attendance_codes WHERE id=CAST(:id AS uuid)
       AND organization_id=CAST(:organization_id AS uuid)
