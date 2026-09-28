@@ -198,26 +198,35 @@ choice subject to the frozen behavior and ASTRA security acceptance.
 - Stop boundary respected: no weighted/final-grade calculation, GPA,
   report-card engine, promotion, graduation or progression logic.
 
-## M28-7 — Operational history and evidence continuity
+## M28-7 — Operational history and evidence continuity — CLOSED / PASS
 
-- Goal: operator/rector/coordinator can follow an accepted record to M18,
-  M21/M22 and existing M27 with correct provenance, permissions and freshness.
-- Backend: bounded composed history/readiness queries and existing projection
-  orchestration; include M24 source-run references. No direct writes to M27,
-  no new authoritative history/analytics store and no dashboard side-effect.
-- Frontend: reuse record workspace and Student360 links, institutional context,
-  actionable next steps and stale/suppressed states; no per-card fetch waterfall.
-- Migration: NONE expected. If new M21 payload consumption is required, stop
-  for ASTRA additive contract review; the default uses existing event allowlists.
-- Security: destination reauthorization, counts match row scope, suppressed
-  values never recomputed, no broad ledger payload endpoint.
-- Tests: real event -> ledger -> timeline, domain -> M22 -> M27 source continuity,
-  replay/no duplication, correction/freshness, read-only and no causal claims;
-  directed M18/M19/M20/M21/M22/M24/M27. M25/M26 only if those boundaries touched.
-- Dependencies: M28-2..6.
-- Full backend suite: YES once after directed PASS; full frontend tests,
-  typecheck and production build. This is the major integration boundary.
-- Stop: no new signals/metrics/case rules, providers or autonomous intervention.
+- Goal delivered: consolidated authority, event, projection, provenance,
+  freshness, privacy and human-control boundaries across M28 and existing
+  M18/M21/M22/M27. Existing IDs and services remain authoritative; no feature
+  dashboard, composed history API, or new projection was introduced.
+- Evidence: [M28 operational continuity](M28_OPERATIONAL_CONTINUITY.md)
+  maps each authority and consumer. Focused cross-milestone regression passed
+  60 tests; both opt-in M21 online/offline attendance E2E tests passed against
+  the local application database. M28-6's runtime M3 result → M18 → M21
+  integration remained green. M24 import→M1 enrollment lifecycle and M27
+  append-only human review/decision/ownership paths passed in existing suites.
+- Boundaries: M22 derives from operational records plus M21 intervention
+  evidence; it does not consume the M21 timeline as an event feed. M27 can
+  reference eligible existing evidence through authorized human review, but
+  neither an M22 signal nor an operational event automatically creates a
+  decision or high-impact action. Asynchronous consumers retain independent
+  checkpoints; there is no cross-domain watermark.
+- Migration: NONE. No source code, schema, RLS policy, grants or historical
+  migration changed. Assessment commands continue to require explicit maximum
+  score despite the historical M3 database default.
+- Validation: required full backend passed 768 tests, 0 failed, with two
+  opt-in M21 cases skipped in the default invocation; the two cases separately
+  passed when configured for the local DB. Full frontend passed 76 tests;
+  typecheck and production build passed (existing chunk/dynamic-import
+  warnings). No Python files changed; Ruff/`py_compile` had no targets.
+  Alembic heads/current remained `0046_m28_attendance_perms`; diff-check passed.
+- Stop boundary respected: M28-8 remains NOT STARTED. No new signal rules,
+  metrics, accountability automation, providers, or autonomous intervention.
 
 ## M28-8 — Controlled operational pilot and closeout
 
