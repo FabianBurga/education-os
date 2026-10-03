@@ -1,0 +1,29 @@
+{
+  "memory_version": 1,
+  "project": "Education OS",
+  "canonical_branch": "m29-teacher-family-continuity",
+  "baseline_release": {
+    "milestone": "M28 — Operational Adoption Core v0.28.0",
+    "tag": "m28-operational-adoption-core-v0.28.0",
+    "commit": "c21e7c1287a8bc7abd8f355aa619e67c0beee0c4"
+  },
+  "current": {
+    "milestone": "M29 — Teacher & Family Continuity",
+    "stage": "M29-AO — Agent Orchestration + Project Memory + Efficiency Foundation",
+    "status": "PASS; M29-1 awaits human contract acceptance"
+  },
+  "database": {
+    "migration_head": "0046_m28_attendance_perms"
+  },
+  "orchestration": {
+    "mode": "native delegated subagents, single root orchestrator",
+    "root_agent": "A0 — ORCHESTRATOR / ARCHITECT",
+    "max_concurrent_subagents": 3,
+    "nested_subagents": false
+  },
+  "memory_anchor_commit": "ba371604a588a9093987e8b636ba9b4e570d9b0c",
+  "memory_anchor_semantics": "Last accepted project-context baseline described by this memory, not the commit that contains this memory. Inspect only anchor..HEAD before wider rediscovery.",
+  "last_validation_baseline": "M28 closeout: backend 769 passed, 0 failed, 2 opt-in M21 E2E skipped (each passed separately); frontend 76 passed; typecheck/build/Ruff/py_compile/Alembic/diff-check passed. See docs/m28/M28_CLOSEOUT.md.",
+  "next_expected_step": "Human review of M29-0 continuity/privacy contract; then bounded M29-1 Task Contract.",
+  "canonical_context": "docs/memory/CURRENT_CONTEXT.md"
+}

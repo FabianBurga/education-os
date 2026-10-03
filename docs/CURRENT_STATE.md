@@ -1,10 +1,11 @@
 # Current State
 
-## Current canonical handoff — M29-0
+## Current canonical handoff — M29-AO
 
 M29 — Teacher & Family Continuity is CURRENT on branch
-`m29-teacher-family-continuity`. Current stage: M29-0 — Canonical Bootstrap &
-Contract Freeze (documentation and discovery only). The branch is based on
+`m29-teacher-family-continuity`. M29-0 — Canonical Bootstrap & Contract Freeze
+is PASS. Current task: M29-AO — Agent Orchestration + Project Memory +
+Efficiency Foundation. The branch is based on
 the immutable M28 release tag `m28-operational-adoption-core-v0.28.0`, peeled
 to `c21e7c1287a8bc7abd8f355aa619e67c0beee0c4`. M28 is CLOSED / PUBLISHED /
 CANONICAL; its Alembic head is `0046_m28_attendance_perms`. Do not modify the

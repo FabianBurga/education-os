@@ -4,11 +4,11 @@
   "source_base_commit": "c21e7c1287a8bc7abd8f355aa619e67c0beee0c4",
   "database_revision": "0046_m28_attendance_perms",
   "active_milestone": "M29",
-  "active_slice": "M29-0 — Canonical Bootstrap & Contract Freeze",
+  "active_slice": "M29-AO — Agent Orchestration + Project Memory + Efficiency Foundation",
   "previous_slice": "M28-CLOSED-PUBLISHED",
   "branch": "m29-teacher-family-continuity",
   "previous_milestone": "M28",
-  "milestone_status": "M29_0_IN_PROGRESS",
+  "milestone_status": "M29_AO_IN_PROGRESS",
   "m28_0_status": "CLOSED_PASS",
   "m28_1_status": "CLOSED_PASS",
   "m28_2_status": "CLOSED_PASS",
@@ -73,8 +73,11 @@
   "m27_7_status": "CLOSED_PASS",
   "m27_8_status": "CLOSED_PASS_WITH_HUMAN_LIMITATIONS",
   "m28_1_evidence": "docs/m28/M28_STUDENT_RECORD.md",
-  "m29_0_status": "IN_PROGRESS",
+  "m29_0_status": "CLOSED_PASS",
+  "m29_ao_status": "PASS",
   "m29_1_status": "NOT_STARTED",
   "m29_scope_document": "docs/m29/M29_SCOPE.md",
-  "next_step": "Review and accept M29-0 capability inventory, continuity gaps, privacy boundary, and frozen contract before M29-1"
+  "memory_state_document": "docs/memory/PROJECT_STATE.json",
+  "memory_anchor_commit": "ba371604a588a9093987e8b636ba9b4e570d9b0c",
+  "next_step": "Create a bounded M29-1 Task Contract after reviewing the M29-0 privacy/product decisions"
 }

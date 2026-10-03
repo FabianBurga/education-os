@@ -5,7 +5,8 @@
 M28 — Operational Adoption Core v0.28.0 is CLOSED / PUBLISHED / CANONICAL at
 `c21e7c1287a8bc7abd8f355aa619e67c0beee0c4`, tag
 `m28-operational-adoption-core-v0.28.0`. M29 — Teacher & Family Continuity is
-CURRENT at M29-0 — Canonical Bootstrap & Contract Freeze. See [M29 scope](m29/M29_SCOPE.md).
+CURRENT; M29-0 contract is PASS and M29-AO is the current development-harness
+task. See [M29 scope](m29/M29_SCOPE.md) and `docs/agent_orchestration/`.
 
 This is direction, not implementation status.
 
@@ -16,7 +17,8 @@ This is direction, not implementation status.
   passed, with value evidence limited by required human observation.
 - M28 - Operational Adoption Core v0.28.0. CLOSED / PUBLISHED / CANONICAL;
   immutable release tag and commit are recorded above.
-- M29 - Teacher & Family Continuity. CURRENT; M29-0 contract freeze in progress.
+- M29 - Teacher & Family Continuity. CURRENT; M29-0 contract freeze PASS and
+  M29-AO development harness current. Product implementation has not started.
 - M30+ - Future roadmap topics require separate discovery and approval.
 
 Future milestones do not authorize autonomous mutation, generic tool access, browser automation, SQL, shell, credentials, or provider-driven decisions. Each requires a separately frozen contract and closure evidence.

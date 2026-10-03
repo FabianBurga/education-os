@@ -1,10 +1,11 @@
 # Education OS - Project Handoff
 
-## Current handoff — M29-0
+## Current handoff — M29-AO
 
 M29 — Teacher & Family Continuity is CURRENT on branch
-`m29-teacher-family-continuity`, stage M29-0 — Canonical Bootstrap & Contract
-Freeze. Base: immutable M28 tag `m28-operational-adoption-core-v0.28.0`, commit
+`m29-teacher-family-continuity`. M29-0 contract/discovery is PASS; current
+process task is M29-AO — Agent Orchestration + Project Memory + Efficiency
+Foundation. Base: immutable M28 tag `m28-operational-adoption-core-v0.28.0`, commit
 `c21e7c1287a8bc7abd8f355aa619e67c0beee0c4`. M28 is CLOSED / PUBLISHED /
 CANONICAL; do not modify its release branch or tag. M29-1 must wait until the
 discovered capabilities, continuity gaps and privacy contract in [docs/m29](m29/M29_SCOPE.md)

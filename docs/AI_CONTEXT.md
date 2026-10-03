@@ -1,9 +1,10 @@
 # Education OS - AI Continuity Context
 
-## Current canonical context — M29-0
+## Current canonical context — M29-AO
 
-Current milestone: M29 — Teacher & Family Continuity. Current stage: M29-0 —
-Canonical Bootstrap & Contract Freeze (documentation/discovery only). Current
+Current milestone: M29 — Teacher & Family Continuity. M29-0 contract/discovery
+is PASS. Current task: M29-AO — Agent Orchestration + Project Memory +
+Efficiency Foundation (development harness only). Current
 branch: `m29-teacher-family-continuity`, based on immutable M28 tag
 `m28-operational-adoption-core-v0.28.0` / commit
 `c21e7c1287a8bc7abd8f355aa619e67c0beee0c4`. M28 is CLOSED / PUBLISHED /
