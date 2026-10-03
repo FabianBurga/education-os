@@ -1,5 +1,20 @@
 # Education OS - AI Continuity Context
 
+## Current canonical context — M29-0
+
+Current milestone: M29 — Teacher & Family Continuity. Current stage: M29-0 —
+Canonical Bootstrap & Contract Freeze (documentation/discovery only). Current
+branch: `m29-teacher-family-continuity`, based on immutable M28 tag
+`m28-operational-adoption-core-v0.28.0` / commit
+`c21e7c1287a8bc7abd8f355aa619e67c0beee0c4`. M28 is CLOSED / PUBLISHED /
+CANONICAL; Alembic head `0046_m28_attendance_perms`.
+
+Reuse M0–M28 authorities. Do not add a second communications backend, event
+ledger, timeline, intervention/accountability engine, or offline protocol.
+M29-0 implements no product functionality. Contract: [docs/m29/M29_SCOPE.md](m29/M29_SCOPE.md).
+The remaining content is historical milestone context; older current/next
+milestone statements are superseded by this section.
+
 Project: Education OS, an Institutional Intelligence & Action Platform.
 
 Authoritative published M27 base: `8af4557ee77d04adb2cb20d5994684268aacd194`,

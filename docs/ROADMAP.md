@@ -1,20 +1,23 @@
 # Roadmap
 
+## Current baseline
+
+M28 — Operational Adoption Core v0.28.0 is CLOSED / PUBLISHED / CANONICAL at
+`c21e7c1287a8bc7abd8f355aa619e67c0beee0c4`, tag
+`m28-operational-adoption-core-v0.28.0`. M29 — Teacher & Family Continuity is
+CURRENT at M29-0 — Canonical Bootstrap & Contract Freeze. See [M29 scope](m29/M29_SCOPE.md).
+
 This is direction, not implementation status.
 
 - M25 - Agentic Control Plane. CLOSED.
 - M26 - Human Experience Layer / Mentor OS. CLOSED / PASS.
 - M27 - Institutional Decision & Accountability OS. CLOSED / PASS. M27-1
   through M27-8 are complete; technical and synthetic operational validation
-  passed, with value evidence limited by required human observation. The next
-  milestone is M28 - Operational Adoption Core.
-- M28 - Operational Adoption Core. M28-0 CLOSED / PASS; M28-1 Secure Student
-  Record CLOSED / PASS locally. Enrollment lifecycle M28-2 is NOT STARTED.
-  Scope and slices: [M28 implementation plan](m28/M28_IMPLEMENTATION_PLAN.md).
-- M29 - Preventive Intelligence / Sentinel.
-- M30 - Family Experience.
-- M31 - Autonomous Operations.
-- M32 - Self-Healing Platform.
+  passed, with value evidence limited by required human observation.
+- M28 - Operational Adoption Core v0.28.0. CLOSED / PUBLISHED / CANONICAL;
+  immutable release tag and commit are recorded above.
+- M29 - Teacher & Family Continuity. CURRENT; M29-0 contract freeze in progress.
+- M30+ - Future roadmap topics require separate discovery and approval.
 
 Future milestones do not authorize autonomous mutation, generic tool access, browser automation, SQL, shell, credentials, or provider-driven decisions. Each requires a separately frozen contract and closure evidence.
 

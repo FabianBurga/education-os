@@ -11,21 +11,22 @@ Correctness, tenant isolation, auditability, migration safety, and evidence-back
 behavior take priority over speed.
 
 ## Current authoritative baseline
-Branch:
-m28-operational-adoption-core
+Current branch:
+m29-teacher-family-continuity
 
 Current Alembic revision:
-0043_m28_student_record_perms
+0046_m28_attendance_perms
 
 Current phase:
-M28-1 — Secure Student Record (CLOSED / PASS)
+M29-0 — Canonical Bootstrap & Contract Freeze (documentation/discovery only)
 
-M28 canonical base:
-Published annotated tag m27-decision-accountability-os-v0.27.0
-8af4557ee77d04adb2cb20d5994684268aacd194
-M28 planning contracts: docs/m28/M28_SCOPE.md and linked boundary/plan files.
-M28-0: CLOSED / PASS. M28-1: CLOSED / PASS. M28-2: NOT STARTED.
-No push/tag/release is authorized by the M28-1 task.
+M28 release tag: m28-operational-adoption-core-v0.28.0
+M28 release commit: c21e7c1287a8bc7abd8f355aa619e67c0beee0c4
+M28 status: CLOSED / PUBLISHED / CANONICAL; release branch and tag are immutable.
+M29: Teacher & Family Continuity. Review docs/m29/ before M29-1.
+
+M29 canonical base is the M28 tag above, peeled to the recorded release commit.
+Preserve M0–M28 authorities; do not modify the M28 release branch or tag.
 
 M27 canonical closure:
 M27 — Institutional Decision & Accountability OS: CLOSED / PASS
@@ -36,7 +37,7 @@ Value evidence: PASS_WITH_HUMAN_LIMITATIONS
 Ready for controlled human pilot: YES
 Field validated: NO
 Production certified: NO
-Next milestone: M28 - Operational Adoption Core
+Next milestone: M29 - Teacher & Family Continuity
 
 M25:
 CLOSED
@@ -48,7 +49,7 @@ M26-2:
 CLOSED / PASS
 
 Next task:
-Review M28-1 evidence before handing M28-2 to Luna.
+Review and accept the M29-0 contract before beginning M29-1.
 
 Current validated M26-1 configuration evidence:
 - M26 config: 6 passed.
@@ -264,7 +265,7 @@ State must be derived from lifecycle events.
 
 PostgreSQL trigger enforces valid event transitions.
 
-## Current canonical status
+## Historical status at the M28-1 handoff (superseded)
 M27 — Institutional Decision & Accountability OS is CLOSED / PASS and published at
 `8af4557ee77d04adb2cb20d5994684268aacd194`, with migration
 `0042_m27_true_recurrence`. Technical and synthetic operational validation

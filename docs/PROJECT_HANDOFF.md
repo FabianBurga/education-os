@@ -1,6 +1,17 @@
 # Education OS - Project Handoff
 
-## Current handoff point
+## Current handoff — M29-0
+
+M29 — Teacher & Family Continuity is CURRENT on branch
+`m29-teacher-family-continuity`, stage M29-0 — Canonical Bootstrap & Contract
+Freeze. Base: immutable M28 tag `m28-operational-adoption-core-v0.28.0`, commit
+`c21e7c1287a8bc7abd8f355aa619e67c0beee0c4`. M28 is CLOSED / PUBLISHED /
+CANONICAL; do not modify its release branch or tag. M29-1 must wait until the
+discovered capabilities, continuity gaps and privacy contract in [docs/m29](m29/M29_SCOPE.md)
+are reviewed. The milestone notes below are historical records; older “current”
+status wording does not supersede this handoff.
+
+## Historical M28-1 handoff point
 
 M28-1 Secure Student Record is CLOSED / PASS locally on
 `m28-operational-adoption-core`, descended from published tag
@@ -12,7 +23,7 @@ M28-2 Enrollment Lifecycle. No push/tag/release is authorized.
 The M27 implementation/pilot evidence below remains historical evidence;
 its 692a8c2 implementation SHA is not the published closeout/tag SHA.
 
-Education OS is a security-sensitive, multi-tenant Institutional Intelligence & Action Platform. M27 - Institutional Decision & Accountability OS is CLOSED / PASS at `692a8c2b6f79b1c773d001a2e4e1117f8f356d1c`; its migration head/current is `0042_m27_true_recurrence`. Technical and synthetic operational validation passed; value evidence is `PASS_WITH_HUMAN_LIMITATIONS`. M27 is ready for a controlled human pilot, is not field validated, and is not production certified. The next milestone is M28 - Operational Adoption Core.
+The following M26/M27 implementation notes are retained as historical evidence from their handoff dates. Their earlier milestone pointers and implementation SHAs do not supersede the current M29-0 handoff above; M28's canonical release identity is recorded there.
 
 ## M26-1 closed configuration baseline
 

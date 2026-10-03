@@ -1,6 +1,24 @@
 # Current State
 
-## Current engineering state
+## Current canonical handoff — M29-0
+
+M29 — Teacher & Family Continuity is CURRENT on branch
+`m29-teacher-family-continuity`. Current stage: M29-0 — Canonical Bootstrap &
+Contract Freeze (documentation and discovery only). The branch is based on
+the immutable M28 release tag `m28-operational-adoption-core-v0.28.0`, peeled
+to `c21e7c1287a8bc7abd8f355aa619e67c0beee0c4`. M28 is CLOSED / PUBLISHED /
+CANONICAL; its Alembic head is `0046_m28_attendance_perms`. Do not modify the
+M28 release branch or tag.
+
+M29-0 discovery and contract: [scope](m29/M29_SCOPE.md), [capability inventory](m29/M29_CAPABILITY_INVENTORY.md),
+[continuity map](m29/M29_CONTINUITY_MAP.md), [domain boundaries](m29/M29_DOMAIN_BOUNDARIES.md),
+[privacy boundary](m29/M29_PRIVACY_BOUNDARY.md), [event continuity](m29/M29_EVENT_CONTINUITY.md),
+[implementation plan](m29/M29_IMPLEMENTATION_PLAN.md). No M29 product code or migration is in scope.
+
+The earlier M28-1 state below is retained historical context and is superseded
+by this current handoff.
+
+## Historical M28-1 engineering state
 
 M27 is CLOSED / PASS and published as `m27-decision-accountability-os-v0.27.0`
 at `8af4557ee77d04adb2cb20d5994684268aacd194`. M28-0 scope freeze and M28-1
