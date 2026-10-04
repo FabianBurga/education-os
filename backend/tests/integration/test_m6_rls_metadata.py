@@ -36,16 +36,17 @@ def test_m6_runtime_role_has_dml_privileges() -> None:
     with psycopg.connect(OWNER_URL) as conn, conn.cursor() as cur:
         cur.execute("SELECT version_num FROM alembic_version")
         version = cur.fetchone()[0]
+        hardened_receipts = version in {"0047_sec_tc1_m29_ack_bridge", "0048_m29_batch_ack_reads"}
         for table in M6_TABLES:
             for privilege in ("SELECT", "INSERT", "UPDATE", "DELETE"):
-                if version == "0047_sec_tc1_m29_ack_bridge" and table == "family_notice_receipts" and privilege != "SELECT":
+                if hardened_receipts and table == "family_notice_receipts" and privilege != "SELECT":
                     continue
                 cur.execute(
                     "SELECT has_table_privilege('education_app', %s, %s)",
                     (table, privilege),
                 )
                 assert cur.fetchone()[0], f"{privilege} missing on {table}"
-        if version == "0047_sec_tc1_m29_ack_bridge":
+        if hardened_receipts:
             cur.execute("""
                 SELECT has_column_privilege('education_app','public.family_notice_receipts','read_at','INSERT'),
                        has_column_privilege('education_app','public.family_notice_receipts','read_at','UPDATE'),

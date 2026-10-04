@@ -6,13 +6,13 @@ PUBLISHED / CANONICAL at tag `m28-operational-adoption-core-v0.28.0`, commit
 
 ## Current slice
 
-M29-1 — Family Acknowledgement Evidence Bridge: CLOSED / PASS after local
-migration, security, and backend regression validation. Migration head:
-`0047_sec_tc1_m29_ack_bridge`. SEC-TC1 is implemented as the first consumer
-of the database-issued one-time capability boundary. The current memory
-anchor remains the pre-slice accepted base `7134bad2608f60c81bc9d199ab277340d962caf7`;
-the M29-1 implementation and evidence are captured below and in the linked
-closeout documents.
+M29-2 — Teacher Continuity Workspace: CLOSED / PASS after local migration,
+security, frontend and backend regression validation. Migration head:
+`0048_m29_batch_ack_reads`. The workspace is a read-only orchestration layer
+over M21/M27 source reads and the governed SEC-TC1 batch evidence contract.
+M29-1 remains the trusted acknowledgement bridge. The current memory anchor
+remains the accepted pre-slice project baseline; inspect the accepted delta
+before wider discovery.
 
 ## Accepted facts and authority
 
@@ -34,14 +34,22 @@ closeout documents.
   triggers. Downgrade refuses while capability/evidence rows remain.
 - No frontend change, historical backfill, or external delivery integration
   was introduced.
+- M29-2 adds `M21_ACK_BATCH_READ` and `M27_ACK_BATCH_READ` with canonical
+  target-set digest binding and a 25-target bound. Unauthorized targets are
+  omitted and acknowledgement evidence cannot discover targets.
+- `GET /api/v1/continuity/worklist` is read-only and bounded. It adds no
+  permission, event, projection, persistence authority or lifecycle state.
+  Teachers receive current authorized M21 continuity; M27 is omitted unless
+  current M27 authorization exists.
 
 ## Validated baseline
 
-Full backend: 801 passed, 0 failed, 2 opt-in M21 E2E skipped because
-`M21_E2E_DATABASE_URL` was unset, 144 warnings. Focused M29/M6/M7 DB/security:
-29 passed. Focused unit/contracts: 40 passed. Ruff, `py_compile`, memory and
-architecture checks, Alembic single-head/current, local 0046→0047 upgrade,
-0047→0046 downgrade and re-upgrade, and `git diff --check` passed. See
+Full backend: 797 passed, 13 skipped, 144 warnings. Skips are the opt-in M21
+E2E and SEC-TC1 issuer integration cases without configured local URLs.
+Frontend: 79 passed; typecheck and production build passed. Focused M29-2
+contracts: 16 passed. Ruff, memory and architecture checks, Alembic
+0047→0048 upgrade, 0048→0047 downgrade and re-upgrade, local ACL/RLS checks,
+and `git diff --check` passed. See
 `docs/memory/VALIDATION_BASELINE.md`,
 `docs/m29/M29_1_ACKNOWLEDGEMENT_EVIDENCE_BRIDGE.md`, and
 `docs/security/SEC_TC1_TRUSTED_CAPABILITY_FOUNDATION.md`.
@@ -55,6 +63,8 @@ architecture checks, Alembic single-head/current, local 0046→0047 upgrade,
   slice to rewrite legacy authentication.
 - Receipt read authorization/read-state exposure is existing M6 debt.
 - Two opt-in M21 E2E tests remain unrun without `M21_E2E_DATABASE_URL`.
+- SEC-TC1 issuer integration tests remain unrun without a dedicated local
+  `TRUSTED_CONTEXT_ISSUER_DATABASE_URL`; no credential is stored in Git.
 
 ## Operating rules
 
@@ -66,4 +76,4 @@ release is authorized by this local implementation closeout.
 
 Next: A0 should define the next bounded M29 slice from verified continuity
 gaps; do not assume family conversations, consent/preferences, retention,
-guardian disputes, or response moderation semantics.
+guardian disputes, response moderation, or broader SEC-TC1 adoption.

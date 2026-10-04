@@ -10,7 +10,7 @@ from sqlalchemy import text
 from sqlmodel import Session
 
 from app.api.deps import CurrentPrincipal
-from app.security.trusted_context import issue_capability
+from app.security.trusted_context import issue_batch_capability, issue_capability
 
 
 def _digest(value: object) -> str:
@@ -61,5 +61,40 @@ def read_followup_acknowledgement(
         operation_fingerprint=_digest({"receipt": receipt_id, "followup": followup_id}),
     )
     rows = session.execute(text("SELECT * FROM public.m21_read_acknowledgement_evidence(:capability)"), {"capability": capability}).mappings().all()
+    session.commit()
+    return [dict(row) for row in rows]
+
+
+def read_followup_acknowledgement_batch(
+    session: Session,
+    principal: CurrentPrincipal,
+    *,
+    followup_ids: list[UUID] | tuple[UUID, ...],
+    idempotency_key: UUID,
+) -> list[dict[str, object]]:
+    target_ids = list(followup_ids)
+    operation = _digest({
+        "actor": principal.user_id,
+        "key": idempotency_key,
+        "purpose": "M21_ACK_BATCH_READ",
+        "targets": sorted(str(target_id) for target_id in target_ids),
+    })
+    capability = issue_batch_capability(
+        principal=principal,
+        purpose="M21_ACK_BATCH_READ",
+        target_ids=target_ids,
+        operation_key=operation,
+        operation_fingerprint=_digest({
+            "purpose": "M21_ACK_BATCH_READ",
+            "targets": sorted(str(target_id) for target_id in target_ids),
+        }),
+    )
+    rows = session.execute(
+        text(
+            "SELECT * FROM public.m21_read_acknowledgement_evidence_batch("
+            ":capability, CAST(:target_ids AS uuid[]))"
+        ),
+        {"capability": capability, "target_ids": [str(target_id) for target_id in target_ids]},
+    ).mappings().all()
     session.commit()
     return [dict(row) for row in rows]

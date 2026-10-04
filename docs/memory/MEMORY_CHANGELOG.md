@@ -10,6 +10,12 @@
   `0047_sec_tc1_m29_ack_bridge`. Local backend/security validation passed;
   details and bounded debt are in `CURRENT_CONTEXT.md` and
   `VALIDATION_BASELINE.md`.
+- M29-2: accepted the bounded, read-only Teacher Continuity Workspace on
+  migration `0048_m29_batch_ack_reads`. Added domain-specific SEC-TC1 batch
+  purposes with target-set digest binding; target authorization precedes
+  evidence; no new permission, event, projection or M29 persistence. Local
+  backend/frontend, migration and ACL/RLS validation passed. See the M29-2
+  closeout and validation baseline.
 - Memory updates are A0-owned. Delegated agents return `MEMORY_DELTA`; A0
   validates it against repository evidence before publishing.
 - Advance `memory_anchor_commit` only when a project-context baseline is

@@ -6,7 +6,8 @@ values are returned only to the immediate caller and must never be logged.
 
 from __future__ import annotations
 
-from uuid import UUID
+import hashlib
+from uuid import NAMESPACE_URL, UUID, uuid5
 
 from sqlalchemy import text
 
@@ -21,6 +22,61 @@ PURPOSES = frozenset(
         "M13_NOTICE_ACK",
     }
 )
+
+BATCH_PURPOSES = frozenset({"M21_ACK_BATCH_READ", "M27_ACK_BATCH_READ"})
+MAX_BATCH_TARGETS = 25
+
+
+def canonical_batch_target_digest(
+    *,
+    purpose: str,
+    organization_id: UUID,
+    institution_id: UUID,
+    target_ids: list[UUID] | tuple[UUID, ...],
+) -> str:
+    """Return the stable tenant- and purpose-bound batch fingerprint."""
+    if purpose not in BATCH_PURPOSES:
+        raise ValueError("Unsupported SEC-TC1 batch purpose")
+    if not target_ids or len(target_ids) > MAX_BATCH_TARGETS:
+        raise ValueError("SEC-TC1 batch target set is outside its bound")
+    if any(target_id is None for target_id in target_ids):
+        raise ValueError("SEC-TC1 batch target set cannot contain null IDs")
+    if len(set(target_ids)) != len(target_ids):
+        raise ValueError("SEC-TC1 batch target set cannot contain duplicate IDs")
+    canonical = "|".join(
+        (
+            purpose,
+            str(organization_id),
+            str(institution_id),
+            ",".join(str(target_id) for target_id in sorted(target_ids, key=str)),
+        )
+    )
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def batch_operation_key(
+    *,
+    principal: CurrentPrincipal,
+    purpose: str,
+    target_ids: list[UUID] | tuple[UUID, ...],
+) -> UUID:
+    """Return the stable idempotency key for one bounded read operation.
+
+    The continuity worklist has no caller supplied mutation key. Its retry
+    identity is therefore derived from the authenticated actor, tenant,
+    purpose, and canonical target set. This makes equivalent retries converge
+    without allowing a reordered target list to rotate the capability.
+    """
+    digest = canonical_batch_target_digest(
+        purpose=purpose,
+        organization_id=principal.organization_id,
+        institution_id=principal.institution_id,
+        target_ids=target_ids,
+    )
+    return uuid5(
+        NAMESPACE_URL,
+        f"education-os:sec-tc1:{principal.user_id}:{purpose}:{digest}",
+    )
 
 
 def issue_capability(
@@ -63,6 +119,44 @@ def issue_capability(
                 "related_link": related_link_id,
                 "replacement_target": replacement_target_id,
                 "reason": reason_code,
+                "operation_key": operation_key,
+                "fingerprint": operation_fingerprint,
+            },
+        ).scalar_one()
+    return str(token)
+
+
+def issue_batch_capability(
+    *,
+    principal: CurrentPrincipal,
+    purpose: str,
+    target_ids: list[UUID] | tuple[UUID, ...],
+    operation_key: str,
+    operation_fingerprint: str,
+) -> str:
+    """Issue a domain-specific, bounded target-set capability."""
+    if purpose not in BATCH_PURPOSES:
+        raise ValueError("Unsupported SEC-TC1 batch purpose")
+    target_set_digest = canonical_batch_target_digest(
+        purpose=purpose,
+        organization_id=principal.organization_id,
+        institution_id=principal.institution_id,
+        target_ids=target_ids,
+    )
+    engine = get_trusted_context_issuer_engine()
+    with engine.begin() as connection:
+        token = connection.execute(
+            text(
+                """SELECT public.sec_tc1_issue_batch_capability(
+                    :purpose, :actor, :organization, :institution,
+                    :target_set_digest, :operation_key, :fingerprint)"""
+            ),
+            {
+                "purpose": purpose,
+                "actor": principal.user_id,
+                "organization": principal.organization_id,
+                "institution": principal.institution_id,
+                "target_set_digest": target_set_digest,
                 "operation_key": operation_key,
                 "fingerprint": operation_fingerprint,
             },

@@ -9,11 +9,11 @@
   },
   "current": {
     "milestone": "M29 — Teacher & Family Continuity",
-    "stage": "M29-1 — Family Acknowledgement Evidence Bridge / SEC-TC1 Phase 1",
+    "stage": "M29-2 — Teacher Continuity Workspace",
     "status": "CLOSED / PASS; local validation complete"
   },
   "database": {
-    "migration_head": "0047_sec_tc1_m29_ack_bridge"
+    "migration_head": "0048_m29_batch_ack_reads"
   },
   "orchestration": {
     "mode": "native delegated subagents, single root orchestrator",
@@ -23,7 +23,7 @@
   },
   "memory_anchor_commit": "7134bad2608f60c81bc9d199ab277340d962caf7",
   "memory_anchor_semantics": "Last accepted project-context baseline before M29-1; this memory captures the accepted M29-1 delta. Inspect only anchor..HEAD before wider rediscovery.",
-  "last_validation_baseline": "M29-1 / SEC-TC1 local closeout: backend 801 passed, 0 failed, 2 opt-in M21 E2E skipped, 144 warnings; focused DB/security 29 passed; focused units 40 passed; migration 0047 upgrade/downgrade/re-upgrade; Ruff, py_compile, memory, architecture and diff-check passed. See docs/memory/VALIDATION_BASELINE.md.",
-  "next_expected_step": "A0 defines the next bounded M29 slice from verified continuity gaps; use current memory and do not infer unresolved family-response/privacy semantics.",
+  "last_validation_baseline": "M29-2 local closeout: backend 797 passed, 13 skipped, 144 warnings; frontend 79 passed; typecheck/build passed; focused M29-2 contracts 16 passed; migration 0047 upgrade/downgrade/re-upgrade; ACL/RLS checks, Ruff, memory, architecture and diff-check passed. See docs/memory/VALIDATION_BASELINE.md.",
+  "next_expected_step": "A0 defines the next bounded M29 slice from verified continuity gaps; M29-2 remains read-only and does not imply family-response, consent, retention or new authority semantics.",
   "canonical_context": "docs/memory/CURRENT_CONTEXT.md"
 }

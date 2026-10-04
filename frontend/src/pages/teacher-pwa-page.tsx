@@ -38,6 +38,7 @@ import type {
   TeacherOfflineSnapshot,
   TeacherOfflineSyncResponse,
 } from "../types/teacher-offline";
+import { TeacherContinuityPage } from "../m29/teacher-continuity-page";
 
 export function TeacherPwaPage() {
   const { bootstrap } = useAppContext();
@@ -287,22 +288,26 @@ export function TeacherPwaPage() {
 
   if (!capability) {
     return (
-      <Card data-testid="teacher-pwa-page">
-        <CardContent className="py-10 text-center">
-          <ShieldCheck className="mx-auto h-10 w-10 text-amber-500" />
-          <h1 className="mt-4 text-xl font-bold">
-            Modo docente sin conexión deshabilitado
-          </h1>
-          <p className="mt-2 text-sm text-slate-500">
-            La capability teacher.offline_pwa está deshabilitada.
-          </p>
-        </CardContent>
-      </Card>
+      <div className="space-y-5" data-testid="teacher-pwa-page">
+        <TeacherContinuityPage />
+        <Card>
+          <CardContent className="py-10 text-center">
+            <ShieldCheck className="mx-auto h-10 w-10 text-amber-500" />
+            <h1 className="mt-4 text-xl font-bold">
+              Modo docente sin conexión deshabilitado
+            </h1>
+            <p className="mt-2 text-sm text-slate-500">
+              La capability teacher.offline_pwa está deshabilitada.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
     <div className="space-y-5" data-testid="teacher-pwa-page">
+      <TeacherContinuityPage />
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex gap-2">

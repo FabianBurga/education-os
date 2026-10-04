@@ -28,9 +28,11 @@ from app.api.v1.m24_router import router as m24_router
 from app.api.v1.m25_router import router as m25_router
 from app.api.v1.m27_router import router as m27_router
 from app.db.session import get_session
+from app.modules.continuity.router import router as continuity_router
 
 router = APIRouter()
 router.include_router(m27_router)
+router.include_router(continuity_router)
 router.include_router(m25_router)
 router.include_router(m24_router)
 router.include_router(m23_router)

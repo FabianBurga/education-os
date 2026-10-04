@@ -29,8 +29,8 @@ TABLES = (
 
 def _require_revision(cur):
     cur.execute("SELECT version_num FROM alembic_version")
-    if cur.fetchone()[0] != "0047_sec_tc1_m29_ack_bridge":
-        pytest.skip("SEC-TC1 migration 0047 is not installed in this test database")
+    if cur.fetchone()[0] not in {"0047_sec_tc1_m29_ack_bridge", "0048_m29_batch_ack_reads"}:
+        pytest.skip("SEC-TC1 migration 0047/0048 is not installed in this test database")
 
 
 def _local_url(value: str, expected_user: str) -> str:
