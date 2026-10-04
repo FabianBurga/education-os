@@ -60,6 +60,21 @@ and missing optional issuer/E2E URLs. No warning was treated as a test failure.
   architecture check, and `git diff --check` passed.
 - A3 and A4 remediation reviews: PASS; zero unresolved CRITICAL/HIGH findings.
 
+## M29-3 Curated Family Continuity closeout
+
+- DESIGN_A frontend composition: one bounded Guardian Console “Avisos para
+  revisar” card; no backend API, migration, permission, event, persistence,
+  projection, or new authority.
+- Focused frontend: **5 passed**; full frontend: **84 passed**; typecheck and
+  production build passed.
+- Guardian/M13 contract validation: **21 passed**. Full issuer-backed backend:
+  **810 passed, 2 skipped, 144 warnings**. The only skips are the optional
+  M21 E2E cases requiring `M21_E2E_DATABASE_URL`.
+- A3 privacy/security review and A4 independent QA passed with zero unresolved
+  CRITICAL/HIGH findings. The Guardian Console notice list is read-only for
+  this card; the older Family Portal read-state side effect remains legacy
+  behavior outside the card.
+
 ## Inherited baseline
 
 M28 closeout evidence remains historical and authoritative for M28:

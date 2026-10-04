@@ -6,6 +6,13 @@ PUBLISHED / CANONICAL at tag `m28-operational-adoption-core-v0.28.0`, commit
 
 ## Current slice
 
+M29-3 — Curated Family Continuity: CLOSED / PASS after frontend,
+Guardian Console/M13 contract, privacy, and backend regression validation.
+The implementation is DESIGN_A: one bounded React “Avisos para revisar” card
+composed from existing family-safe Guardian Console reads. Migration head
+remains `0048_m29_batch_ack_reads`; no backend API, migration, permission,
+event, persistence, or new authority was added.
+
 M29-2 — Teacher Continuity Workspace: CLOSED / PASS after local migration,
 security, frontend and backend regression validation. Migration head:
 `0048_m29_batch_ack_reads`. The workspace is a read-only orchestration layer
@@ -32,8 +39,8 @@ before wider discovery.
 - `education_app` has no direct access to the capability or four evidence
   tables. Those tables retain ENABLE/FORCE RLS, tenant-aware FKs, and append-only
   triggers. Downgrade refuses while capability/evidence rows remain.
-- No frontend change, historical backfill, or external delivery integration
-  was introduced.
+- M29-2 introduced no frontend change, historical backfill, or external
+  delivery integration; M29-3 later added only the approved family card.
 - M29-2 adds `M21_ACK_BATCH_READ` and `M27_ACK_BATCH_READ` with canonical
   target-set digest binding and a 25-target bound. Unauthorized targets are
   omitted and acknowledgement evidence cannot discover targets.
@@ -41,6 +48,15 @@ before wider discovery.
   permission, event, projection, persistence authority or lifecycle state.
   Teachers receive current authorized M21 continuity; M27 is omitted unless
   current M27 authorization exists.
+- M29-3 is a family-only DESIGN_A composition in the existing Guardian
+  Console workspace. It shows one bounded “Avisos para revisar” notice card
+  using existing M13 notice and acknowledgement contracts.
+- M21, M27, and M22 remain invisible to family users. Acknowledgement display
+  is actor-specific; no consent, conversation, free text, persistence,
+  backend API, permission, migration, or event was added.
+- The M29-3 card uses the read-only Guardian Console notice list with no
+  polling. The older Family Portal notice list's established read-state side
+  effect is outside this card.
 
 ## Validated baseline
 
@@ -56,6 +72,14 @@ and `git diff --check` passed. See
 `docs/m29/M29_1_ACKNOWLEDGEMENT_EVIDENCE_BRIDGE.md`, and
 `docs/security/SEC_TC1_TRUSTED_CAPABILITY_FOUNDATION.md`.
 
+## M29-3 closeout baseline
+
+Frontend: 84 passed; typecheck and production build passed. Focused
+Guardian/M13 contract checks: 21 passed. Full issuer-backed backend: 810
+passed, 2 optional M21 E2E skips, 144 warnings. A3 privacy/security review
+and A4 independent QA passed with zero unresolved CRITICAL/HIGH findings.
+See `docs/m29/M29_3_CURATED_FAMILY_CONTINUITY.md`.
+
 ## Known debt
 
 - Capability rows are durable provenance and have no scheduled cleanup;
@@ -67,6 +91,9 @@ and `git diff --check` passed. See
 - Two opt-in M21 E2E tests remain unrun without `M21_E2E_DATABASE_URL`.
 - SEC-TC1 issuer credentials remain process/deployment managed and are never
   stored in Git.
+- Existing Guardian Console notice transport and legacy Family Portal
+  read-state behavior remain outside the curated frontend boundary and are
+  known legacy debt.
 
 ## Operating rules
 

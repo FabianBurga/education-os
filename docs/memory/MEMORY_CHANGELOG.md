@@ -20,6 +20,11 @@
   ambiguity and accepted issuer-backed permanent coverage (24 focused passed;
   full backend 810 passed, 2 optional M21 E2E skips). No architecture,
   permission, event, or persistence change was introduced.
+- M29-3: accepted the curated family continuity DESIGN_A composition in the
+  existing Guardian Console surface. The bounded notice card preserves
+  actor-specific M13 acknowledgement semantics and keeps M21, M27, and M22
+  invisible to family users. Frontend 84 passed and issuer-backed backend 810
+  passed with the two optional M21 E2E skips; A3/A4 passed.
 - Memory updates are A0-owned. Delegated agents return `MEMORY_DELTA`; A0
   validates it against repository evidence before publishing.
 - Advance `memory_anchor_commit` only when a project-context baseline is

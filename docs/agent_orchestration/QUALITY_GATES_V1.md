@@ -16,6 +16,12 @@ Localized frontend changes: focused frontend tests, typecheck and production
 build. Documentation-only changes: diff check, JSON/reference validation; do
 not run product regression solely for docs.
 
+Protected function runtime rule: a protected PostgreSQL function is not
+validated by migration success, ACL/RLS checks, static assertions, or green
+general regression alone. Each newly introduced protected function must have
+at least one permanent integration test that executes its intended runtime
+authority path.
+
 Cheap failure means stop and diagnose before expensive regression. Do not run
 tests automatically from impact tooling. Never weaken tests/security contracts
 to obtain PASS. Reports identify command, exit code, passed/failed/skipped
