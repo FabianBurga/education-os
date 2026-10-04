@@ -17,8 +17,19 @@ from app.api.access import (
     require_intervention_suggestion_review,
     require_intervention_update,
 )
-from app.api.deps import CurrentPrincipal
+from app.api.deps import CurrentPrincipal, get_current_principal
 from app.db.session import get_session
+from app.modules.interventions.acknowledgement_evidence import (
+    correct_followup_acknowledgement,
+    link_followup_acknowledgement,
+    read_followup_acknowledgement,
+)
+from app.modules.interventions.acknowledgement_schemas import (
+    AcknowledgementEvidenceCorrectionRequest,
+    AcknowledgementEvidenceLinkRequest,
+    AcknowledgementEvidenceMutationRead,
+    AcknowledgementEvidenceRead,
+)
 from app.modules.interventions.institutional_views import (
     list_institutional_intervention_queue,
 )
@@ -77,6 +88,7 @@ from app.modules.interventions.suggestion_service import (
 )
 
 router = APIRouter(prefix="/interventions", tags=["interventions"])
+PrincipalDep = Annotated[CurrentPrincipal, Depends(get_current_principal)]
 
 SessionDep = Annotated[Session, Depends(get_session)]
 ReadPrincipalDep = Annotated[CurrentPrincipal, Depends(require_intervention_read)]
@@ -512,3 +524,41 @@ def get_intervention_followup_api(
         principal,
         followup_id,
     )
+
+
+@router.post("/followups/{followup_id}/acknowledgement-evidence", response_model=AcknowledgementEvidenceMutationRead)
+def link_followup_acknowledgement_api(
+    followup_id: UUID, payload: AcknowledgementEvidenceLinkRequest,
+    principal: PrincipalDep, session: SessionDep,
+) -> AcknowledgementEvidenceMutationRead:
+    link_id = link_followup_acknowledgement(
+        session, principal, followup_id=followup_id, receipt_id=payload.receipt_id,
+        idempotency_key=payload.idempotency_key,
+    )
+    return AcknowledgementEvidenceMutationRead(id=link_id)
+
+
+@router.post("/followups/{followup_id}/acknowledgement-evidence/{link_id}/correction", response_model=AcknowledgementEvidenceMutationRead)
+def correct_followup_acknowledgement_api(
+    followup_id: UUID, link_id: UUID, payload: AcknowledgementEvidenceCorrectionRequest,
+    principal: PrincipalDep, session: SessionDep,
+) -> AcknowledgementEvidenceMutationRead:
+    correction_id = correct_followup_acknowledgement(
+        session, principal, followup_id=followup_id, receipt_id=payload.receipt_id,
+        link_id=link_id, reason_code=payload.reason_code,
+        replacement_followup_id=payload.replacement_followup_id,
+        idempotency_key=payload.idempotency_key,
+    )
+    return AcknowledgementEvidenceMutationRead(id=correction_id)
+
+
+@router.get("/followups/{followup_id}/acknowledgement-evidence", response_model=list[AcknowledgementEvidenceRead])
+def read_followup_acknowledgement_api(
+    followup_id: UUID, receipt_id: UUID, idempotency_key: UUID,
+    principal: PrincipalDep, session: SessionDep,
+) -> list[AcknowledgementEvidenceRead]:
+    rows = read_followup_acknowledgement(
+        session, principal, followup_id=followup_id, receipt_id=receipt_id,
+        idempotency_key=idempotency_key,
+    )
+    return [AcknowledgementEvidenceRead.model_validate(row) for row in rows]

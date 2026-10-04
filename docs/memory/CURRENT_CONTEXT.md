@@ -1,39 +1,69 @@
 # Current context
 
-Current development-harness task: M29-AO — Agent Orchestration + Project
-Memory + Efficiency Foundation. This adds repository tooling and process
-contracts only; product behavior and schema remain untouched.
+Education OS is on `m29-teacher-family-continuity`. M28 remains CLOSED /
+PUBLISHED / CANONICAL at tag `m28-operational-adoption-core-v0.28.0`, commit
+`c21e7c1287a8bc7abd8f355aa619e67c0beee0c4`.
 
-M29 — Teacher & Family Continuity. M29-0 contract/discovery is PASS on
-`m29-teacher-family-continuity`, based at M28 release
-`m28-operational-adoption-core-v0.28.0` /
-`c21e7c1287a8bc7abd8f355aa619e67c0beee0c4`. M28 Alembic head:
-`0046_m28_attendance_perms`. The M29-0 accepted context anchor is
-`ba371604a588a9093987e8b636ba9b4e570d9b0c`; it intentionally identifies the
-project baseline this memory describes, not the commit containing later
-memory edits. If HEAD differs, inspect only `git log ANCHOR..HEAD --oneline`
-and `git diff --name-only ANCHOR..HEAD` before deciding on broader discovery.
+## Current slice
 
-M29-0 confirmed existing teacher/student/guardian/family and M13 communication
-capabilities. Guardian/student access uses explicit grants; family receives
-curated attendance/results, notices and acknowledgement. General family
-response, communication-to-M21 follow-up / M27 obligation linkage, a unified
-teacher-family continuity view and family-safe M21 timeline projection were
-not verified. M13 release scope is in-app; SMS/email/WhatsApp/push are not
-included. Offline clients must not dispatch family messages. Evidence and
-privacy constraints: `docs/m29/M29_CAPABILITY_INVENTORY.md`,
-`M29_CONTINUITY_MAP.md`, `M29_PRIVACY_BOUNDARY.md`, and `M29_EVENT_CONTINUITY.md`.
+M29-1 — Family Acknowledgement Evidence Bridge: CLOSED / PASS after local
+migration, security, and backend regression validation. Migration head:
+`0047_sec_tc1_m29_ack_bridge`. SEC-TC1 is implemented as the first consumer
+of the database-issued one-time capability boundary. The current memory
+anchor remains the pre-slice accepted base `7134bad2608f60c81bc9d199ab277340d962caf7`;
+the M29-1 implementation and evidence are captured below and in the linked
+closeout documents.
 
-Unresolved product/privacy decisions: family response semantics,
-contact/consent preferences, retention, guardian disputes and response
-moderation. Do not decide these silently. Escalate implementation dependency
-to A0 and obtain human approval where needed.
+## Accepted facts and authority
 
-Next: human review of M29-0 contract, then one bounded M29-1 Task Contract.
-Do not reconstruct M0–M28 when the anchor is fresh and memory covers the task;
-repository evidence wins when it contradicts memory.
+- M13 owns `FamilyNoticeReceipt` and guardian acknowledgement lifecycle.
+  `education_app` cannot insert/update `acknowledged_at`; the protected M13
+  operation rechecks the active guardian account/profile, notice, tenant, and
+  current portal grant. Existing receipt SELECT/read-state limitations remain
+  known debt.
+- SEC-TC1 issues 60-second, operation/target/tenant/actor-bound opaque
+  capabilities through the dedicated issuer connection. Legacy `app.*` GUCs
+  are not privileged identity proof. `education_context_function_owner` is
+  restricted, NOLOGIN, and NOBYPASSRLS.
+- M21 owns follow-up acknowledgement evidence links/corrections; M27 owns
+  obligation evidence links/corrections. Link evidence does not change
+  intervention, follow-up, obligation, case, or academic lifecycle. No new
+  canonical event or M29 authority was introduced.
+- `education_app` has no direct access to the capability or four evidence
+  tables. Those tables retain ENABLE/FORCE RLS, tenant-aware FKs, and append-only
+  triggers. Downgrade refuses while capability/evidence rows remain.
+- No frontend change, historical backfill, or external delivery integration
+  was introduced.
 
-Development harness: native delegated subagents are available to the root
-agent; A0 owns coordination, with at most three active delegates and no nested
-agents. Persistent Goals are available in this environment but are optional;
-repository memory and the Task Contract remain authoritative.
+## Validated baseline
+
+Full backend: 801 passed, 0 failed, 2 opt-in M21 E2E skipped because
+`M21_E2E_DATABASE_URL` was unset, 144 warnings. Focused M29/M6/M7 DB/security:
+29 passed. Focused unit/contracts: 40 passed. Ruff, `py_compile`, memory and
+architecture checks, Alembic single-head/current, local 0046→0047 upgrade,
+0047→0046 downgrade and re-upgrade, and `git diff --check` passed. See
+`docs/memory/VALIDATION_BASELINE.md`,
+`docs/m29/M29_1_ACKNOWLEDGEMENT_EVIDENCE_BRIDGE.md`, and
+`docs/security/SEC_TC1_TRUSTED_CAPABILITY_FOUNDATION.md`.
+
+## Known debt
+
+- Capability rows are durable provenance and have no scheduled cleanup;
+  retain consumed M13 provenance while dependent evidence links exist.
+- Ordinary legacy HTTP authentication does not globally recheck
+  `user_accounts.is_active`; SEC-TC1 protected functions do. Do not widen this
+  slice to rewrite legacy authentication.
+- Receipt read authorization/read-state exposure is existing M6 debt.
+- Two opt-in M21 E2E tests remain unrun without `M21_E2E_DATABASE_URL`.
+
+## Operating rules
+
+A0 remains the single orchestrator and Git mutation owner. Keep A1/A2/A3/A4
+roles bounded, enforce one writer per file per wave, and use the Task Contract
+and test-selection harness. Do not reconstruct M0-M28 when this memory is
+fresh; repository evidence wins if it contradicts memory. No push, tag, or
+release is authorized by this local implementation closeout.
+
+Next: A0 should define the next bounded M29 slice from verified continuity
+gaps; do not assume family conversations, consent/preferences, retention,
+guardian disputes, or response moderation semantics.

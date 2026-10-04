@@ -1,18 +1,22 @@
 # Education OS - AI Continuity Context
 
-## Current canonical context — M29-AO
+## Current canonical context — M29-1
 
-Current milestone: M29 — Teacher & Family Continuity. M29-0 contract/discovery
-is PASS. Current task: M29-AO — Agent Orchestration + Project Memory +
-Efficiency Foundation (development harness only). Current
+Current milestone: M29 — Teacher & Family Continuity. M29-0 and M29-AO are
+PASS. Current task: M29-1 — Family Acknowledgement Evidence Bridge / SEC-TC1
+Phase 1 (CLOSED / PASS locally). Current
 branch: `m29-teacher-family-continuity`, based on immutable M28 tag
 `m28-operational-adoption-core-v0.28.0` / commit
 `c21e7c1287a8bc7abd8f355aa619e67c0beee0c4`. M28 is CLOSED / PUBLISHED /
-CANONICAL; Alembic head `0046_m28_attendance_perms`.
+CANONICAL; Alembic head `0047_sec_tc1_m29_ack_bridge`.
 
-Reuse M0–M28 authorities. Do not add a second communications backend, event
-ledger, timeline, intervention/accountability engine, or offline protocol.
-M29-0 implements no product functionality. Contract: [docs/m29/M29_SCOPE.md](m29/M29_SCOPE.md).
+Reuse M0–M28 authorities. M13 owns family notice acknowledgement, M21 owns
+follow-up evidence links/corrections, and M27 owns obligation evidence
+links/corrections. SEC-TC1 uses database-issued one-time capabilities; legacy
+`app.*` GUC values are untrusted for privileged operations. No new canonical
+event or automatic lifecycle closure was added. Read [M29-1 closeout](m29/M29_1_ACKNOWLEDGEMENT_EVIDENCE_BRIDGE.md),
+[SEC-TC1 security boundary](security/SEC_TC1_TRUSTED_CAPABILITY_FOUNDATION.md),
+and [M29 scope](m29/M29_SCOPE.md).
 The remaining content is historical milestone context; older current/next
 milestone statements are superseded by this section.
 

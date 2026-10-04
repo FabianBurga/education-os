@@ -9,11 +9,11 @@
   },
   "current": {
     "milestone": "M29 — Teacher & Family Continuity",
-    "stage": "M29-AO — Agent Orchestration + Project Memory + Efficiency Foundation",
-    "status": "PASS; M29-1 awaits human contract acceptance"
+    "stage": "M29-1 — Family Acknowledgement Evidence Bridge / SEC-TC1 Phase 1",
+    "status": "CLOSED / PASS; local validation complete"
   },
   "database": {
-    "migration_head": "0046_m28_attendance_perms"
+    "migration_head": "0047_sec_tc1_m29_ack_bridge"
   },
   "orchestration": {
     "mode": "native delegated subagents, single root orchestrator",
@@ -21,9 +21,9 @@
     "max_concurrent_subagents": 3,
     "nested_subagents": false
   },
-  "memory_anchor_commit": "ba371604a588a9093987e8b636ba9b4e570d9b0c",
-  "memory_anchor_semantics": "Last accepted project-context baseline described by this memory, not the commit that contains this memory. Inspect only anchor..HEAD before wider rediscovery.",
-  "last_validation_baseline": "M28 closeout: backend 769 passed, 0 failed, 2 opt-in M21 E2E skipped (each passed separately); frontend 76 passed; typecheck/build/Ruff/py_compile/Alembic/diff-check passed. See docs/m28/M28_CLOSEOUT.md.",
-  "next_expected_step": "Human review of M29-0 continuity/privacy contract; then bounded M29-1 Task Contract.",
+  "memory_anchor_commit": "7134bad2608f60c81bc9d199ab277340d962caf7",
+  "memory_anchor_semantics": "Last accepted project-context baseline before M29-1; this memory captures the accepted M29-1 delta. Inspect only anchor..HEAD before wider rediscovery.",
+  "last_validation_baseline": "M29-1 / SEC-TC1 local closeout: backend 801 passed, 0 failed, 2 opt-in M21 E2E skipped, 144 warnings; focused DB/security 29 passed; focused units 40 passed; migration 0047 upgrade/downgrade/re-upgrade; Ruff, py_compile, memory, architecture and diff-check passed. See docs/memory/VALIDATION_BASELINE.md.",
+  "next_expected_step": "A0 defines the next bounded M29 slice from verified continuity gaps; use current memory and do not infer unresolved family-response/privacy semantics.",
   "canonical_context": "docs/memory/CURRENT_CONTEXT.md"
 }

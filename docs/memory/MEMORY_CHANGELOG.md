@@ -4,6 +4,12 @@
   M29-0 state; anchor semantics point to accepted M29-0 commit
   `ba371604a588a9093987e8b636ba9b4e570d9b0c`. M28 release facts and M29-0
   capability/privacy findings are linked to canonical milestone evidence.
+- M29-1 / SEC-TC1: accepted the database-issued one-time capability boundary
+  as the first SEC-TC1 consumer; closed the guardian acknowledgement source
+  boundary and M21/M27 evidence bridge on migration
+  `0047_sec_tc1_m29_ack_bridge`. Local backend/security validation passed;
+  details and bounded debt are in `CURRENT_CONTEXT.md` and
+  `VALIDATION_BASELINE.md`.
 - Memory updates are A0-owned. Delegated agents return `MEMORY_DELTA`; A0
   validates it against repository evidence before publishing.
 - Advance `memory_anchor_commit` only when a project-context baseline is

@@ -34,13 +34,25 @@ def test_m6_tables_force_rls() -> None:
 
 def test_m6_runtime_role_has_dml_privileges() -> None:
     with psycopg.connect(OWNER_URL) as conn, conn.cursor() as cur:
+        cur.execute("SELECT version_num FROM alembic_version")
+        version = cur.fetchone()[0]
         for table in M6_TABLES:
             for privilege in ("SELECT", "INSERT", "UPDATE", "DELETE"):
+                if version == "0047_sec_tc1_m29_ack_bridge" and table == "family_notice_receipts" and privilege != "SELECT":
+                    continue
                 cur.execute(
                     "SELECT has_table_privilege('education_app', %s, %s)",
                     (table, privilege),
                 )
                 assert cur.fetchone()[0], f"{privilege} missing on {table}"
+        if version == "0047_sec_tc1_m29_ack_bridge":
+            cur.execute("""
+                SELECT has_column_privilege('education_app','public.family_notice_receipts','read_at','INSERT'),
+                       has_column_privilege('education_app','public.family_notice_receipts','read_at','UPDATE'),
+                       has_column_privilege('education_app','public.family_notice_receipts','acknowledged_at','INSERT'),
+                       has_column_privilege('education_app','public.family_notice_receipts','acknowledged_at','UPDATE')
+            """)
+            assert cur.fetchone() == (True, True, False, False)
 
 
 def test_m6_has_command_specific_rls_policies() -> None:

@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "change-me"
     DATABASE_URL: str
     OWNER_DATABASE_URL: str | None = None
+    TRUSTED_CONTEXT_ISSUER_DATABASE_URL: str | None = None
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 480
 
     RELEASE_ID: str = "v1.0.0-rc7"

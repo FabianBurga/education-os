@@ -1,5 +1,6 @@
 from datetime import UTC, datetime
-from uuid import UUID
+from hashlib import sha256
+from uuid import UUID, uuid4
 
 from fastapi import HTTPException
 from sqlalchemy import text
@@ -26,6 +27,7 @@ from app.modules.family_portal.schemas import (
     PortalGrantCreate,
 )
 from app.modules.students.models import StudentProfile
+from app.security.trusted_context import issue_guardian_notice_acknowledgement
 
 
 def _guardian_has_student(
@@ -354,16 +356,31 @@ def list_portal_notices(
                 )
             ).first()
             if receipt is None:
-                receipt = FamilyNoticeReceipt(
-                    organization_id=guardian.organization_id,
-                    institution_id=guardian.institution_id,
-                    family_notice_id=row[0],
-                    guardian_profile_id=guardian.guardian_profile_id,
-                    read_at=now,
+                session.execute(
+                    text("""
+                        INSERT INTO family_notice_receipts(
+                            id, organization_id, institution_id, family_notice_id,
+                            guardian_profile_id, read_at
+                        ) VALUES (
+                            :id, :organization_id, :institution_id, :notice_id,
+                            :guardian_id, :read_at
+                        )
+                        ON CONFLICT ON CONSTRAINT uq_family_notice_receipt_notice_guardian
+                        DO UPDATE SET read_at = COALESCE(
+                            family_notice_receipts.read_at, EXCLUDED.read_at
+                        )
+                    """),
+                    {
+                        "id": uuid4(), "organization_id": guardian.organization_id,
+                        "institution_id": guardian.institution_id, "notice_id": row[0],
+                        "guardian_id": guardian.guardian_profile_id, "read_at": now,
+                    },
                 )
             else:
-                receipt.read_at = now
-            session.add(receipt)
+                session.execute(
+                    text("UPDATE family_notice_receipts SET read_at=COALESCE(read_at,:read_at) WHERE id=:id"),
+                    {"read_at": now, "id": receipt.id},
+                )
 
         result.append(
             FamilyNoticeRead(
@@ -399,34 +416,24 @@ def acknowledge_notice(
     ):
         raise HTTPException(status_code=404, detail="Notice not available")
 
-    now = datetime.now(UTC)
-    receipt = session.exec(
-        select(FamilyNoticeReceipt).where(
-            FamilyNoticeReceipt.family_notice_id == notice_id,
-            FamilyNoticeReceipt.guardian_profile_id == guardian.guardian_profile_id,
-        )
-    ).first()
-
-    if receipt is None:
-        receipt = FamilyNoticeReceipt(
-            organization_id=guardian.organization_id,
-            institution_id=guardian.institution_id,
-            family_notice_id=notice_id,
-            guardian_profile_id=guardian.guardian_profile_id,
-            read_at=now,
-            acknowledged_at=now,
-        )
-    else:
-        receipt.read_at = receipt.read_at or now
-        receipt.acknowledged_at = now
-
-    session.add(receipt)
+    op_key = sha256(f"m13-notice-ack:{guardian.user_id}:{notice_id}".encode()).hexdigest()
+    fingerprint = sha256(f"M13_NOTICE_ACK:{guardian.organization_id}:{guardian.institution_id}:{notice_id}:{guardian.guardian_profile_id}".encode()).hexdigest()
+    capability = issue_guardian_notice_acknowledgement(
+        guardian=guardian, notice_id=notice_id, operation_key=op_key,
+        operation_fingerprint=fingerprint,
+    )
+    receipt_id = session.exec(
+        text("SELECT public.m13_acknowledge_family_notice(:capability)").bindparams(capability=capability)
+    ).one()[0]
+    acknowledged_at = session.exec(
+        text("SELECT acknowledged_at FROM family_notice_receipts WHERE id=CAST(:receipt_id AS uuid)").bindparams(receipt_id=receipt_id)
+    ).one()[0]
     session.commit()
 
     return NoticeAcknowledgeResult(
         family_notice_id=notice_id,
         guardian_profile_id=guardian.guardian_profile_id,
-        acknowledged_at=now,
+        acknowledged_at=acknowledged_at,
     )
 
 

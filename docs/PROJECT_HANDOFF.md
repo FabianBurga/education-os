@@ -1,16 +1,20 @@
 # Education OS - Project Handoff
 
-## Current handoff — M29-AO
+## Current handoff — M29-1
 
 M29 — Teacher & Family Continuity is CURRENT on branch
-`m29-teacher-family-continuity`. M29-0 contract/discovery is PASS; current
-process task is M29-AO — Agent Orchestration + Project Memory + Efficiency
-Foundation. Base: immutable M28 tag `m28-operational-adoption-core-v0.28.0`, commit
+`m29-teacher-family-continuity`. M29-0 and M29-AO are PASS. M29-1 — Family
+Acknowledgement Evidence Bridge / SEC-TC1 Phase 1 is CLOSED / PASS locally;
+Alembic head is `0047_sec_tc1_m29_ack_bridge`. Base: immutable M28 tag
+`m28-operational-adoption-core-v0.28.0`, commit
 `c21e7c1287a8bc7abd8f355aa619e67c0beee0c4`. M28 is CLOSED / PUBLISHED /
-CANONICAL; do not modify its release branch or tag. M29-1 must wait until the
-discovered capabilities, continuity gaps and privacy contract in [docs/m29](m29/M29_SCOPE.md)
-are reviewed. The milestone notes below are historical records; older “current”
-status wording does not supersede this handoff.
+CANONICAL; do not modify its release branch or tag.
+
+Review [M29-1 closeout](m29/M29_1_ACKNOWLEDGEMENT_EVIDENCE_BRIDGE.md),
+[SEC-TC1 security/deployment boundary](security/SEC_TC1_TRUSTED_CAPABILITY_FOUNDATION.md),
+and [M29 product boundaries](m29/M29_SCOPE.md) before defining the next
+bounded slice. Historical milestone notes below remain evidence; older
+“current” wording does not supersede this handoff.
 
 ## Historical M28-1 handoff point
 

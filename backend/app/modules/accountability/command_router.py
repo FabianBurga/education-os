@@ -6,6 +6,17 @@ from sqlmodel import Session
 
 from app.api.deps import CurrentPrincipal, get_current_principal
 from app.db.session import get_session
+from app.modules.accountability.acknowledgement_evidence import (
+    correct_obligation_acknowledgement,
+    link_obligation_acknowledgement,
+    read_obligation_acknowledgement,
+)
+from app.modules.accountability.acknowledgement_schemas import (
+    AcknowledgementEvidenceCorrectionRequest,
+    AcknowledgementEvidenceLinkRequest,
+    AcknowledgementEvidenceMutationRead,
+    AcknowledgementEvidenceRead,
+)
 from app.modules.accountability.command_schemas import (
     AccountabilityCommandRead,
     DecisionCommand,
@@ -29,6 +40,36 @@ from app.modules.accountability.obligation_service import (
 router = APIRouter(prefix="/accountability", tags=["accountability-commands"])
 PrincipalDep = Annotated[CurrentPrincipal, Depends(get_current_principal)]
 SessionDep = Annotated[Session, Depends(get_session)]
+
+
+@router.post("/obligations/{obligation_id}/acknowledgement-evidence", response_model=AcknowledgementEvidenceMutationRead)
+def link_obligation_acknowledgement_api(
+    obligation_id: UUID, payload: AcknowledgementEvidenceLinkRequest,
+    principal: PrincipalDep, session: SessionDep,
+) -> AcknowledgementEvidenceMutationRead:
+    link_id = link_obligation_acknowledgement(session, principal, obligation_id=obligation_id, receipt_id=payload.receipt_id, idempotency_key=payload.idempotency_key)
+    session.commit()
+    return AcknowledgementEvidenceMutationRead(id=link_id)
+
+
+@router.post("/obligations/{obligation_id}/acknowledgement-evidence/{link_id}/correction", response_model=AcknowledgementEvidenceMutationRead)
+def correct_obligation_acknowledgement_api(
+    obligation_id: UUID, link_id: UUID, payload: AcknowledgementEvidenceCorrectionRequest,
+    principal: PrincipalDep, session: SessionDep,
+) -> AcknowledgementEvidenceMutationRead:
+    correction_id = correct_obligation_acknowledgement(session, principal, obligation_id=obligation_id, receipt_id=payload.receipt_id, link_id=link_id, reason_code=payload.reason_code, replacement_obligation_id=payload.replacement_obligation_id, idempotency_key=payload.idempotency_key)
+    session.commit()
+    return AcknowledgementEvidenceMutationRead(id=correction_id)
+
+
+@router.get("/obligations/{obligation_id}/acknowledgement-evidence", response_model=list[AcknowledgementEvidenceRead])
+def read_obligation_acknowledgement_api(
+    obligation_id: UUID, receipt_id: UUID, idempotency_key: UUID,
+    principal: PrincipalDep, session: SessionDep,
+) -> list[AcknowledgementEvidenceRead]:
+    rows = read_obligation_acknowledgement(session, principal, obligation_id=obligation_id, receipt_id=receipt_id, idempotency_key=idempotency_key)
+    session.commit()
+    return [AcknowledgementEvidenceRead.model_validate(row) for row in rows]
 
 
 def _read(command: str, result: object, *, provenance_sha256: str) -> AccountabilityCommandRead:
