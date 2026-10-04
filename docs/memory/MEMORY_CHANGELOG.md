@@ -25,6 +25,11 @@
   actor-specific M13 acknowledgement semantics and keeps M21, M27, and M22
   invisible to family users. Frontend 84 passed and issuer-backed backend 810
   passed with the two optional M21 E2E skips; A3/A4 passed.
+- M29-4: accepted the synthetic controlled institutional pilot across M13,
+  M21, M27, M29-1, M29-2, M29-3, and SEC-TC1. Full issuer-backed backend was
+  810 passed with two optional M21 E2E skips; frontend was 84 passed; A3/A4
+  passed; release blockers were none. No product capability or schema change
+  was introduced.
 - Memory updates are A0-owned. Delegated agents return `MEMORY_DELTA`; A0
   validates it against repository evidence before publishing.
 - Advance `memory_anchor_commit` only when a project-context baseline is

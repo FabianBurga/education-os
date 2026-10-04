@@ -9,7 +9,7 @@
   },
   "current": {
     "milestone": "M29 — Teacher & Family Continuity",
-    "stage": "M29-3 — Curated Family Continuity",
+    "stage": "M29-4 — Controlled Institutional Pilot & Acceptance",
     "status": "CLOSED / PASS; local validation complete"
   },
   "database": {
@@ -23,7 +23,7 @@
   },
   "memory_anchor_commit": "7134bad2608f60c81bc9d199ab277340d962caf7",
   "memory_anchor_semantics": "Last accepted project-context baseline before M29-1; this memory captures the accepted M29-1 delta. Inspect only anchor..HEAD before wider rediscovery.",
-  "last_validation_baseline": "M29-3 closeout: frontend 84 passed with typecheck/build; focused Guardian/M13 contracts 21 passed; issuer-backed backend 810 passed, 2 optional M21 E2E skips, 144 warnings; A3/A4 PASS. DESIGN_A uses existing Guardian Console/M13 family surfaces with no backend expansion. See docs/memory/VALIDATION_BASELINE.md.",
-  "next_expected_step": "A0 defines the next bounded M29 slice from verified continuity gaps; M29-3 remains curated, read-first, and does not imply family-response, consent, retention or new authority semantics.",
+  "last_validation_baseline": "M29-4 acceptance: synthetic scenarios A-H passed; issuer-backed backend 810 passed, 2 optional M21 E2E skips, 144 warnings; frontend 84 passed with typecheck/build; A3/A4 PASS, release blockers none. See docs/m29/M29_4_CONTROLLED_PILOT_ACCEPTANCE.md.",
+  "next_expected_step": "Release consideration for M29 after human release authorization; retain known transport, M27 scope, label, and optional E2E follow-up debt.",
   "canonical_context": "docs/memory/CURRENT_CONTEXT.md"
 }

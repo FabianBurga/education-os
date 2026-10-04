@@ -6,6 +6,10 @@ PUBLISHED / CANONICAL at tag `m28-operational-adoption-core-v0.28.0`, commit
 
 ## Current slice
 
+M29-4 — Controlled Institutional Pilot & Acceptance: CLOSED / PASS after
+synthetic integrated workflow validation, independent security/QA review,
+and full regression. M29-3 remains accepted below.
+
 M29-3 — Curated Family Continuity: CLOSED / PASS after frontend,
 Guardian Console/M13 contract, privacy, and backend regression validation.
 The implementation is DESIGN_A: one bounded React “Avisos para revisar” card
@@ -79,6 +83,14 @@ Guardian/M13 contract checks: 21 passed. Full issuer-backed backend: 810
 passed, 2 optional M21 E2E skips, 144 warnings. A3 privacy/security review
 and A4 independent QA passed with zero unresolved CRITICAL/HIGH findings.
 See `docs/m29/M29_3_CURATED_FAMILY_CONTINUITY.md`.
+
+## M29-4 acceptance baseline
+
+Synthetic pilot scenarios A–H passed across M13, M21, M27, M29-1, M29-2,
+M29-3, and SEC-TC1. Full issuer-backed backend validation was 810 passed,
+2 optional M21 E2E skips, and 144 warnings; frontend remained 84 passed with
+typecheck/build passing. A3 and A4 passed with no unresolved CRITICAL/HIGH
+findings. Release blockers: none.
 
 ## Known debt
 

@@ -75,6 +75,19 @@ and missing optional issuer/E2E URLs. No warning was treated as a test failure.
   this card; the older Family Portal read-state side effect remains legacy
   behavior outside the card.
 
+## M29-4 Controlled Institutional Pilot & Acceptance
+
+- Synthetic scenarios A–H passed across M13, M21, M27, M29-1, M29-2, M29-3,
+  and SEC-TC1. No real institutional data was used.
+- Full issuer-backed backend: **810 passed, 0 failed, 2 optional M21 E2E
+  skips, 144 warnings**. The skips require `M21_E2E_DATABASE_URL`.
+- Frontend: **84 passed, 0 failed, 0 skipped**; typecheck and production
+  build passed. Focused M29/M13/Guardian suite passed.
+- A3 security review and A4 independent QA: PASS; zero unresolved
+  CRITICAL/HIGH findings. Release blockers: none.
+- Migration remains `0048_m29_batch_ack_reads`; no product or schema changes
+  were made during acceptance.
+
 ## Inherited baseline
 
 M28 closeout evidence remains historical and authoritative for M28:
