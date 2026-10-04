@@ -16,6 +16,10 @@
   evidence; no new permission, event, projection or M29 persistence. Local
   backend/frontend, migration and ACL/RLS validation passed. See the M29-2
   closeout and validation baseline.
+- M29-2V remediation: corrected the existing 0048 batch-validator runtime
+  ambiguity and accepted issuer-backed permanent coverage (24 focused passed;
+  full backend 810 passed, 2 optional M21 E2E skips). No architecture,
+  permission, event, or persistence change was introduced.
 - Memory updates are A0-owned. Delegated agents return `MEMORY_DELTA`; A0
   validates it against repository evidence before publishing.
 - Advance `memory_anchor_commit` only when a project-context baseline is

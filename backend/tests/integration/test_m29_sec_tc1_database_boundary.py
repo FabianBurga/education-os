@@ -6,7 +6,18 @@ from uuid import uuid4
 
 import psycopg
 import pytest
+from sqlalchemy import create_engine
 from sqlalchemy.engine import make_url
+from sqlmodel import Session
+
+from app.api.deps import CurrentPrincipal
+from app.modules.accountability.acknowledgement_evidence import (
+    read_obligation_acknowledgement_batch,
+)
+from app.modules.interventions.acknowledgement_evidence import (
+    read_followup_acknowledgement_batch,
+)
+from app.security import trusted_context
 
 OWNER_URL = os.getenv(
     "OWNER_DATABASE_URL_PG",
@@ -265,6 +276,24 @@ def _consume_staff_capability(urls, operation, capability):
         rows = cur.fetchall()
         conn.commit()
         return rows[0][0] if operation.endswith(("_LINK", "_CORRECT")) else rows
+
+
+def _issue_batch_capability(urls, fixture, purpose, target_ids, *, operation_key=None):
+    _, _, issuer_url = urls
+    canonical = (
+        f"{purpose}|{fixture['org']}|{fixture['inst']}|"
+        f"{','.join(sorted(str(target_id) for target_id in target_ids))}"
+    )
+    digest = sha256(canonical.encode()).hexdigest()
+    op_key = operation_key or sha256(f"batch-op:{uuid4()}".encode()).hexdigest()
+    fingerprint = sha256(f"batch-fingerprint:{op_key}:{digest}".encode()).hexdigest()
+    with psycopg.connect(issuer_url) as conn, conn.cursor() as cur:
+        cur.execute(
+            """SELECT public.sec_tc1_issue_batch_capability(
+                   %s,%s,%s,%s,%s,%s,%s)""",
+            (purpose, fixture["staff_user"], fixture["org"], fixture["inst"], digest, op_key, fingerprint),
+        )
+        return cur.fetchone()[0], op_key, digest
 
 
 def test_m13_guardian_ack_capability_converges_and_is_idempotent(m13_guardian_fixture):
@@ -529,6 +558,142 @@ def test_m21_duplicate_correction_and_competing_supersessions_are_serialized(m13
         assert replacement_link_id is not None
         cur.execute("SELECT followup_id FROM intervention_followup_acknowledgement_evidence_links WHERE id=%s", (replacement_link_id,))
         assert cur.fetchone()[0] == successes[0][1]
+
+
+def test_application_services_issue_and_consume_order_independent_m21_m27_batches(
+    m13_guardian_fixture, monkeypatch
+):
+    urls = _require_runtime_urls()
+    fixture = m13_guardian_fixture
+    owner_url, app_url, issuer_url = urls
+    receipt_id = _consume_m13_capability(urls, _issue_m13_capability(urls, fixture))
+
+    for operation, target_id in (
+        ("M21_ACK_LINK", fixture["followup"]),
+        ("M21_ACK_LINK", fixture["replacement_followup"]),
+        ("M27_ACK_LINK", fixture["obligation"]),
+    ):
+        _consume_staff_capability(
+            urls,
+            operation,
+            _issue_staff_capability(urls, fixture, operation, receipt_id, target_id),
+        )
+
+    issuer_engine = create_engine(
+        make_url(issuer_url).set(drivername="postgresql+psycopg").render_as_string(
+            hide_password=False
+        )
+    )
+    app_engine = create_engine(
+        make_url(app_url).set(drivername="postgresql+psycopg").render_as_string(
+            hide_password=False
+        )
+    )
+    monkeypatch.setattr(
+        trusted_context,
+        "get_trusted_context_issuer_engine",
+        lambda: issuer_engine,
+    )
+    principal = CurrentPrincipal(
+        user_id=fixture["staff_user"],
+        organization_id=fixture["org"],
+        institution_id=fixture["inst"],
+    )
+    hidden_followup = uuid4()
+    hidden_obligation = uuid4()
+    followup_targets = [
+        fixture["replacement_followup"],
+        hidden_followup,
+        fixture["followup"],
+    ]
+    obligation_targets = [fixture["obligation"], hidden_obligation]
+
+    try:
+        with Session(app_engine) as session:
+            m21_rows = read_followup_acknowledgement_batch(
+                session,
+                principal,
+                followup_ids=followup_targets,
+                idempotency_key=uuid4(),
+            )
+        with Session(app_engine) as session:
+            m27_rows = read_obligation_acknowledgement_batch(
+                session,
+                principal,
+                obligation_ids=obligation_targets,
+                idempotency_key=uuid4(),
+            )
+
+        assert [row["target_id"] for row in m21_rows] == sorted(
+            [fixture["followup"], fixture["replacement_followup"]]
+        )
+        assert all(row["acknowledgement_evidence_present"] for row in m21_rows)
+        assert [row["target_id"] for row in m27_rows] == [fixture["obligation"]]
+        assert m27_rows[0]["acknowledgement_evidence_present"] is True
+
+        # The service canonicalizes set identity independent of caller order;
+        # two separate operations therefore persist equal target-set digests.
+        followup_pair = [fixture["followup"], fixture["replacement_followup"]]
+        for ordered_targets in (followup_pair, list(reversed(followup_pair))):
+            with Session(app_engine) as session:
+                rows = read_followup_acknowledgement_batch(
+                    session,
+                    principal,
+                    followup_ids=ordered_targets,
+                    idempotency_key=uuid4(),
+                )
+            assert [row["target_id"] for row in rows] == sorted(followup_pair)
+
+        with psycopg.connect(owner_url) as conn, conn.cursor() as cur:
+            cur.execute(
+                """SELECT target_set_digest FROM sec_tc1_capabilities
+                   WHERE actor_user_id=%s AND purpose='M21_ACK_BATCH_READ'
+                   ORDER BY issued_at DESC LIMIT 2""",
+                (fixture["staff_user"],),
+            )
+            ordered_digests = [row[0] for row in cur.fetchall()]
+            assert len(ordered_digests) == 2 and ordered_digests[0] == ordered_digests[1]
+    finally:
+        app_engine.dispose()
+        issuer_engine.dispose()
+
+
+def test_batch_capability_rejects_target_set_conflict_and_expiry(m13_guardian_fixture):
+    urls = _require_runtime_urls()
+    fixture = m13_guardian_fixture
+    app_url, owner_url = urls[1], urls[0]
+    targets = [fixture["followup"]]
+
+    conflict_capability, _, _ = _issue_batch_capability(
+        urls, fixture, "M21_ACK_BATCH_READ", targets
+    )
+    with psycopg.connect(app_url) as conn, conn.cursor() as cur:
+        with pytest.raises(psycopg.Error) as error:
+            cur.execute(
+                "SELECT * FROM public.m21_read_acknowledgement_evidence_batch(%s,%s)",
+                (conflict_capability, [fixture["followup"], uuid4()]),
+            )
+        assert error.value.sqlstate == "42501"
+        conn.rollback()
+
+    expired_capability, _, _ = _issue_batch_capability(
+        urls, fixture, "M27_ACK_BATCH_READ", [fixture["obligation"]]
+    )
+    with psycopg.connect(owner_url) as conn, conn.cursor() as cur:
+        cur.execute(
+            """UPDATE sec_tc1_capabilities SET expires_at=now()-interval '1 second'
+               WHERE capability_value=%s""",
+            (expired_capability,),
+        )
+        assert cur.rowcount == 1
+    with psycopg.connect(app_url) as conn, conn.cursor() as cur:
+        with pytest.raises(psycopg.Error) as error:
+            cur.execute(
+                "SELECT * FROM public.m27_read_acknowledgement_evidence_batch(%s,%s)",
+                (expired_capability, [fixture["obligation"]]),
+            )
+        assert error.value.sqlstate == "42501"
+        conn.rollback()
 
 
 @pytest.mark.parametrize("purpose", ["M21_ACK_LINK", "M27_ACK_LINK"])

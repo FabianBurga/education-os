@@ -202,12 +202,6 @@ def upgrade() -> None:
                 RAISE EXCEPTION 'SEC-TC1 invalid bounded target set' USING ERRCODE='22023';
             END IF;
             SELECT count(*) INTO v_count FROM unnest(p_target_ids);
-            v_canonical := p_expected || '|' ||
-                (SELECT c.organization_id::text FROM public.sec_tc1_capabilities c
-                 WHERE c.capability_value=p_value) || '|' ||
-                (SELECT c.institution_id::text FROM public.sec_tc1_capabilities c
-                 WHERE c.capability_value=p_value) || '|' ||
-                array_to_string(ARRAY(SELECT x::text FROM unnest(p_target_ids) x ORDER BY x), ',');
             SELECT * INTO c
             FROM public.sec_tc1_capabilities
             WHERE capability_value=p_value

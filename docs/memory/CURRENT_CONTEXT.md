@@ -44,10 +44,12 @@ before wider discovery.
 
 ## Validated baseline
 
-Full backend: 797 passed, 13 skipped, 144 warnings. Skips are the opt-in M21
-E2E and SEC-TC1 issuer integration cases without configured local URLs.
+Full backend issuer-backed remediation baseline: 810 passed, 2 skipped, 144
+warnings. The only skips are opt-in M21 E2E cases requiring
+`M21_E2E_DATABASE_URL`; SEC-TC1 issuer tests ran.
 Frontend: 79 passed; typecheck and production build passed. Focused M29-2
-contracts: 16 passed. Ruff, memory and architecture checks, Alembic
+contracts: 16 passed. Permanent SEC-TC1 integration coverage: 24 passed,
+0 skipped. Ruff, memory and architecture checks, Alembic
 0047→0048 upgrade, 0048→0047 downgrade and re-upgrade, local ACL/RLS checks,
 and `git diff --check` passed. See
 `docs/memory/VALIDATION_BASELINE.md`,
@@ -63,8 +65,8 @@ and `git diff --check` passed. See
   slice to rewrite legacy authentication.
 - Receipt read authorization/read-state exposure is existing M6 debt.
 - Two opt-in M21 E2E tests remain unrun without `M21_E2E_DATABASE_URL`.
-- SEC-TC1 issuer integration tests remain unrun without a dedicated local
-  `TRUSTED_CONTEXT_ISSUER_DATABASE_URL`; no credential is stored in Git.
+- SEC-TC1 issuer credentials remain process/deployment managed and are never
+  stored in Git.
 
 ## Operating rules
 

@@ -43,6 +43,23 @@ Warnings were existing dependency deprecations, unknown opt-in integration
 marks, short local HS256 test keys, bundle-size/dynamic-import build warnings,
 and missing optional issuer/E2E URLs. No warning was treated as a test failure.
 
+## M29-2V issuer-backed remediation closeout
+
+- Corrected the existing `0048_m29_batch_ack_reads` validator by removing its
+  unused pre-lock canonical query, which collided with the PL/pgSQL capability
+  record variable `c`. No authorization, digest, tenant, purpose, RLS, grant,
+  or role semantics changed.
+- Permanent issuer-backed SEC-TC1 integration coverage: **24 passed, 0
+  skipped**, including application-service M21/M27 batch reads, canonical
+  ordering, hidden-target omission, target-set mismatch, and expiry rejection.
+- Full backend regression with issuer configuration: **810 passed, 2 skipped,
+  144 warnings**. The only skips are optional M21 E2E cases requiring
+  `M21_E2E_DATABASE_URL`; no SEC-TC1 issuer tests were skipped.
+- Local migration round-trip `0047 -> 0048 -> 0047 -> 0048`, Alembic current,
+  and the single-head check passed. Ruff, `py_compile`, memory validation,
+  architecture check, and `git diff --check` passed.
+- A3 and A4 remediation reviews: PASS; zero unresolved CRITICAL/HIGH findings.
+
 ## Inherited baseline
 
 M28 closeout evidence remains historical and authoritative for M28:

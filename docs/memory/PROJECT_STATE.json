@@ -23,7 +23,7 @@
   },
   "memory_anchor_commit": "7134bad2608f60c81bc9d199ab277340d962caf7",
   "memory_anchor_semantics": "Last accepted project-context baseline before M29-1; this memory captures the accepted M29-1 delta. Inspect only anchor..HEAD before wider rediscovery.",
-  "last_validation_baseline": "M29-2 local closeout: backend 797 passed, 13 skipped, 144 warnings; frontend 79 passed; typecheck/build passed; focused M29-2 contracts 16 passed; migration 0047 upgrade/downgrade/re-upgrade; ACL/RLS checks, Ruff, memory, architecture and diff-check passed. See docs/memory/VALIDATION_BASELINE.md.",
+  "last_validation_baseline": "M29-2V issuer-backed remediation: backend 810 passed, 2 skipped, 144 warnings; permanent SEC-TC1 integration 24 passed, 0 skipped; frontend accepted baseline 79 passed with typecheck/build; corrected 0048 round-trip, ACL/RLS, Ruff, memory, architecture and diff-check passed. See docs/memory/VALIDATION_BASELINE.md.",
   "next_expected_step": "A0 defines the next bounded M29 slice from verified continuity gaps; M29-2 remains read-only and does not imply family-response, consent, retention or new authority semantics.",
   "canonical_context": "docs/memory/CURRENT_CONTEXT.md"
 }
